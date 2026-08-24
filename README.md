@@ -20,6 +20,7 @@ This repository is a portfolio project designed to showcase advanced frontend ar
 - [Business Requirements](docs/business-requirements.md)
 - Architecture (coming soon)
 - ADRs (coming soon)
+- [How to Commit](docs/commits.md)
 
 ## Getting Started
 
