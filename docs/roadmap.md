@@ -1,0 +1,25 @@
+| Week | Dates (example) | Goal | Stories | Checkpoint |
+|------|-----------------|------|---------|------------|
+| **W1** | Week 1 | Foundation + Identity | KYC-001 to KYC-014, KYC-002 diagrams | API runs, register/login works, tenant in JWT |
+| **W2** | Week 2 | GraphQL + Cases backend | KYC-020 to KYC-037 | Case lifecycle works via GraphQL playground |
+| **W3** | Week 3 | Documents + Audit | KYC-040 to KYC-051 | Upload/download + audit entries exist |
+| **W4** | Week 4 | Angular Admin | KYC-060 to KYC-064 | Reviewer can finish a case in Angular |
+| **W5** | Week 5 | React Customer | KYC-070 to KYC-074 | Customer happy path works in React |
+| **W6** | Week 6 | Vue Reports + Security + Seed | KYC-080, KYC-081, KYC-090 to KYC-101 | All 3 UIs usable, isolation tests green |
+| **W7** | Buffer | Federation attempt, polish, docs | leftover + Module Federation spike | Public README and architecture complete |
+
+### Weekly checkpoint questions
+
+At the end of every week, answer:
+
+1. What is demoable now?
+2. Which MVP stories slipped?
+3. What is cut vs moved to buffer?
+4. Is tenant isolation still proven?
+
+### Time-control rules
+
+- If Module Federation is not working by **end of W5**, keep 3 separate apps. Do not block MVP.
+- If Vue is late, keep Reports as a **single read-only page**.
+- If document storage is slow, use local disk in dev and keep the same interface.
+- Do not add notifications, billing, OCR, or custom workflows.
