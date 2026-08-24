@@ -1,0 +1,210 @@
+# =============================================================================
+# KYC Compliance Platform — .gitignore
+# Covers: Node.js, Angular, React, Vue, .NET, Visual Studio, VS Code, Cursor,
+#         Docker, macOS, Windows, Linux
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Node.js / npm / yarn / pnpm
+# -----------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npm/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+package-lock.json.bak
+
+# -----------------------------------------------------------------------------
+# Angular
+# -----------------------------------------------------------------------------
+dist/
+.angular/
+.angular/cache/
+
+# -----------------------------------------------------------------------------
+# React
+# -----------------------------------------------------------------------------
+build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# -----------------------------------------------------------------------------
+# Vue / Vite
+# -----------------------------------------------------------------------------
+dist-ssr/
+*.local
+.vite/
+
+# -----------------------------------------------------------------------------
+# Environment files (any framework)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# -----------------------------------------------------------------------------
+# .NET / C#
+# -----------------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+project.lock.json
+project.fragment.lock.json
+artifacts/
+_ReSharper*/
+*.DotSettings.user
+.vs/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+*.ncrunchproject
+*.ncrunchsolution
+nCrunchTemp_*
+*.testsettings
+*.vsmdi
+*.pidb
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.ipch
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# -----------------------------------------------------------------------------
+# Visual Studio
+# -----------------------------------------------------------------------------
+.vs/
+*.rsuser
+*.userprefs
+MonoDevelop/
+
+# -----------------------------------------------------------------------------
+# VS Code
+# -----------------------------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# -----------------------------------------------------------------------------
+# Cursor
+# -----------------------------------------------------------------------------
+.cursor/
+.cursorignore
+.cursorrules
+
+# -----------------------------------------------------------------------------
+# JetBrains IDEs (Rider, WebStorm, etc.)
+# -----------------------------------------------------------------------------
+.idea/
+*.iml
+*.iws
+out/
+.idea_modules/
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+docker-compose.override.yml
+
+# -----------------------------------------------------------------------------
+# macOS
+# -----------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# -----------------------------------------------------------------------------
+# Windows
+# -----------------------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# -----------------------------------------------------------------------------
+# Linux
+# -----------------------------------------------------------------------------
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# -----------------------------------------------------------------------------
+# Test & Coverage output
+# -----------------------------------------------------------------------------
+coverage/
+lcov.info
+*.lcov
+junit.xml
+test-results/
+
+# -----------------------------------------------------------------------------
+# Misc
+# -----------------------------------------------------------------------------
+*.bak
+*.swp
+*.swo
+*.orig
