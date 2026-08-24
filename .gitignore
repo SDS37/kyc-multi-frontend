@@ -127,6 +127,7 @@ TestResults/
 *.coveragexml
 
 # -------------------- Misc --------------------
+scripts/
 *.swp
 *.swo
 *~
