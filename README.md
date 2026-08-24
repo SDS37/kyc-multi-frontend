@@ -18,8 +18,10 @@ This repository is a portfolio project designed to showcase advanced frontend ar
 ## Documentation
 
 - [Business Requirements](docs/business-requirements.md)
-- Architecture (coming soon)
-- ADRs (coming soon)
+- [Architecture](docs/architecture.md)
+- [Roadmap](docs/roadmap.md)
+- [Definition of Done](docs/DoD.md)
+- [ADRs](docs/architecture-decision-records.md)
 - [How to Commit](docs/commits.md)
 
 ## Getting Started
