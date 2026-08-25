@@ -1,140 +1,93 @@
-# KYC Compliance Platform
+# KYC Multi-Frontend Platform
 
-> A production-oriented, multi-tenant KYC (Know Your Customer) Compliance platform built on a modular monolith backend and micro-frontend architecture.
+> Production-oriented multi-tenant KYC & Compliance platform.
+> Angular admin shell, React customer portal, Vue reports, and a .NET GraphQL API.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
----
-
-## Overview
-
-This monorepo contains all applications and infrastructure configuration for a multi-tenant KYC Compliance platform used by financial institutions to onboard, verify, and monitor customers in accordance with regulatory requirements.
-
-The platform demonstrates enterprise-grade patterns including multi-tenancy, CQRS, event sourcing, micro-frontends, and GraphQL federation — making it an ideal reference architecture for senior engineering portfolios.
-
----
+This monorepo is a portfolio project. Three independent frontends share one GraphQL API and auth contract. Module Federation is a later spike, not a Week 1 requirement.
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Admin Shell | Angular 21+ |
-| Customer Portal | React 19+ |
-| Reports Dashboard | Vue 3.5+ |
-| API / Backend | .NET 10, C# |
-| API Protocol | Hot Chocolate GraphQL |
-| Database | PostgreSQL |
-| Cache / Sessions | Redis |
-| Architecture | Modular Monolith + Micro-Frontends |
-| Containerization | Docker / Docker Compose |
+| Admin / Shell | Angular |
+| Customer Portal | React |
+| Reports | Vue |
+| API | Hot Chocolate GraphQL on .NET |
+| Backend | Modular monolith, CQRS, multi-tenancy |
+| Data | PostgreSQL, Redis, MinIO |
+| Local run | Docker Compose |
 
----
-
-## Repository Structure
+## Repository structure
 
 ```
 kyc-multi-frontend/
 ├── apps/
-│   ├── angular-admin/        # Angular shell — admin & operations portal
-│   ├── react-customer/       # React app — customer self-service portal
-│   ├── vue-reports/          # Vue app — reporting & analytics dashboard
-│   └── api/                  # .NET 10 modular monolith with GraphQL
+│   ├── angular-admin/     # Angular shell + admin/reviewer portal (not scaffolded yet)
+│   ├── react-customer/    # React customer portal (not scaffolded yet)
+│   ├── vue-reports/       # Vue reports portal (not scaffolded yet)
+│   └── api/               # .NET GraphQL API (not scaffolded yet)
 ├── docs/
-│   └── business-requirements.md
 ├── infrastructure/
-│   └── docker-compose.yml
+│   ├── docker-compose.yml
+│   └── .env.example
 ├── .editorconfig
 ├── .gitignore
 ├── LICENSE
 └── README.md
 ```
 
----
-
 ## Getting Started
 
-> Prerequisites: Node.js 24+, .NET 10 SDK, Docker Desktop
+**Prerequisites:** Docker Desktop.
 
-### 1. Clone the repository
+App folders are placeholders. There is no `.csproj` or `package.json` to run yet. Local work starts with infrastructure.
+
+### 1. Clone
 
 ```bash
 git clone https://github.com/SDS37/kyc-multi-frontend.git
 cd kyc-multi-frontend
 ```
 
-### 2. Start infrastructure services
+### 2. Start PostgreSQL, Redis, and MinIO
 
 ```bash
+cp infrastructure/.env.example infrastructure/.env
 docker compose -f infrastructure/docker-compose.yml up -d
 ```
 
-### 3. Run the API
+| Service | Address | Default credentials |
+|---|---|---|
+| PostgreSQL | `127.0.0.1:5432` | user `kyc`, password `changeme`, database `kyc_db` |
+| Redis | `127.0.0.1:6379` | password `changeme` |
+| MinIO API | `127.0.0.1:9000` | user `minio`, password `changeme1` |
+| MinIO console | `127.0.0.1:9001` | same as API |
 
-```bash
-cd apps/api
-dotnet restore
-dotnet run
-```
+These defaults are for local development only. Change them in `infrastructure/.env`. Data persists in Docker named volumes.
 
-### 4. Run the Angular Admin
-
-```bash
-cd apps/angular-admin
-npm install
-npm start
-```
-
-### 5. Run the React Customer Portal
-
-```bash
-cd apps/react-customer
-npm install
-npm start
-```
-
-### 6. Run the Vue Reports Dashboard
-
-```bash
-cd apps/vue-reports
-npm install
-npm run dev
-```
-
----
+Stop with `docker compose -f infrastructure/docker-compose.yml down`.
 
 ## Architecture
 
-> Detailed architecture diagrams and ADRs are forthcoming in `docs/`.
-
-### High-Level Overview
+See [docs/architecture.md](docs/architecture.md) and [ADRs](docs/architecture-decision-records.md).
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   Browser / Clients                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │ Angular Admin│  │ React Customer│  │ Vue Reports│ │
-│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
-└─────────┼─────────────────┼────────────────┼────────┘
-          │                 │                │
-          └─────────────────▼────────────────┘
-                    GraphQL API Gateway
-                  (Hot Chocolate / .NET 10)
-                           │
-          ┌────────────────┼─────────────────┐
-          ▼                ▼                 ▼
-      PostgreSQL         Redis           External KYC
-      (primary DB)      (cache/sessions)  Providers
+Browser
+  Angular Admin   React Customer   Vue Reports
+           \            |            /
+            \           |           /
+              GraphQL API (.NET / Hot Chocolate)
+                    |         |         |
+              PostgreSQL    Redis     MinIO
 ```
 
-### Key Patterns
-
-- **Multi-Tenancy**: Resolve tenant context from verified authentication claims and enforce tenant membership/row-level isolation; never trust a caller-supplied tenant header on its own.
-- **CQRS**: Commands and Queries separated at the application layer.
-- **Micro-Frontends**: Each frontend is independently deployable and developed by separate teams.
-- **GraphQL**: Single schema entry point with Hot Chocolate stitching.
-- **Event-Driven**: Domain events published for audit trail and downstream integrations.
-
----
+- **Multi-tenancy:** tenant and role come from the JWT, never from client-supplied IDs (ADR-007).
+- **CQRS:** commands and queries are separate in the application layer.
+- **GraphQL:** one schema for all three clients (ADR-002).
+- **Frontends:** independent apps for MVP; Module Federation is deferred (ADR-005).
+- **Files:** KYC documents go to MinIO (ADR-006).
 
 ## Documentation
 
@@ -145,9 +98,12 @@ npm run dev
 - [Architecture Decision Records](docs/architecture-decision-records.md)
 - [Commit Convention](docs/commits.md)
 
----
+## Commit convention
+
+Use [Conventional Commits](docs/commits.md): `type(scope): message`.
+
+Examples: `feat(api): add tenant login`, `docs: add architecture diagrams`.
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-

@@ -1,22 +1,20 @@
-# Vue Reports Dashboard
+# Vue Reports
 
-Vue 3.5 + Vite application for compliance reporting and analytics.
+Placeholder for the Vue reports portal.
 
-## Responsibilities
+No application scaffold yet (`package.json` / Vite config are not in the repo).
 
-- KYC completion rate metrics
-- Risk score distribution charts
-- Tenant-level compliance summaries
-- Exportable PDF/CSV reports
-- Audit log viewer
+## Intended responsibilities
 
-## Getting Started
+- Read-only view of cases relevant to the tenant
+- Basic filtering by status
+- Keep the first version to a single page if time is tight (see roadmap)
 
-> **Note:** The following commands are placeholders. The Vue/Vite workspace scaffold (`package.json`, `vite.config.ts`, etc.) has not yet been committed; these commands will fail until those files are added.
+When the scaffold exists:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Application will be available at `http://localhost:5173`.
+Expected URL: `http://localhost:5173`.

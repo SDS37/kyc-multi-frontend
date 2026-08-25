@@ -1,22 +1,21 @@
-# React Customer Portal
+# React Customer
 
-React 19+ application for end-customers to complete their KYC onboarding journey.
+Placeholder for the React customer portal.
 
-## Responsibilities
+No application scaffold yet (`package.json` is not in the repo).
 
-- Identity document upload and verification
-- Liveness check integration
-- Onboarding progress tracking
-- Profile management
-- Status notifications
+## Intended responsibilities
 
-## Getting Started
+- Customer login against the shared auth contract
+- Create and fill a KYC case
+- Upload documents and submit the case
+- See case status (Draft → Submitted → In Review → Approved / Rejected)
 
-> **Note:** The following commands are placeholders until the React app scaffold (`package.json`, etc.) is committed.
+When the scaffold exists:
 
 ```bash
 npm install
 npm start
 ```
 
-Application will be available at `http://localhost:3000`.
+Expected URL: `http://localhost:3000`.

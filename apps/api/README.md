@@ -1,25 +1,22 @@
-# KYC API
+# API
 
-.NET 10 modular monolith exposing a Hot Chocolate GraphQL API.
+Placeholder for the .NET GraphQL API (Hot Chocolate).
 
-## Responsibilities
+No application scaffold yet (no `.csproj` / `.sln`). Do not run `dotnet` here until that exists.
 
-- Multi-tenant request resolution
-- KYC case orchestration
-- Identity verification provider integrations
-- CQRS with MediatR
-- Domain event publishing
-- PostgreSQL persistence (EF Core)
-- Redis caching and session management
+## Intended responsibilities
 
-## Getting Started
+- One GraphQL schema for Angular, React, and Vue
+- Identity and tenancy (JWT carries tenant and role)
+- Cases, documents, and audit modules
+- PostgreSQL via EF Core; KYC files in MinIO
+- CQRS in the application layer
 
-> **Note:** The .NET project scaffold (`.csproj` / `.sln`) has not been committed yet.
-> The commands below are placeholders and will work once the project files are added.
+When the scaffold exists:
 
 ```bash
 dotnet restore
 dotnet run
 ```
 
-GraphQL playground will be available at `http://localhost:5000/graphql`.
+Expected GraphQL endpoint: `http://localhost:5000/graphql`.

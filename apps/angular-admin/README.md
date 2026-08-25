@@ -1,22 +1,22 @@
 # Angular Admin
 
-Angular 21+ shell application for KYC platform administrators and compliance officers.
+Placeholder for the Angular shell and admin/reviewer portal.
 
-## Responsibilities
+No application scaffold yet (`package.json`, `angular.json`, and source are not in the repo).
 
-- Tenant management
-- KYC case review and approval workflow
-- User role and permission management
-- Compliance reporting interface (embedded Vue micro-frontend)
-- Real-time notifications via GraphQL subscriptions
+## Intended responsibilities
 
-## Getting Started
+- Shell chrome and routing for the admin experience
+- Case list, review, and status transitions
+- Tenant user and role management (Tenant Admin / Reviewer)
 
-> **Note:** The Angular workspace scaffold (`package.json`, `angular.json`, etc.) has not been committed yet. The commands below are placeholders for when the app scaffold is in place.
+React and Vue stay separate apps for MVP (ADR-005). They are not loaded as remotes here yet.
+
+When the scaffold exists:
 
 ```bash
 npm install
 npm start
 ```
 
-Application will be available at `http://localhost:4200`.
+Expected URL: `http://localhost:4200`.

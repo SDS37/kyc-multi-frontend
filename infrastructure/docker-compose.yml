@@ -1,10 +1,10 @@
-version: "3.9"
-
 name: kyc-platform
 
 services:
   # ---------------------------------------------------------------------------
   # PostgreSQL — primary relational database
+  # PGDATA in Postgres 18+ is /var/lib/postgresql/18/docker. Mount the parent
+  # directory so the named volume actually persists data.
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:18-alpine
@@ -17,7 +17,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kyc}"]
       interval: 10s
@@ -25,7 +25,7 @@ services:
       retries: 5
 
   # ---------------------------------------------------------------------------
-  # Redis — caching and session management
+  # Redis — cache / tokens (included for local DX; optional for the first slice)
   # ---------------------------------------------------------------------------
   redis:
     image: redis:8-alpine
@@ -43,36 +43,32 @@ services:
       retries: 5
 
   # ---------------------------------------------------------------------------
-  # API — .NET 10 Hot Chocolate GraphQL backend
-  # NOTE: The build context below is a placeholder. apps/api does not yet
-  # contain a Dockerfile or .NET project. Remove this comment and un-comment
-  # the build section once the scaffold is committed.
-  # This service is excluded from the default `docker compose up` via the
-  # "api" profile. Run `docker compose --profile api up -d` to include it.
+  # MinIO — S3-compatible object storage for KYC documents
   # ---------------------------------------------------------------------------
-  api:
-    image: kyc-api:local
-    profiles: ["api"]
-    container_name: kyc-api
-    # build:                          # placeholder — no Dockerfile yet
-    #   context: ../apps/api
-    #   dockerfile: Dockerfile
+  minio:
+    image: minio/minio:RELEASE.2025-09-06T17-38-46Z
+    container_name: kyc-minio
     restart: unless-stopped
+    command: server /data --console-address ":9001"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-kyc_db};Username=${POSTGRES_USER:-kyc};Password=${POSTGRES_PASSWORD:-changeme}"
-      ConnectionStrings__Redis: "redis:6379,password=${REDIS_PASSWORD:-changeme}"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme1}
     ports:
-      - "5000:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-# -----------------------------------------------------------------------------
-# Volumes
-# -----------------------------------------------------------------------------
+  # The API is not composed yet. apps/api has no Dockerfile or .NET project.
+  # Add an `api` service (with a real build context) when that scaffold exists.
+
 volumes:
   postgres_data:
   redis_data:
+  minio_data:

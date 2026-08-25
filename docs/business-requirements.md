@@ -1,117 +1,78 @@
-# Business Requirements — MVP Scope
+# Business Requirements – MVP
 
-**Project:** Multi-Tenant KYC Compliance Platform
-**Version:** 1.0 — MVP
-**Date:** 2026-08-24
-**Status:** Draft
+**Product**: KYC Compliance Platform
+**Version**: MVP
+**Last updated**: 2026-08-25
+**Status**: Aligned with accepted ADRs
 
----
+## 1. Vision
 
-## 1. Purpose
+A multi-tenant platform that allows companies to manage KYC (Know Your Customer) cases, collect information and documents from end customers, review them, and maintain a clear audit trail — with strong security and strict tenant isolation.
 
-This document defines the Minimum Viable Product (MVP) scope for the KYC Compliance Platform. The platform enables financial institutions (tenants) to digitally onboard customers, verify their identities, assess risk, and maintain an auditable compliance record — all in a multi-tenant SaaS model.
+## 2. Target Users
 
----
-
-## 2. Stakeholders
-
-| Role | Responsibility |
+| Role | Description |
 |---|---|
-| Compliance Officer | Reviews and approves KYC cases |
-| Customer | Completes the KYC self-service journey |
-| Platform Admin | Manages tenants, users, and system configuration |
-| Auditor | Reviews audit logs and compliance reports |
+| Tenant Admin | Manages users and settings within a tenant |
+| Reviewer | Reviews and decides on KYC cases |
+| Customer | Submits KYC information and documents |
 
----
-
-## 3. MVP Feature Scope
+## 3. Core Business Requirements (MVP)
 
 ### 3.1 Multi-Tenancy
+- The system must support multiple independent companies (tenants).
+- Data belonging to one tenant must never be accessible by another tenant.
+- Each tenant has its own users and cases.
 
-- [ ] Tenant registration and provisioning
-- [ ] Tenant isolation at the data layer (schema-per-tenant or row-level security)
-- [ ] Tenant-specific branding configuration (logo, colours)
-- [ ] Tenant admin user with scoped permissions
+### 3.2 Authentication & Authorization
+- Users must authenticate securely.
+- The system supports at least three roles: Tenant Admin, Reviewer, and Customer.
+- Authorization must be enforced based on the user’s role and tenant.
 
-### 3.2 Customer Onboarding
+### 3.3 Case Management
+- A Customer can create a new KYC case.
+- A case follows a simple status lifecycle:
+  `Draft → Submitted → In Review → Approved / Rejected`
+- Reviewers can change the status and add internal comments.
+- Both Customers and Reviewers can view case details (according to permissions).
 
-- [ ] Customer self-registration (email + password)
-- [ ] KYC form: personal details (name, date of birth, nationality, address)
-- [ ] Identity document upload (passport, national ID, driver's licence)
-- [ ] Selfie / liveness check (integration with third-party provider placeholder)
-- [ ] Onboarding status tracking (Pending → In Review → Approved / Rejected)
-- [ ] Email notification on status change
+### 3.4 Information Collection
+- A case must support collecting structured information.
+- The system should allow flexible capture of data (basic fields + possibility to extend).
 
-### 3.3 KYC Case Management (Admin)
+### 3.5 Document Management
+- Customers can upload documents related to a case.
+- Authorized users (mainly Reviewers) can download the documents.
+- Documents must be stored securely (MinIO in MVP) and only accessible within the same tenant.
 
-- [ ] Case queue with filtering by status, risk level, and date
-- [ ] Case detail view with document previews
-- [ ] Manual approval / rejection with mandatory notes
-- [ ] Risk score display (calculated by rules engine)
-- [ ] Escalation workflow (escalate to senior reviewer)
+### 3.6 Audit Trail
+- Important actions (status changes, document uploads, key updates) must be recorded.
+- The audit log must show who performed the action and when.
 
-### 3.4 Risk Assessment
+### 3.7 Basic Overview
+- Users must be able to see a list of cases relevant to their role.
+- Basic filtering by status must be available.
 
-- [ ] Configurable risk rules per tenant (e.g., high-risk nationalities, PEP flags)
-- [ ] Automatic risk score calculation on case submission
-- [ ] Risk level classification: Low / Medium / High / Unacceptable
-
-### 3.5 Audit & Compliance Reporting
-
-- [ ] Immutable audit log for all case actions (who, what, when)
-- [ ] Compliance summary report per tenant (cases processed, approval rate, avg. time-to-decision)
-- [ ] Exportable report (CSV / PDF)
-- [ ] Data retention policy configuration
-
-### 3.6 Authentication & Authorisation
-
-- [ ] JWT-based authentication
-- [ ] Role-based access control (RBAC): Platform Admin, Tenant Admin, Compliance Officer, Customer
-- [ ] MFA for compliance officer and admin roles
-
-### 3.7 API
-
-- [ ] GraphQL API (Hot Chocolate) for all frontend interactions
-- [ ] Mutations: register, submit KYC, approve/reject case, update settings
-- [ ] Queries: tenant info, case list, case detail, reports
-- [ ] Subscriptions: real-time case status updates
-
----
+### 3.8 Security & Compliance Basics
+- Strict tenant isolation is mandatory.
+- Authentication and authorization must be properly implemented.
+- Basic production security practices must be followed (input validation, secure document access, etc.).
 
 ## 4. Out of Scope for MVP
 
-- Automated document OCR (manual review only)
-- Payment integrations
+- Advanced customizable workflows / approval chains
+- Billing and subscription management
+- Advanced analytics and dashboards
+- Real email/SMS notifications (can be mocked)
 - Native mobile applications
-- Advanced AML transaction monitoring
-- SWIFT / FATF third-party data feeds
-- BI / data warehouse integrations
+- Automated document verification / OCR / liveness
+- MFA
+- Multi-language support
+- Module Federation (Week 7 spike only)
 
----
+## 5. Success Criteria for MVP
 
-## 5. Non-Functional Requirements
-
-| Requirement | Target |
-|---|---|
-| Availability | 99.9% uptime |
-| Response time (p95) | < 500 ms for GraphQL queries |
-| Security | OWASP Top 10 compliance; encrypted data at rest and in transit |
-| Scalability | Horizontal scaling via containerisation |
-| Data residency | Configurable per tenant (EU / US) |
-| Audit retention | Minimum 7 years |
-
----
-
-## 6. Assumptions
-
-- Third-party identity verification providers will expose REST APIs (adapters built per provider).
-- All tenants operate under the same regulatory framework for MVP; jurisdiction-specific rules are post-MVP.
-- PostgreSQL row-level security is sufficient for tenant isolation in MVP.
-
----
-
-## 7. Success Criteria
-
-- A new tenant can be provisioned and have their first KYC case reviewed within one business day of platform deployment.
-- Compliance officers can process cases without requiring direct database access.
-- All case actions are captured in the audit log and available in the compliance report.
+- A complete happy path works end-to-end:
+  Customer creates a case → uploads documents → submits → Reviewer reviews and approves/rejects.
+- Tenant isolation is correctly enforced.
+- The solution has a clean architecture that can evolve into a real product.
