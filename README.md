@@ -128,7 +128,7 @@ npm run dev
 
 ### Key Patterns
 
-- **Multi-Tenancy**: Tenant resolution via request headers; isolated data per tenant.
+- **Multi-Tenancy**: Resolve tenant context from verified authentication claims and enforce tenant membership/row-level isolation; never trust a caller-supplied tenant header on its own.
 - **CQRS**: Commands and Queries separated at the application layer.
 - **Micro-Frontends**: Each frontend is independently deployable and developed by separate teams.
 - **GraphQL**: Single schema entry point with Hot Chocolate stitching.
