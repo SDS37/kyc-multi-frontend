@@ -1,6 +1,6 @@
 # Angular Admin
 
-Angular 17+ shell application for KYC platform administrators and compliance officers.
+Angular 21+ shell application for KYC platform administrators and compliance officers.
 
 ## Responsibilities
 

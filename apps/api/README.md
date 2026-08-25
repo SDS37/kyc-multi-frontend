@@ -1,6 +1,6 @@
 # KYC API
 
-.NET 8 modular monolith exposing a Hot Chocolate GraphQL API.
+.NET 10 modular monolith exposing a Hot Chocolate GraphQL API.
 
 ## Responsibilities
 

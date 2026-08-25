@@ -1,6 +1,6 @@
 # Vue Reports Dashboard
 
-Vue 3 + Vite application for compliance reporting and analytics.
+Vue 3.5 + Vite application for compliance reporting and analytics.
 
 ## Responsibilities
 

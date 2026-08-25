@@ -18,10 +18,10 @@ The platform demonstrates enterprise-grade patterns including multi-tenancy, CQR
 
 | Layer | Technology |
 |---|---|
-| Admin Shell | Angular 17+ |
-| Customer Portal | React 18+ |
-| Reports Dashboard | Vue 3+ |
-| API / Backend | .NET 8, C# |
+| Admin Shell | Angular 21+ |
+| Customer Portal | React 19+ |
+| Reports Dashboard | Vue 3.5+ |
+| API / Backend | .NET 10, C# |
 | API Protocol | Hot Chocolate GraphQL |
 | Database | PostgreSQL |
 | Cache / Sessions | Redis |
@@ -38,7 +38,7 @@ kyc-multi-frontend/
 │   ├── angular-admin/        # Angular shell — admin & operations portal
 │   ├── react-customer/       # React app — customer self-service portal
 │   ├── vue-reports/          # Vue app — reporting & analytics dashboard
-│   └── api/                  # .NET 8 modular monolith with GraphQL
+│   └── api/                  # .NET 10 modular monolith with GraphQL
 ├── docs/
 │   └── business-requirements.md
 ├── infrastructure/
@@ -53,7 +53,7 @@ kyc-multi-frontend/
 
 ## Getting Started
 
-> Prerequisites: Node.js 20+, .NET 8 SDK, Docker Desktop
+> Prerequisites: Node.js 24+, .NET 10 SDK, Docker Desktop
 
 ### 1. Clone the repository
 
@@ -118,7 +118,7 @@ npm run dev
           │                 │                │
           └─────────────────▼────────────────┘
                     GraphQL API Gateway
-                  (Hot Chocolate / .NET 8)
+                  (Hot Chocolate / .NET 10)
                            │
           ┌────────────────┼─────────────────┐
           ▼                ▼                 ▼

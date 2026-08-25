@@ -1,6 +1,6 @@
 # React Customer Portal
 
-React 18+ application for end-customers to complete their KYC onboarding journey.
+React 19+ application for end-customers to complete their KYC onboarding journey.
 
 ## Responsibilities
 

@@ -7,7 +7,7 @@ services:
   # PostgreSQL — primary relational database
   # ---------------------------------------------------------------------------
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: kyc-postgres
     restart: unless-stopped
     environment:
@@ -28,7 +28,7 @@ services:
   # Redis — caching and session management
   # ---------------------------------------------------------------------------
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: kyc-redis
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
@@ -43,7 +43,7 @@ services:
       retries: 5
 
   # ---------------------------------------------------------------------------
-  # API — .NET 8 Hot Chocolate GraphQL backend
+  # API — .NET 10 Hot Chocolate GraphQL backend
   # ---------------------------------------------------------------------------
   api:
     image: kyc-api:local
