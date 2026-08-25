@@ -1,5 +1,22 @@
-# React Customer
+# React Customer Portal
 
-Placeholder for the React customer portal.
+React 19+ application for end-customers to complete their KYC onboarding journey.
 
-No application code yet. See [architecture](../../docs/architecture.md).
+## Responsibilities
+
+- Identity document upload and verification
+- Liveness check integration
+- Onboarding progress tracking
+- Profile management
+- Status notifications
+
+## Getting Started
+
+> **Note:** The following commands are placeholders until the React app scaffold (`package.json`, etc.) is committed.
+
+```bash
+npm install
+npm start
+```
+
+Application will be available at `http://localhost:3000`.
