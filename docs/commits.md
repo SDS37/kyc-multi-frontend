@@ -1,16 +1,16 @@
 ## Type, When to use
 
-- feat,A new feature
-- fix,A bug fix
-- docs,Documentation only
-- style,"Formatting, missing semicolons, etc. (no logic)"
-- refactor,Code change that neither fixes a bug nor adds a feature
-- perf,Performance improvement
-- test,Adding or correcting tests
-- build,Changes to build system or dependencies
-- ci,CI configuration
-- chore,"Other changes (tooling, configs, etc.)"
-- revert,Reverts a previous commit
+- feat, A new feature
+- fix, A bug fix
+- docs, Documentation only
+- style, "Formatting, missing semicolons, etc. (no logic)"
+- refactor,C ode change that neither fixes a bug nor adds a feature
+- perf,P erformance improvement
+- test, Adding or correcting tests
+- build, Changes to build system or dependencies
+- ci, CI configuration
+- chore, "Other changes (tooling, configs, etc.)"
+- revert, Reverts a previous commit
 
 ## Recommended Scopes
 
