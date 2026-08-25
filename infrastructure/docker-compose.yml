@@ -44,13 +44,16 @@ services:
 
   # ---------------------------------------------------------------------------
   # API — .NET 10 Hot Chocolate GraphQL backend
+  # NOTE: The build context below is a placeholder. apps/api does not yet
+  # contain a Dockerfile or .NET project. Remove this comment and un-comment
+  # the build section once the scaffold is committed.
   # ---------------------------------------------------------------------------
   api:
     image: kyc-api:local
     container_name: kyc-api
-    build:
-      context: ../apps/api
-      dockerfile: Dockerfile
+    # build:                          # placeholder — no Dockerfile yet
+    #   context: ../apps/api
+    #   dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Development
