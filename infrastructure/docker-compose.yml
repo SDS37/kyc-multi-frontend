@@ -57,8 +57,8 @@ services:
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-kyc_db};Username=${POSTGRES_USER:-kyc};******"
-      ConnectionStrings__Redis: "redis:6379,******"
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-kyc_db};Username=${POSTGRES_USER:-kyc};Password=${POSTGRES_PASSWORD:-changeme}"
+      ConnectionStrings__Redis: "redis:6379,password=${REDIS_PASSWORD:-changeme}"
     ports:
       - "5000:8080"
     depends_on:
