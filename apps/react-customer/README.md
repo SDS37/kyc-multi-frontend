@@ -12,6 +12,8 @@ React 19+ application for end-customers to complete their KYC onboarding journey
 
 ## Getting Started
 
+> **Note:** The following commands are placeholders until the React app scaffold (`package.json`, etc.) is committed.
+
 ```bash
 npm install
 npm start
