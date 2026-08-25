@@ -20,4 +20,4 @@ Compose loads `infrastructure/.env` automatically. Defaults are local-only; chan
 
 Data is stored in named volumes: `postgres_data`, `redis_data`, `minio_data`.
 
-The API and frontends are not part of this Compose file yet. See [architecture](../../docs/architecture.md).
+The API and frontends are not part of this Compose file yet. See [architecture](../docs/architecture.md).

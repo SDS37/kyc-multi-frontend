@@ -73,14 +73,25 @@ Stop with `docker compose -f infrastructure/docker-compose.yml down`.
 
 See [docs/architecture.md](docs/architecture.md) and [ADRs](docs/architecture-decision-records.md).
 
-```
-Browser
-  Angular Admin   React Customer   Vue Reports
-           \            |            /
-            \           |           /
-              GraphQL API (.NET / Hot Chocolate)
-                    |         |         |
-              PostgreSQL    Redis     MinIO
+```mermaid
+flowchart TB
+    subgraph Clients["Browser"]
+        Admin["Angular Admin"]
+        Customer["React Customer"]
+        Reports["Vue Reports"]
+    end
+
+    GQL["GraphQL API<br/>.NET / Hot Chocolate"]
+    DB[(PostgreSQL)]
+    Cache[(Redis)]
+    Files[(MinIO)]
+
+    Admin --> GQL
+    Customer --> GQL
+    Reports --> GQL
+    GQL --> DB
+    GQL --> Cache
+    GQL --> Files
 ```
 
 - **Multi-tenancy:** tenant and role come from the JWT, never from client-supplied IDs (ADR-007).
