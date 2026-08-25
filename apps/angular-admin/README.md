@@ -12,6 +12,8 @@ Angular 21+ shell application for KYC platform administrators and compliance off
 
 ## Getting Started
 
+> **Note:** The Angular workspace scaffold (`package.json`, `angular.json`, etc.) has not been committed yet. The commands below are placeholders for when the app scaffold is in place.
+
 ```bash
 npm install
 npm start
