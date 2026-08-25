@@ -12,6 +12,8 @@ Vue 3.5 + Vite application for compliance reporting and analytics.
 
 ## Getting Started
 
+> **Note:** The following commands are placeholders. The Vue/Vite workspace scaffold (`package.json`, `vite.config.ts`, etc.) has not yet been committed; these commands will fail until those files are added.
+
 ```bash
 npm install
 npm run dev
