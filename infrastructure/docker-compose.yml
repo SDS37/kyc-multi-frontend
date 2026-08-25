@@ -47,9 +47,12 @@ services:
   # NOTE: The build context below is a placeholder. apps/api does not yet
   # contain a Dockerfile or .NET project. Remove this comment and un-comment
   # the build section once the scaffold is committed.
+  # This service is excluded from the default `docker compose up` via the
+  # "api" profile. Run `docker compose --profile api up -d` to include it.
   # ---------------------------------------------------------------------------
   api:
     image: kyc-api:local
+    profiles: ["api"]
     container_name: kyc-api
     # build:                          # placeholder — no Dockerfile yet
     #   context: ../apps/api
