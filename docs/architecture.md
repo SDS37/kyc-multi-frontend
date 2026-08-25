@@ -73,7 +73,39 @@ flowchart TB
     Shell --> Reports
 ```
 
-## 4. Request Flow
+## 4. Backend Module Structure
+
+```mermaid
+flowchart TB
+    subgraph API["API Host"]
+        GQL["Hot Chocolate GraphQL"]
+        Middleware["Auth / Tenant Middleware"]
+    end
+
+    subgraph Modules
+        Identity["Identity & Tenancy"]
+        Cases["Cases Module"]
+        Documents["Documents Module"]
+        Audit["Audit Module"]
+    end
+
+    subgraph CrossCutting["Cross-Cutting"]
+        CQRS["MediatR CQRS"]
+        Events["Domain Events"]
+    end
+
+    GQL --> Middleware
+    Middleware --> Identity
+    Middleware --> Cases
+    Middleware --> Documents
+    Middleware --> Audit
+    Cases --> CQRS
+    Documents --> CQRS
+    Audit --> CQRS
+    CQRS --> Events
+```
+
+## 5. Request Flow
 
 ```mermaid
 sequenceDiagram
@@ -93,7 +125,7 @@ sequenceDiagram
     GQL-->>UI: Typed payload
 ```
 
-## 5. Case Lifecycle
+## 6. Case Lifecycle
 
 ```mermaid
 stateDiagram-v2
