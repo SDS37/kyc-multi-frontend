@@ -14,6 +14,9 @@
 
 ## Getting Started
 
+> **Note:** The .NET project scaffold (`.csproj` / `.sln`) has not been committed yet.
+> The commands below are placeholders and will work once the project files are added.
+
 ```bash
 dotnet restore
 dotnet run
