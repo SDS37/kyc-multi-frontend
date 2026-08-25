@@ -139,6 +139,11 @@ npm run dev
 ## Documentation
 
 - [Business Requirements](docs/business-requirements.md)
+- [Architecture](docs/architecture.md)
+- [Roadmap](docs/roadmap.md)
+- [Definition of Done](docs/DoD.md)
+- [Architecture Decision Records](docs/architecture-decision-records.md)
+- [Commit Convention](docs/commits.md)
 
 ---
 
