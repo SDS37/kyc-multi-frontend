@@ -57,6 +57,8 @@ dist-ssr/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+appsettings.Development.json
+!appsettings.Development.json.example
 *.user
 *.suo
 *.userosscache
