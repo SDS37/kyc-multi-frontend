@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run).
 
-`Tenant` is persisted via EF Core (KYC-010). GraphQL, JWT, and User are later stories (KYC-011, KYC-013, KYC-020).
+`Tenant` and `User` (with roles) are persisted via EF Core (KYC-010 / KYC-011). GraphQL and JWT are later stories (KYC-013, KYC-020).
 
 ## Prerequisites
 
@@ -64,7 +64,7 @@ Still in `apps/api/Kyc.Api`, with Compose Postgres running and a connection stri
 dotnet ef database update
 ```
 
-Migrations in `Data/Migrations` include `InitialCreate` and `AddTenant` (`tenants` table, unique `Slug`). After pull:
+Migrations in `Data/Migrations` include `InitialCreate`, `AddTenant`, and `AddUser` (`users` table; unique `(TenantId, Email)`). After pull:
 
 ```bash
 dotnet ef database update
@@ -101,5 +101,6 @@ succeeds if restore worked. Stop the host with Ctrl+C.
 |---|---|
 | KYC-004 | `dotnet build` / `dotnet run`; OpenAPI at `http://localhost:5295/openapi/v1.json`; connection string not committed |
 | KYC-010 | `tenants` table with unique `Slug`; entity has Id, Name, Slug, IsActive, CreatedAt |
+| KYC-011 | `users` with Role TenantAdmin/Reviewer/Customer; FK to one tenant; unique `(TenantId, Email)`; `PasswordHash` ready for KYC-012 |
 
-Out of scope here: User, GraphQL, JWT (KYC-011 / KYC-020 / KYC-013).
+Out of scope here: register/login, GraphQL, JWT (KYC-012 / KYC-013 / KYC-020).
