@@ -1,6 +1,6 @@
 | Week | Dates (example) | Goal | Stories | Checkpoint |
 |------|-----------------|------|---------|------------|
-| **W1** | Week 1 | Foundation + Identity | KYC-001 to KYC-014, KYC-002 diagrams | API runs, register/login works, tenant in JWT |
+| **W1** | Week 1 | Foundation + Identity | KYC-001 to KYC-014 (incl. KYC-004 API scaffold before KYC-010) | API runs, register/login works, tenant in JWT |
 | **W2** | Week 2 | GraphQL + Cases backend | KYC-020 to KYC-037 | Case lifecycle works via GraphQL playground |
 | **W3** | Week 3 | Documents + Audit | KYC-040 to KYC-051 | Upload/download + audit entries exist |
 | **W4** | Week 4 | Angular Admin | KYC-060 to KYC-064 | Reviewer can finish a case in Angular |

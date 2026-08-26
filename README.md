@@ -27,7 +27,7 @@ kyc-multi-frontend/
 │   ├── angular-admin/     # Angular shell + admin/reviewer portal (not scaffolded yet)
 │   ├── react-customer/    # React customer portal (not scaffolded yet)
 │   ├── vue-reports/       # Vue reports portal (not scaffolded yet)
-│   └── api/               # .NET GraphQL API (not scaffolded yet)
+│   └── api/               # .NET API host + EF Core (GraphQL in KYC-020)
 ├── docs/
 ├── infrastructure/
 │   ├── docker-compose.yml
@@ -40,9 +40,9 @@ kyc-multi-frontend/
 
 ## Getting Started
 
-**Prerequisites:** Docker Desktop.
+**Prerequisites:** Docker Desktop and the .NET 10 SDK (for the API).
 
-App folders are placeholders. There is no `.csproj` or `package.json` to run yet. Local work starts with infrastructure.
+Angular, React, and Vue apps are not scaffolded yet. The API host in `apps/api` builds and talks to Compose PostgreSQL. GraphQL comes in KYC-020.
 
 ### 1. Clone
 
@@ -68,6 +68,10 @@ docker compose -f infrastructure/docker-compose.yml up -d
 These defaults are for local development only. Change them in `infrastructure/.env`. Data persists in Docker named volumes.
 
 Stop with `docker compose -f infrastructure/docker-compose.yml down`.
+
+### 3. Run the API
+
+See [apps/api/README.md](apps/api/README.md) (restore, migrate, `dotnet run`). HTTP: `http://localhost:5295`.
 
 ## Architecture
 
@@ -108,6 +112,8 @@ flowchart TB
 - [Definition of Done](docs/DoD.md)
 - [Architecture Decision Records](docs/architecture-decision-records.md)
 - [Commit Convention](docs/commits.md)
+- [API runbook](apps/api/README.md)
+- [.NET API for frontend engineers](docs/guides/dotnet-api-for-frontend-engineers.md)
 
 ## Commit convention
 
