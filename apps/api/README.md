@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run).
 
-GraphQL, JWT, and domain entities (Tenant, User, cases) are **not** in this project yet. Those are later stories (KYC-010, KYC-013, KYC-020).
+`Tenant` is persisted via EF Core (KYC-010). GraphQL, JWT, and User are later stories (KYC-011, KYC-013, KYC-020).
 
 ## Prerequisites
 
@@ -64,7 +64,13 @@ Still in `apps/api/Kyc.Api`, with Compose Postgres running and a connection stri
 dotnet ef database update
 ```
 
-`InitialCreate` is already in `Data/Migrations`. With an empty `DbContext` it only creates `__EFMigrationsHistory`. New tables (e.g. Tenant) get a new migration later:
+Migrations in `Data/Migrations` include `InitialCreate` and `AddTenant` (`tenants` table, unique `Slug`). After pull:
+
+```bash
+dotnet ef database update
+```
+
+To add another schema change:
 
 ```bash
 dotnet ef migrations add NameOfChange --output-dir Data/Migrations
@@ -89,13 +95,11 @@ dotnet build
 
 succeeds if restore worked. Stop the host with Ctrl+C.
 
-## How you know KYC-004 is done
+## Done checks
 
-| Criterion | Proof |
+| Story | Proof |
 |---|---|
-| Project builds and starts | `dotnet build` and `dotnet run` in `apps/api/Kyc.Api`; OpenAPI at `http://localhost:5295/openapi/v1.json` returns 200 |
-| EF Core talks to Compose Postgres | `dotnet ef database update` succeeds (`InitialCreate` / `__EFMigrationsHistory`) |
-| No secrets committed | `appsettings.Development.json` is gitignored; only `.example` is tracked |
-| README | this file covers restore, migrate, and run |
+| KYC-004 | `dotnet build` / `dotnet run`; OpenAPI at `http://localhost:5295/openapi/v1.json`; connection string not committed |
+| KYC-010 | `tenants` table with unique `Slug`; entity has Id, Name, Slug, IsActive, CreatedAt |
 
-Out of scope (do **not** treat as missing): Tenant entity, GraphQL, JWT. Those are KYC-010 / KYC-020 / KYC-013.
+Out of scope here: User, GraphQL, JWT (KYC-011 / KYC-020 / KYC-013).
