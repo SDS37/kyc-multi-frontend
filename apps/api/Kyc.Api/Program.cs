@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Data;
@@ -34,6 +35,8 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Keep ADR claim names (sub, role, tenant_id) as issued — needed for KYC-014.
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -43,7 +46,9 @@ builder.Services
             ValidIssuer = jwtOptions.Issuer,
             ValidAudience = jwtOptions.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
-            ClockSkew = TimeSpan.FromMinutes(1)
+            ClockSkew = TimeSpan.FromMinutes(1),
+            NameClaimType = JwtRegisteredClaimNames.Sub,
+            RoleClaimType = "role"
         };
     });
 builder.Services.AddAuthorization();
