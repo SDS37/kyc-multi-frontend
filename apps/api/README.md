@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run, test).
 
-`Tenant` and `User` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
+`Tenant` and `User` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Role gates protect `reviewerOnlyPing` / `customerOnlyPing` (KYC-022; real case mutations later). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
 
 Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
 
@@ -166,6 +166,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-014 | `ICurrentTenant` from JWT `tenant_id`; EF global filter on `ITenantScoped` (fail closed without tenant); `dotnet test` proves tenant A cannot read tenant B users (Case inherits when KYC-030 implements `ITenantScoped`) |
 | KYC-020 | `/graphql` (Hot Chocolate); GraphQL IDE in Development only; `GET /health` |
 | KYC-021 | Deny-by-default GraphQL JWT auth; anonymous `login` / `registerTenant` only; invalid token rejected; REST on the same allow-list |
+| KYC-022 | `[Authorize(Roles = ...)]` on Reviewer/Customer mutations; wrong role → GraphQL `AUTH_NOT_AUTHORIZED` (not HTTP 500) |
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 
-Out of scope here: role-based GraphQL auth (KYC-022), auth rate limits (KYC-093). Local HTTP is for Development only.
+Out of scope here: auth rate limits (KYC-093). Local HTTP is for Development only.
