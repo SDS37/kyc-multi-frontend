@@ -188,3 +188,43 @@ Put `tenant_id` and `role` in the JWT after login. All queries and commands take
 - Login must include tenant slug or equivalent
 - Token handling must be consistent in all three frontends
 - EF global filters on `ITenantScoped` fail closed without a JWT tenant (KYC-014); GraphQL must keep the same rule (KYC-021)
+---
+
+## ADR-008: Defer formal AI context-engineering packs for MVP
+
+Date: 2026-08-27  
+Status: Accepted
+
+### Context
+Formal **AI context engineering** (in the sense popularized by practitioners such as Daniel Glejzner / ACE) treats agent instructions as production infrastructure: owned, versioned, allow-listed, validated before use, and measurable — not ad-hoc chat dumps or unowned rule files scattered across tools.
+
+That approach is valuable when many people or agents share outdated context, or when scope drift from agents is a repeated failure mode. This repository is a **solo portfolio MVP** with:
+
+- GitHub stories and acceptance criteria
+- ADRs, roadmap, and API runbooks
+- Small PRs and Conventional Commits
+- Established code patterns (`User`, `ITenantScoped`, GraphQL deny-by-default auth)
+
+Those already provide enough scoped context to ship Week 2+ stories (e.g. [KYC-030](https://github.com/SDS37/kyc-multi-frontend/issues/13)) without a separate context supply chain.
+
+### Decision
+**Do not** introduce a formal context-pack system (e.g. `.context/packs/...` with VERSION / SOURCES / CONSTRAINTS) or ACE-style governance as an MVP deliverable.
+
+Continue to steer agents with:
+
+1. The issue AC and notes
+2. “Mirror existing patterns; do not invent parallel mechanisms”
+3. Proof via tests called out in the story
+
+Revisit formal packs only if agent scope drift becomes a real, recurring cost.
+
+### Alternatives
+- Adopt ACE-style packs for every story from KYC-030 onward
+- Heavy global Cursor/Claude rule sets as the primary contract
+- No written ADRs — rely on chat memory only
+
+### Consequences
+- Less process overhead; focus stays on Cases / Documents / UIs
+- Context quality still depends on keeping issues and ADRs accurate
+- No versioned “what reached the agent” audit trail
+- If multiple contributors or heavy agent automation appear later, ADR-008 should be revisited and packs (or equivalent) considered
