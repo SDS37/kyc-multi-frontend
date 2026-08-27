@@ -21,6 +21,7 @@ public class CaseConfiguration : IEntityTypeConfiguration<Case>
             .HasMaxLength(32)
             .IsRequired();
 
+        // Postgres: jsonb (see AppDbContext for provider-specific column type; SQLite tests use text).
         builder.Property(c => c.FormData)
             .IsRequired();
 

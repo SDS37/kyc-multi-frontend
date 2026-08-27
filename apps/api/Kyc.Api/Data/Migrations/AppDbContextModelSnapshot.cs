@@ -36,7 +36,7 @@ namespace Kyc.Api.Data.Migrations
 
                     b.Property<string>("FormData")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<DateTimeOffset?>("ReviewedAt")
                         .HasColumnType("timestamp with time zone");

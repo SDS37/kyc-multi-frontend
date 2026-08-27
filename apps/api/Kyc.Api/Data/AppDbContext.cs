@@ -25,6 +25,14 @@ public class AppDbContext(
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
+        // jsonb is Postgres-only; leave default text for SQLite test host EnsureCreated.
+        if (Database.IsNpgsql())
+        {
+            modelBuilder.Entity<Case>()
+                .Property(c => c.FormData)
+                .HasColumnType("jsonb");
+        }
+
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (!typeof(ITenantScoped).IsAssignableFrom(entityType.ClrType))
