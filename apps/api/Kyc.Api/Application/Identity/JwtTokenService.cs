@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Domain.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -19,7 +20,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options)
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new("tenant_id", user.TenantId.ToString()),
+            new(HttpCurrentTenant.TenantIdClaimType, user.TenantId.ToString()),
             new("role", user.Role.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

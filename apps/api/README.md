@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run).
 
-`Tenant` and `User` are persisted via EF Core. Public tenant registration and login are temporary REST (`POST /api/register-tenant`, `POST /api/login`) until GraphQL (KYC-020). Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`).
+`Tenant` and `User` are persisted via EF Core. Public tenant registration and login are temporary REST (`POST /api/register-tenant`, `POST /api/login`) until GraphQL (KYC-020). Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (KYC-014).
 
 Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
 
@@ -120,9 +120,10 @@ Successful login returns `{ "accessToken", "tokenType": "Bearer", "expiresInSeco
 
 ```bash
 dotnet build
+dotnet test apps/api/Kyc.Api.sln
 ```
 
-succeeds if restore worked. Stop the host with Ctrl+C.
+(from the repo root; or `dotnet test` inside `apps/api`). Stop the host with Ctrl+C.
 
 ## Done checks
 
@@ -133,5 +134,6 @@ succeeds if restore worked. Stop the host with Ctrl+C.
 | KYC-011 | `users` with Role TenantAdmin/Reviewer/Customer; FK to one tenant; unique `(TenantId, Email)` |
 | KYC-012 | `POST /api/register-tenant` creates Tenant + TenantAdmin in one transaction; password hashed (8–128 chars); validation errors return 400; no JWT required |
 | KYC-013 | `POST /api/login` with tenant slug + email + password; JWT claims `sub`, `tenant_id`, `role`, `email`; generic 401 on bad credentials; inactive tenant cannot log in |
+| KYC-014 | `ICurrentTenant` from JWT `tenant_id`; EF global filter on `ITenantScoped`; `dotnet test` proves tenant A cannot read tenant B users (Case inherits when KYC-030 implements `ITenantScoped`) |
 
-Out of scope here: tenant query filters (KYC-014), GraphQL (KYC-020). Local HTTP is for Development only.
+Out of scope here: GraphQL (KYC-020). Local HTTP is for Development only.

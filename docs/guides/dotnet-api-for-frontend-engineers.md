@@ -9,8 +9,8 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
 | .NET host + EF Core + Postgres | Hot Chocolate GraphQL (KYC-020) |
-| `Tenant` and `User` (+ roles) | Tenant isolation / query filters (KYC-014) |
-| Temporary `POST /api/register-tenant` and `POST /api/login` (JWT) | Cases, documents, audit, three UI apps |
+| `Tenant` and `User` (+ roles) | Cases, documents, audit, three UI apps |
+| Temporary register/login (JWT) + tenant isolation filters | Role checks on GraphQL (KYC-022) |
 
 The **target** remains one GraphQL API, CQRS modular monolith, JWT tenant context, and three frontends — see [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md).
 
@@ -40,11 +40,12 @@ KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an
 
 ## What the API project is
 
-- **`Program.cs`** — composition root. Registers EF Core, JWT auth, OpenAPI (Development), password hasher, register + login endpoints.
-- **`AppDbContext`** — EF session with `Tenants` and `Users` (and more as stories land).
+- **`Program.cs`** — composition root. Registers EF Core, JWT auth, `ICurrentTenant`, OpenAPI (Development), password hasher, register + login endpoints.
+- **`AppDbContext`** — EF session with `Tenants` and `Users`; global query filters on `ITenantScoped` from JWT `tenant_id`.
 - **`UseNpgsql`** — Postgres provider (the `pg` driver equivalent).
 - **Local HTTP** — Development uses `http://localhost:5295`. Fine for local Compose credentials; do not treat that as a production pattern for passwords.
 - **JWT** — short-lived access token from login (`sub`, `tenant_id`, `role`, `email`). Signing key lives in Development config / user-secrets (not committed).
+- **Tenant isolation** — never trust client-supplied tenant IDs (ADR-007). Case (KYC-030) must implement `ITenantScoped` to inherit the filter.
 
 ## Secrets
 
@@ -68,6 +69,6 @@ History includes `InitialCreate` (empty pipeline proof), then `AddTenant` and `A
 
 `dotnet-ef` is a **local tool** in `.config/dotnet-tools.json` (`dotnet tool restore` from the repo root).
 
-## Next identity steps
+## Next steps
 
-Register and login are temporary REST. Tenant isolation (KYC-014) and GraphQL (KYC-020) are next. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).
+Register/login remain temporary REST until GraphQL (KYC-020). For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).
