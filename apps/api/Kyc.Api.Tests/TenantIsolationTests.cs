@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Cases;
 using Kyc.Api.Domain.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
@@ -73,7 +74,6 @@ public sealed class TenantIsolationTests : IAsyncLifetime
             Assert.Empty(await anon.Users.AsNoTracking().ToListAsync());
         }
 
-        // Act as tenant A — User stands in for cases until KYC-030 (same ITenantScoped filter).
         _currentTenant.TenantId = tenantA;
         await using (var asA = CreateDb())
         {
@@ -90,6 +90,94 @@ public sealed class TenantIsolationTests : IAsyncLifetime
             Assert.Single(visible);
             Assert.Equal(userBId, visible[0]);
             Assert.Null(await asB.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userAId));
+        }
+    }
+
+    [Fact]
+    public async Task Tenant_A_cannot_read_tenant_B_cases()
+    {
+        var tenantA = Guid.NewGuid();
+        var tenantB = Guid.NewGuid();
+        var customerA = Guid.NewGuid();
+        var customerB = Guid.NewGuid();
+        var caseA = Guid.NewGuid();
+        var caseB = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        _currentTenant.TenantId = null;
+        await using (var seed = CreateDb())
+        {
+            seed.Tenants.AddRange(
+                new Tenant { Id = tenantA, Name = "A", Slug = "case-tenant-a", IsActive = true, CreatedAt = now },
+                new Tenant { Id = tenantB, Name = "B", Slug = "case-tenant-b", IsActive = true, CreatedAt = now });
+            seed.Users.AddRange(
+                new User
+                {
+                    Id = customerA,
+                    TenantId = tenantA,
+                    Email = "customer-a@example.com",
+                    PasswordHash = "hash",
+                    Role = UserRole.Customer,
+                    CreatedAt = now
+                },
+                new User
+                {
+                    Id = customerB,
+                    TenantId = tenantB,
+                    Email = "customer-b@example.com",
+                    PasswordHash = "hash",
+                    Role = UserRole.Customer,
+                    CreatedAt = now
+                });
+            seed.Cases.AddRange(
+                new Case
+                {
+                    Id = caseA,
+                    TenantId = tenantA,
+                    CustomerUserId = customerA,
+                    Title = "Case A",
+                    Status = CaseStatus.Draft,
+                    FormData = """{"step":1}""",
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                new Case
+                {
+                    Id = caseB,
+                    TenantId = tenantB,
+                    CustomerUserId = customerB,
+                    Title = "Case B",
+                    Status = CaseStatus.Submitted,
+                    FormData = """{"step":2}""",
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    SubmittedAt = now
+                });
+            await seed.SaveChangesAsync();
+        }
+
+        _currentTenant.TenantId = null;
+        await using (var anon = CreateDb())
+        {
+            Assert.Empty(await anon.Cases.AsNoTracking().ToListAsync());
+        }
+
+        _currentTenant.TenantId = tenantA;
+        await using (var asA = CreateDb())
+        {
+            var visible = await asA.Cases.AsNoTracking().Select(c => c.Id).ToListAsync();
+            Assert.Single(visible);
+            Assert.Equal(caseA, visible[0]);
+            Assert.Null(await asA.Cases.AsNoTracking().FirstOrDefaultAsync(c => c.Id == caseB));
+        }
+
+        _currentTenant.TenantId = tenantB;
+        await using (var asB = CreateDb())
+        {
+            var visible = await asB.Cases.AsNoTracking().Select(c => c.Id).ToListAsync();
+            Assert.Single(visible);
+            Assert.Equal(caseB, visible[0]);
+            Assert.Null(await asB.Cases.AsNoTracking().FirstOrDefaultAsync(c => c.Id == caseA));
         }
     }
 

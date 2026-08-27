@@ -16,7 +16,8 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Tenant + User models | Ready |
 | Public `POST /api/register-tenant` | Ready (anonymous allow-list; GraphQL `registerTenant` preferred) |
 | Public `POST /api/login` (JWT) | Ready (anonymous allow-list; GraphQL `login` preferred) |
-| Tenant isolation (JWT → EF filters) | Ready (KYC-014; Cases inherit in KYC-030) |
+| Tenant isolation (JWT → EF filters) | Ready (KYC-014; Cases use `ITenantScoped`) |
+| Case model | Ready (KYC-030) |
 | GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE in Development) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102) |
 | GraphQL auth (deny by default) | Ready (KYC-021) |

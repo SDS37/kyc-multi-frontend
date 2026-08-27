@@ -2,7 +2,7 @@
 
 This document describes the **target architecture** for the MVP. Implementation follows the [roadmap](roadmap.md): identity and infrastructure first, then GraphQL, cases, documents, and the three frontends.
 
-**Today on `main`:** Compose (Postgres / Redis / MinIO); .NET API with EF Core, Tenant/User, JWT login, fail-closed `ICurrentTenant` + `ITenantScoped` EF filters; Hot Chocolate `/graphql` + `/health` (GraphQL IDE in Development); GraphQL deny-by-default JWT auth with anonymous `login` / `registerTenant` (KYC-021); field-level Reviewer/Customer role gates (KYC-022); temporary REST register/login on the same allow-list; `apps/api/Kyc.Api.sln` + tests; GitHub Actions `api-ci` (KYC-102). Cases and UI apps are not built yet.
+**Today on `main`:** Compose (Postgres / Redis / MinIO); .NET API with EF Core, Tenant/User/Case, JWT login, fail-closed `ICurrentTenant` + `ITenantScoped` EF filters; Hot Chocolate `/graphql` + `/health` (GraphQL IDE in Development); GraphQL deny-by-default JWT auth with anonymous `login` / `registerTenant` (KYC-021); field-level Reviewer/Customer role gates (KYC-022); temporary REST register/login on the same allow-list; `apps/api/Kyc.Api.sln` + tests; GitHub Actions `api-ci` (KYC-102). Case GraphQL API and UI apps are not built yet.
 
 **MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Section 3 is the **Week 7 target** (Angular shell composing remotes); it is not required for the first release.
 
