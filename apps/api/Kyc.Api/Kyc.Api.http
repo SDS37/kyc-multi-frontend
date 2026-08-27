@@ -40,6 +40,23 @@ Authorization: Bearer {{accessToken}}
   "query": "query { apiStatus }"
 }
 
+### Role gates (KYC-022) — need a JWT whose `role` claim is Reviewer or Customer
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{reviewerAccessToken}}
+
+{
+  "query": "mutation { reviewerOnlyPing }"
+}
+
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "query": "mutation { customerOnlyPing }"
+}
+
 ### Health (anonymous)
 GET {{Kyc.Api_HostAddress}}/health
 

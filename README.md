@@ -20,6 +20,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE in Development) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102) |
 | GraphQL auth (deny by default) | Ready (KYC-021) |
+| GraphQL role authorization | Ready (KYC-022; stub Reviewer/Customer gates until Cases) |
 | Angular / React / Vue apps | Placeholders only |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).

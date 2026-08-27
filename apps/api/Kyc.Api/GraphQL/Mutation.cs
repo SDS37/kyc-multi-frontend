@@ -6,6 +6,7 @@ namespace Kyc.Api.GraphQL;
 
 /// <summary>
 /// Root GraphQL mutations. Type is deny-by-default; only login/register are anonymous (KYC-021).
+/// Role gates (KYC-022) protect reviewer/customer operations until Cases land.
 /// </summary>
 [Authorize]
 public class Mutation
@@ -56,4 +57,16 @@ public class Mutation
 
         return result;
     }
+
+    /// <summary>
+    /// Reviewer-only gate (KYC-022). Placeholder until case review mutations (KYC-030+).
+    /// </summary>
+    [Authorize(Roles = new[] { AuthRoles.Reviewer })]
+    public string ReviewerOnlyPing() => "reviewer-ok";
+
+    /// <summary>
+    /// Customer-only gate (KYC-022). Placeholder until customer case mutations (KYC-030+).
+    /// </summary>
+    [Authorize(Roles = new[] { AuthRoles.Customer })]
+    public string CustomerOnlyPing() => "customer-ok";
 }
