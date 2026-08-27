@@ -39,7 +39,7 @@ app.MapPost("/api/register-tenant", async (
         return Results.BadRequest(new { errors });
     }
 
-    return Results.Created($"/api/tenants/{result!.TenantId}", result);
+    return Results.Json(result, statusCode: StatusCodes.Status201Created);
 })
 .WithName("RegisterTenant")
 .AllowAnonymous();

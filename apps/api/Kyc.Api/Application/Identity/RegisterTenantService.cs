@@ -65,7 +65,7 @@ public sealed partial class RegisterTenantService(
         catch (DbUpdateException)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return (null, ["Could not register tenant. The slug or email may already be in use."]);
+            return (null, ["Could not register tenant. The slug may already be taken."]);
         }
 
         return (
@@ -116,8 +116,8 @@ public sealed partial class RegisterTenantService(
     {
         try
         {
-            _ = new MailAddress(email);
-            return email.Contains('@');
+            var parsed = new MailAddress(email);
+            return string.Equals(parsed.Address, email, StringComparison.OrdinalIgnoreCase);
         }
         catch (FormatException)
         {
