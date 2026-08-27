@@ -7,6 +7,7 @@ using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
 using Kyc.Api.GraphQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -57,7 +58,14 @@ builder.Services
             RoleClaimType = "role"
         };
     });
-builder.Services.AddAuthorization();
+
+// Deny by default for ASP.NET endpoints (KYC-021). Opt in with AllowAnonymous.
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<JwtTokenService>();
@@ -66,28 +74,35 @@ builder.Services.AddScoped<LoginService>();
 
 builder.Services
     .AddGraphQLServer()
-    .AddQueryType<Query>();
+    .AddAuthorization()
+    .AddQueryType<Query>()
+    .AddMutationType<Mutation>()
+    .ModifyRequestOptions(options =>
+        options.IncludeExceptionDetails = builder.Environment.IsDevelopment());
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").AllowAnonymous();
 
+// HTTP endpoint is anonymous so login/register mutations can run;
+// field auth (Query/Mutation [Authorize] + [AllowAnonymous]) enforces deny-by-default.
 app.MapGraphQL("/graphql")
+    .AllowAnonymous()
     .WithOptions(options =>
     {
         // Banana Cake Pop / Nitro IDE — Development only (KYC-020).
         options.Tool.Enable = app.Environment.IsDevelopment();
     });
 
-// Temporary public REST until GraphQL mutations land (KYC-021).
+// Temporary REST identity surface — same anonymous allow-list as GraphQL (KYC-021).
 // Local Development uses HTTP — fine for Compose defaults only, not for real secrets.
 app.MapPost("/api/register-tenant", async (
     RegisterTenantRequest request,
@@ -103,6 +118,7 @@ app.MapPost("/api/register-tenant", async (
     return Results.Json(result, statusCode: StatusCodes.Status201Created);
 })
 .WithName("RegisterTenant")
+.AllowAnonymous()
 .DisableAntiforgery();
 
 app.MapPost("/api/login", async (
@@ -126,6 +142,9 @@ app.MapPost("/api/login", async (
     return Results.Ok(result);
 })
 .WithName("Login")
+.AllowAnonymous()
 .DisableAntiforgery();
 
 app.Run();
+
+public partial class Program;

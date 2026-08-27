@@ -9,7 +9,7 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
 | .NET host + EF Core + Postgres | Cases, documents, audit, three UI apps |
-| `Tenant` and `User` (+ roles) | GraphQL JWT deny-by-default (KYC-021); role checks (KYC-022) |
+| `Tenant` and `User` (+ roles) | Role checks on GraphQL fields (KYC-022) |
 | Temporary register/login (JWT) + fail-closed tenant filters | Auth rate limits when leaving localhost (KYC-093) |
 | Hot Chocolate `/graphql` + `/health` (KYC-020) | Domain GraphQL fields (cases, etc.) |
 | `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` (KYC-102); SDK in `global.json` | |
@@ -77,4 +77,4 @@ History includes `InitialCreate` (empty pipeline proof), then `AddTenant` and `A
 
 ## Next steps
 
-Register/login remain temporary REST until GraphQL auth/mutations (KYC-021). Domain fields (cases, etc.) come with later stories. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).
+Register/login are GraphQL mutations (`registerTenant`, `login`) with deny-by-default JWT on all other fields (KYC-021). Temporary REST endpoints remain on the same anonymous allow-list. Domain fields (cases, etc.) come with later stories. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).
