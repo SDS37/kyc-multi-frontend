@@ -8,10 +8,11 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
-| .NET host + EF Core + Postgres | Hot Chocolate GraphQL (KYC-020) |
-| `Tenant` and `User` (+ roles) | Cases, documents, audit, three UI apps |
-| Temporary register/login (JWT) + fail-closed tenant filters | GraphQL JWT deny-by-default (KYC-021); role checks (KYC-022) |
-| `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` (KYC-102); SDK in `global.json` | Auth rate limits when leaving localhost (KYC-093) |
+| .NET host + EF Core + Postgres | Cases, documents, audit, three UI apps |
+| `Tenant` and `User` (+ roles) | GraphQL JWT deny-by-default (KYC-021); role checks (KYC-022) |
+| Temporary register/login (JWT) + fail-closed tenant filters | Auth rate limits when leaving localhost (KYC-093) |
+| Hot Chocolate `/graphql` + `/health` (KYC-020) | Domain GraphQL fields (cases, etc.) |
+| `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` (KYC-102); SDK in `global.json` | |
 
 The **target** remains one GraphQL API, CQRS modular monolith, JWT tenant context, and three frontends — see [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md).
 
@@ -42,8 +43,10 @@ KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an
 
 ## What the API project is
 
-- **`Program.cs`** — composition root. Registers EF Core, JWT auth, `ICurrentTenant`, OpenAPI (Development), password hasher, register + login endpoints.
+- **`Program.cs`** — composition root. Registers EF Core, JWT auth, `ICurrentTenant`, Hot Chocolate, health checks, OpenAPI (Development), register + login REST.
 - **`AppDbContext`** — EF session with `Tenants` and `Users`; global query filters on `ITenantScoped` from JWT `tenant_id` (fail closed when unauthenticated).
+- **`/graphql`** — Hot Chocolate endpoint; IDE enabled in Development only.
+- **`/health`** — ASP.NET health checks endpoint.
 - **`UseNpgsql`** — Postgres provider (the `pg` driver equivalent).
 - **Local HTTP** — Development uses `http://localhost:5295`. Fine for local Compose credentials; do not treat that as a production pattern for passwords.
 - **JWT** — short-lived access token from login (`sub`, `tenant_id`, `role`, `email`). Signing key lives in Development config / user-secrets (not committed).
@@ -74,4 +77,4 @@ History includes `InitialCreate` (empty pipeline proof), then `AddTenant` and `A
 
 ## Next steps
 
-Register/login remain temporary REST until GraphQL (KYC-020). Next product slice is Hot Chocolate, then cases. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).
+Register/login remain temporary REST until GraphQL auth/mutations (KYC-021). Domain fields (cases, etc.) come with later stories. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).

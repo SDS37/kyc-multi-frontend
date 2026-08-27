@@ -21,4 +21,15 @@ Content-Type: application/json
   "password": "ChangeMe1"
 }
 
+### Health
+GET {{Kyc.Api_HostAddress}}/health
+
+### GraphQL smoke (Hot Chocolate)
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query { apiStatus }"
+}
+
 ###
