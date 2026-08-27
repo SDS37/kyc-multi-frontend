@@ -53,10 +53,19 @@ cd kyc-multi-frontend
 
 ### 2. Start PostgreSQL, Redis, and MinIO
 
+Run these from the repository root (`kyc-multi-frontend/`):
+
 ```bash
 cp infrastructure/.env.example infrastructure/.env
 docker compose -f infrastructure/docker-compose.yml up -d
+docker compose -f infrastructure/docker-compose.yml ps
 ```
+
+| Command | What it does |
+|---|---|
+| `cp … .env.example … .env` | Creates a local env file with DB/Redis/MinIO credentials (gitignored; do not commit) |
+| `docker compose … up -d` | Starts PostgreSQL, Redis, and MinIO in the background |
+| `docker compose … ps` | Lists those containers and whether they are running / healthy |
 
 | Service | Address | Default credentials |
 |---|---|---|
