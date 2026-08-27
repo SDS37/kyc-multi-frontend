@@ -1,10 +1,20 @@
 # .NET API for frontend engineers
 
-This is a conceptual map of the KYC API scaffold ([KYC-004](https://github.com/SDS37/kyc-multi-frontend/issues/45)). It is for people who are strong on Angular/React/Vue and new to backend .NET.
+Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vue and new to backend .NET.
 
-**Commands to run the app** live in [`apps/api/README.md`](../../apps/api/README.md). Do not treat this file as a runbook; versions and flags change.
+**Commands to run the app** live in [`apps/api/README.md`](../../apps/api/README.md). This file is not a runbook; versions and flags change.
 
-KYC-004 is: an empty but real host that can talk to Postgres. It is the .NET equivalent of `ng new` / `npm create vite` **plus** wiring Prisma or TypeORM to a database. It does **not** include Tenant, GraphQL, or login (those are KYC-010, KYC-020, KYC-013).
+## Where we are vs the target
+
+| Already on `main` | Still ahead (roadmap) |
+|---|---|
+| .NET host + EF Core + Postgres | Hot Chocolate GraphQL (KYC-020) |
+| `Tenant` and `User` (+ roles) | JWT login (KYC-013), tenant isolation (KYC-014) |
+| Temporary `POST /api/register-tenant` | Cases, documents, audit, three UI apps |
+
+The **target** remains one GraphQL API, CQRS modular monolith, JWT tenant context, and three frontends — see [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md).
+
+KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an ORM). Identity stories built on that scaffold.
 
 ## Frontend → .NET cheat sheet
 
@@ -20,22 +30,20 @@ KYC-004 is: an empty but real host that can talk to Postgres. It is the .NET equ
 
 ## Software: what you need and what you can skip
 
-**Cursor is enough as an editor.** Visual Studio (the full IDE) and Rider are optional, like buying WebStorm when Cursor already edits the code. Install the **C#** extension in Cursor for IntelliSense.
+**Cursor is enough as an editor.** Visual Studio and Rider are optional. Install the **C#** extension in Cursor for IntelliSense.
 
 **You need the .NET SDK, not only the Runtime.** Runtime = run compiled apps. SDK = `dotnet new`, `dotnet build`, `dotnet ef`. This repo targets **.NET 10** (`net10.0`). Check with `dotnet --version`.
 
-**You need Docker Desktop**, not a native Postgres install. Compose starts PostgreSQL (and Redis/MinIO). For this API, only **Postgres** on `127.0.0.1:5432` matters. Start Docker Desktop until it is running, then `docker version` and `docker compose version` should work.
+**You need Docker Desktop**, not a native Postgres install. Compose starts PostgreSQL (and Redis/MinIO). For the API, only **Postgres** on `127.0.0.1:5432` is required today. Start Docker Desktop until it is running, then `docker version` and `docker compose version` should work.
 
-**You do not need** pgAdmin, Redis GUIs, or to put the API itself in Docker for KYC-004. The API runs on the Mac and connects to Postgres on localhost. Inside Compose the hostname is `postgres`; **from your machine it is `127.0.0.1`**. Mixing those up is the usual connection error.
+**You do not need** pgAdmin or Redis GUIs for the first slice. The API runs on the host and connects to Postgres on localhost. Inside Compose the hostname is `postgres`; **from your machine it is `127.0.0.1`**. Mixing those up is the usual connection error.
 
-## What the scaffold actually is
+## What the API project is
 
-- **`Program.cs`** — composition root (`main.ts` + app config). Registers OpenAPI in Development and EF Core.
-- **`AppDbContext`** — empty on purpose (no `DbSet`s). KYC-010 adds Tenant.
+- **`Program.cs`** — composition root. Registers EF Core, OpenAPI (Development), password hasher, and the temporary register endpoint.
+- **`AppDbContext`** — EF session with `Tenants` and `Users` (and more as stories land).
 - **`UseNpgsql`** — Postgres provider (the `pg` driver equivalent).
-- **HTTPS redirect** — turned off for local HTTP. The template warning “Failed to determine the https port” is normal if redirect is enabled without an HTTPS URL.
-
-The `dotnet new webapi` weather-forecast sample is not part of KYC; it was removed.
+- **Local HTTP** — Development uses `http://localhost:5295`. Fine for local Compose credentials; do not treat that as a production pattern for passwords.
 
 ## Secrets
 
@@ -43,28 +51,22 @@ The `dotnet new webapi` weather-forecast sample is not part of KYC; it was remov
 
 Local password `changeme` is the **documented Compose default**, not a production secret. Still do **not** commit `appsettings.Development.json` (it is gitignored). Commit only `appsettings.Development.json.example`.
 
-Three ways to supply the string (pick one; see the API README for copy-paste):
+Three ways to supply the string (pick one; see the API README):
 
 1. Copy the example → `appsettings.Development.json` (simplest).
-2. Environment variable `ConnectionStrings__Postgres`. The `__` is nested JSON (`ConnectionStrings:Postgres`), same idea as Vite env prefixes.
+2. Environment variable `ConnectionStrings__Postgres` (`__` = nested JSON).
 3. `dotnet user-secrets` — stored in your user profile, not the repo.
 
 Do not put passwords in `launchSettings.json`; that file is committed.
-
-If the string is missing, the host throws at startup. That is intentional.
 
 ## Migrations
 
 EF migrations are versioned schema, like Prisma’s `migrations/` folder.
 
-`InitialCreate` exists with empty `Up`/`Down` because there are no entities yet. Applying it only creates `__EFMigrationsHistory`. That proves the pipeline. Tenant will be a **new** migration in KYC-010.
+History includes `InitialCreate` (empty pipeline proof), then `AddTenant` and `AddUser`. Apply with `dotnet ef database update` after Compose Postgres is healthy.
 
-`dotnet-ef` is a **local tool** in `.config/dotnet-tools.json` (`dotnet tool restore` from the repo root), similar to a pinned CLI in the repo rather than a global npm -g install.
+`dotnet-ef` is a **local tool** in `.config/dotnet-tools.json` (`dotnet tool restore` from the repo root).
 
-`database update` needs Compose Postgres **healthy** and a connection string. Starting the API before Postgres is ready fails the same way a UI fails when the API is still booting.
+## Next identity steps
 
-## What “done” means for the scaffold
-
-The host **builds**, **listens** (HTTP `http://localhost:5295`, OpenAPI in Development), **migrates** against Compose Postgres, and **does not commit** Development connection files. There is still no `/graphql` and no Tenant table.
-
-For the exact commands, use [`apps/api/README.md`](../../apps/api/README.md).
+Register is temporary REST. Login + JWT (KYC-013) and GraphQL (KYC-020) replace the long-term public surface. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).

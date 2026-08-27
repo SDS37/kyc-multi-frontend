@@ -65,8 +65,8 @@ services:
       retries: 5
       start_period: 10s
 
-  # The API is not composed yet. apps/api has no Dockerfile or .NET project.
-  # Add an `api` service (with a real build context) when that scaffold exists.
+  # The API runs on the host for local MVP (`dotnet run` in apps/api).
+  # Add an `api` Compose service (build context + Dockerfile) when containerizing it.
 
 volumes:
   postgres_data:

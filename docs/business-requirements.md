@@ -2,7 +2,7 @@
 
 **Product**: KYC Compliance Platform
 **Version**: MVP
-**Last updated**: 2026-08-25
+**Last updated**: 2026-08-27
 **Status**: Aligned with accepted ADRs
 
 ## 1. Vision
@@ -32,7 +32,8 @@ A multi-tenant platform that allows companies to manage KYC (Know Your Customer)
 ### 3.3 Case Management
 - A Customer can create a new KYC case.
 - A case follows a simple status lifecycle:
-  `Draft → Submitted → In Review → Approved / Rejected`
+  `Draft → Submitted → InReview → Approved / Rejected`
+  (UI copy may say “In Review”; the domain status name is `InReview`.)
 - Reviewers can change the status and add internal comments.
 - Both Customers and Reviewers can view case details (according to permissions).
 

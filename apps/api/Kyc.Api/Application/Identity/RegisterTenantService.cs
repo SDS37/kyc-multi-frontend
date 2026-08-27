@@ -11,6 +11,8 @@ public sealed partial class RegisterTenantService(
     AppDbContext db,
     IPasswordHasher<User> passwordHasher)
 {
+    private const int MaxPasswordLength = 128;
+
     [GeneratedRegex("^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)]
     private static partial Regex SlugPattern();
 
@@ -65,7 +67,8 @@ public sealed partial class RegisterTenantService(
         catch (DbUpdateException)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return (null, ["Could not register tenant. The slug may already be taken."]);
+            // Unique slug race (or other constraint). Do not claim a specific cause.
+            return (null, ["Could not register tenant. Please try a different slug."]);
         }
 
         return (
@@ -103,6 +106,10 @@ public sealed partial class RegisterTenantService(
         if (password.Length < 8)
         {
             errors.Add("Password must be at least 8 characters.");
+        }
+        else if (password.Length > MaxPasswordLength)
+        {
+            errors.Add($"Password must be at most {MaxPasswordLength} characters.");
         }
         else if (!password.Any(char.IsLetter) || !password.Any(char.IsDigit))
         {
