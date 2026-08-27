@@ -123,7 +123,7 @@ dotnet build
 dotnet test apps/api/Kyc.Api.sln
 ```
 
-(from the repo root; or `dotnet test` inside `apps/api`). Stop the host with Ctrl+C.
+(from the repo root; or `dotnet test` inside `apps/api`). PRs that touch `apps/api` also run this via GitHub Actions (KYC-102). Stop the host with Ctrl+C.
 
 ## Done checks
 

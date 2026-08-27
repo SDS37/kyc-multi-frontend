@@ -17,6 +17,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Public `POST /api/register-tenant` | Ready (temporary REST until KYC-020) |
 | Public `POST /api/login` (JWT) | Ready (temporary REST until KYC-020) |
 | Tenant isolation (JWT → EF filters) | Ready (KYC-014; Cases inherit in KYC-030) |
+| API CI (`dotnet build` / `test`) | Ready (KYC-102) |
 | GraphQL | Not yet (KYC-020) |
 | Angular / React / Vue apps | Placeholders only |
 
@@ -48,7 +49,9 @@ kyc-multi-frontend/
 ├── infrastructure/
 │   ├── docker-compose.yml
 │   └── .env.example
+├── .github/               # GitHub Actions (API CI)
 ├── .config/               # Local .NET tools (dotnet-ef)
+├── global.json            # .NET SDK pin
 ├── .editorconfig
 ├── .gitignore
 ├── LICENSE

@@ -1,0 +1,45 @@
+# Build and test the .NET API on PRs and main.
+name: api-ci
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api-ci.yml"
+      - "global.json"
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api-ci.yml"
+      - "global.json"
+
+concurrency:
+  group: api-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: build and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Kyc.Api.sln
+
+      - name: Build
+        run: dotnet build Kyc.Api.sln --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test Kyc.Api.sln --no-build --configuration Release --verbosity normal
