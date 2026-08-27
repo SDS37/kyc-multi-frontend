@@ -2,7 +2,7 @@
 
 This document describes the **target architecture** for the MVP. Implementation follows the [roadmap](roadmap.md): identity and infrastructure first, then GraphQL, cases, documents, and the three frontends.
 
-**Today on `main`:** Compose (Postgres / Redis / MinIO), .NET API with EF Core, Tenant and User models, and a temporary public `POST /api/register-tenant`. GraphQL, JWT login, cases, and UI apps are not built yet.
+**Today on `main`:** Compose (Postgres / Redis / MinIO), .NET API with EF Core, Tenant and User models, temporary public `POST /api/register-tenant` and `POST /api/login` (JWT). GraphQL, tenant query filters, cases, and UI apps are not built yet.
 
 **MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Section 3 is the **Week 7 target** (Angular shell composing remotes); it is not required for the first release.
 

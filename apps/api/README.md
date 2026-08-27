@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run).
 
-`Tenant` and `User` are persisted via EF Core. Public tenant registration is temporary REST (`POST /api/register-tenant`) until GraphQL (KYC-020). JWT login is KYC-013.
+`Tenant` and `User` are persisted via EF Core. Public tenant registration and login are temporary REST (`POST /api/register-tenant`, `POST /api/login`) until GraphQL (KYC-020). Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`).
 
 Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
 
@@ -23,13 +23,15 @@ Postgres must be healthy on `127.0.0.1:5432`.
 
 ## 1. Connection string (do not commit secrets)
 
-`appsettings.json` has an empty `ConnectionStrings:Postgres` key on purpose.
+`appsettings.json` has empty `ConnectionStrings:Postgres` and `Jwt:SigningKey` on purpose.
 
-Copy the example (gitignored target). Values match Compose local defaults:
+Copy the example (gitignored target). Values match Compose local defaults and include a **local-only** JWT signing key (≥32 chars):
 
 ```bash
 cp apps/api/Kyc.Api/appsettings.Development.json.example apps/api/Kyc.Api/appsettings.Development.json
 ```
+
+If you already have `appsettings.Development.json` from before KYC-013, merge in the `Jwt` block from the example (or the host will refuse to start).
 
 `appsettings.Development.json` is gitignored. Do not commit it.
 
@@ -38,13 +40,15 @@ Other options (pick one):
 ```bash
 # Environment variable (__ = nested JSON key)
 export ConnectionStrings__Postgres="Host=127.0.0.1;Port=5432;Database=kyc_db;Username=kyc;Password=changeme"
+export Jwt__SigningKey="local-dev-only-change-me-32chars-min!!"
 
 # User secrets (stored in your profile, not the repo)
 cd apps/api/Kyc.Api
 dotnet user-secrets set "ConnectionStrings:Postgres" "Host=127.0.0.1;Port=5432;Database=kyc_db;Username=kyc;Password=changeme"
+dotnet user-secrets set "Jwt:SigningKey" "local-dev-only-change-me-32chars-min!!"
 ```
 
-If `Postgres` is missing or empty, the host throws at startup.
+If `Postgres` or `Jwt:SigningKey` is missing/empty (or the key is shorter than 32 characters), the host throws at startup.
 
 ## 2. Restore
 
@@ -88,9 +92,10 @@ dotnet run
 
 - HTTP: `http://localhost:5295`
 - OpenAPI (Development only): `http://localhost:5295/openapi/v1.json`
-- Register tenant (public, no JWT): `POST /api/register-tenant`
+- Register tenant (public): `POST /api/register-tenant`
+- Login (public; returns JWT): `POST /api/login`
 
-Example body:
+Register example:
 
 ```json
 {
@@ -101,7 +106,17 @@ Example body:
 }
 ```
 
-See `Kyc.Api.http` for a ready-to-run request. There is no `/graphql` endpoint yet.
+Login example:
+
+```json
+{
+  "tenantSlug": "acme",
+  "email": "admin@acme.example",
+  "password": "ChangeMe1"
+}
+```
+
+Successful login returns `{ "accessToken", "tokenType": "Bearer", "expiresInSeconds" }`. Invalid credentials or an inactive tenant return **401** with a generic error. See `Kyc.Api.http`. There is no `/graphql` endpoint yet.
 
 ```bash
 dotnet build
@@ -117,5 +132,6 @@ succeeds if restore worked. Stop the host with Ctrl+C.
 | KYC-010 | `tenants` table with unique `Slug`; entity has Id, Name, Slug, IsActive, CreatedAt |
 | KYC-011 | `users` with Role TenantAdmin/Reviewer/Customer; FK to one tenant; unique `(TenantId, Email)` |
 | KYC-012 | `POST /api/register-tenant` creates Tenant + TenantAdmin in one transaction; password hashed (8–128 chars); validation errors return 400; no JWT required |
+| KYC-013 | `POST /api/login` with tenant slug + email + password; JWT claims `sub`, `tenant_id`, `role`, `email`; generic 401 on bad credentials; inactive tenant cannot log in |
 
-Out of scope here: login/JWT, GraphQL (KYC-013 / KYC-020). Local HTTP is for Development only.
+Out of scope here: tenant query filters (KYC-014), GraphQL (KYC-020). Local HTTP is for Development only.
