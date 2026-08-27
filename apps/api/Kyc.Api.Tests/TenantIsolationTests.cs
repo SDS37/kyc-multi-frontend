@@ -37,7 +37,7 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         var userBId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        // Seed without tenant filter (system path).
+        // Seed writes (filters apply to queries, not inserts).
         _currentTenant.TenantId = null;
         await using (var seed = CreateDb())
         {
@@ -64,6 +64,13 @@ public sealed class TenantIsolationTests : IAsyncLifetime
                     CreatedAt = now
                 });
             await seed.SaveChangesAsync();
+        }
+
+        // Fail closed: no tenant context ⇒ no tenant-scoped rows.
+        _currentTenant.TenantId = null;
+        await using (var anon = CreateDb())
+        {
+            Assert.Empty(await anon.Users.AsNoTracking().ToListAsync());
         }
 
         // Act as tenant A — User stands in for cases until KYC-030 (same ITenantScoped filter).

@@ -42,10 +42,10 @@ public class AppDbContext(
     private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder)
         where TEntity : class, ITenantScoped
     {
-        // Null CurrentTenantId = public/system path (register/login): no tenant filter.
-        // Authenticated requests only see rows for the JWT tenant.
+        // Fail closed: no JWT tenant ⇒ no tenant-scoped rows.
+        // Cross-tenant reads (login) must use IgnoreQueryFilters() explicitly.
         Expression<Func<TEntity, bool>> filter =
-            e => CurrentTenantId == null || e.TenantId == CurrentTenantId;
+            e => CurrentTenantId != null && e.TenantId == CurrentTenantId;
 
         modelBuilder.Entity<TEntity>().HasQueryFilter(filter);
     }

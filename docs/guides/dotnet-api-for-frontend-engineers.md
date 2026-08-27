@@ -45,7 +45,7 @@ KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an
 - **`UseNpgsql`** — Postgres provider (the `pg` driver equivalent).
 - **Local HTTP** — Development uses `http://localhost:5295`. Fine for local Compose credentials; do not treat that as a production pattern for passwords.
 - **JWT** — short-lived access token from login (`sub`, `tenant_id`, `role`, `email`). Signing key lives in Development config / user-secrets (not committed).
-- **Tenant isolation** — never trust client-supplied tenant IDs (ADR-007). Case (KYC-030) must implement `ITenantScoped` to inherit the filter.
+- **Tenant isolation** — never trust client-supplied tenant IDs (ADR-007). Filters fail closed without a JWT tenant; login bypasses with `IgnoreQueryFilters()`. Case (KYC-030) must implement `ITenantScoped` to inherit the filter.
 
 ## Secrets
 
