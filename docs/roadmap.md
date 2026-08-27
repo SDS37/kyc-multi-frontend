@@ -5,10 +5,10 @@
 | **W3** | Week 3 | Documents + Audit | KYC-040 to KYC-051 | Upload/download + audit entries exist |
 | **W4** | Week 4 | Angular Admin | KYC-060 to KYC-064 | Reviewer can finish a case in Angular |
 | **W5** | Week 5 | React Customer | KYC-070 to KYC-074 | Customer happy path works in React |
-| **W6** | Week 6 | Vue Reports + Security + Seed | KYC-080, KYC-081, KYC-090 to KYC-101, KYC-093 (rate limits when leaving localhost) | All 3 UIs usable, isolation tests green |
+| **W6** | Week 6 | Vue Reports + Security + Seed | KYC-080, KYC-081, KYC-090 to KYC-101, KYC-093 (rate limits when leaving localhost), KYC-103 / KYC-104 (readiness + observability backlog) | All 3 UIs usable, isolation tests green |
 | **W7** | Buffer | Federation attempt, polish, docs | leftover + Module Federation spike | Public README and architecture complete |
 
-Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. **KYC-093** (rate limits) remains backlog until the API leaves localhost.
+Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. Backlog until the API leaves localhost: **KYC-093** (rate limits), **KYC-103** (readiness / EF retries / timeouts), **KYC-104** (structured logs / basic metrics).
 
 ### Weekly checkpoint questions
 
