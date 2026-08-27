@@ -11,6 +11,7 @@ This file records the main architecture decisions for the KYC multi-frontend MVP
 | 005 | Do not block MVP on Module Federation | Accepted |
 | 006 | Use PostgreSQL and MinIO for MVP persistence | Accepted |
 | 007 | Resolve tenant from the JWT, never from client input | Accepted |
+| 008 | Defer formal AI context-engineering packs for MVP | Accepted |
 
 ---
 
