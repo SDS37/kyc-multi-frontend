@@ -1,3 +1,14 @@
 @Kyc.Api_HostAddress = http://localhost:5295
 
+### Register tenant + first admin (public, no JWT)
+POST {{Kyc.Api_HostAddress}}/api/register-tenant
+Content-Type: application/json
+
+{
+  "tenantName": "Acme Compliance",
+  "tenantSlug": "acme",
+  "adminEmail": "admin@acme.example",
+  "adminPassword": "ChangeMe1"
+}
+
 ###
