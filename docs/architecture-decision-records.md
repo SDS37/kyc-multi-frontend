@@ -20,7 +20,7 @@ Date: 2026-08-24
 Status: Accepted
 
 ### Context
-The project contains an Angular admin app, a React customer app, a Vue reports app, a .NET GraphQL API, infrastructure files and documentation. This is a solo portfolio project.
+The monorepo is intended to hold an Angular admin app, a React customer portal, a Vue reports app, a .NET GraphQL API, infrastructure, and documentation. This is a solo portfolio project. **Today:** Compose + a .NET API with temporary REST identity endpoints; the three UI apps are placeholders only.
 
 ### Decision
 Keep all code in one repository: `kyc-multi-frontend`.
@@ -49,6 +49,8 @@ Three frontends need different slices of the same KYC data. The API must act as 
 ### Decision
 Use Hot Chocolate GraphQL as the single public API for all frontends.
 
+Until KYC-020 lands, the only client-facing surface is temporary REST (`POST /api/register-tenant`, `POST /api/login`). That interim does not change the GraphQL target.
+
 ### Alternatives
 - REST + OpenAPI
 - One BFF per frontend
@@ -61,6 +63,7 @@ Use Hot Chocolate GraphQL as the single public API for all frontends.
 - More setup than REST
 - Need DataLoaders to avoid N+1 queries
 - File upload/download may still use a dedicated path
+- Temporary REST must be retired or folded into GraphQL when KYC-020 ships
 
 ---
 
@@ -183,3 +186,4 @@ Put `tenant_id` and `role` in the JWT after login. All queries and commands take
 - Better auditability
 - Login must include tenant slug or equivalent
 - Token handling must be consistent in all three frontends
+- EF global filters on `ITenantScoped` fail closed without a JWT tenant (KYC-014); GraphQL must keep the same rule (KYC-021)

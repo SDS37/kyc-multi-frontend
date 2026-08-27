@@ -9,7 +9,8 @@ No application scaffold yet (`package.json` is not in the repo).
 - Customer login against the shared auth contract
 - Create and fill a KYC case
 - Upload documents and submit the case
-- See case status (Draft → Submitted → In Review → Approved / Rejected)
+- See case status (`Draft` → `Submitted` → `InReview` → `Approved` / `Rejected`)
+- Consume the shared GraphQL API once KYC-020 lands (temporary REST auth exists today)
 
 When the scaffold exists:
 

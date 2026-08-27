@@ -2,7 +2,7 @@
 
 This document describes the **target architecture** for the MVP. Implementation follows the [roadmap](roadmap.md): identity and infrastructure first, then GraphQL, cases, documents, and the three frontends.
 
-**Today on `main`:** Compose (Postgres / Redis / MinIO), .NET API with EF Core, Tenant and User models, temporary public register/login (JWT), and tenant isolation via `ICurrentTenant` + EF global filters on `ITenantScoped` entities. GraphQL, cases, and UI apps are not built yet.
+**Today on `main`:** Compose (Postgres / Redis / MinIO); .NET API with EF Core, Tenant/User, temporary public register/login (JWT), fail-closed `ICurrentTenant` + `ITenantScoped` EF filters; `apps/api/Kyc.Api.sln` + tests; GitHub Actions `api-ci` (KYC-102). GraphQL, cases, and UI apps are not built yet.
 
 **MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Section 3 is the **Week 7 target** (Angular shell composing remotes); it is not required for the first release.
 

@@ -60,7 +60,7 @@ kyc-multi-frontend/
 
 ## Getting Started
 
-**Prerequisites:** Docker Desktop and the .NET 10 SDK (for the API).
+**Prerequisites:** Docker Desktop and the .NET 10 SDK matching [`global.json`](global.json) (for the API).
 
 ### 1. Clone
 
@@ -98,7 +98,7 @@ Stop with `docker compose -f infrastructure/docker-compose.yml down`.
 
 ### 3. Run the API
 
-See [apps/api/README.md](apps/api/README.md) (restore, migrate, `dotnet run`). Local HTTP: `http://localhost:5295` (Development only; do not send real secrets over plain HTTP outside local use).
+See [apps/api/README.md](apps/api/README.md) (config, restore, migrate, `dotnet run`, test). Local HTTP: `http://localhost:5295` (Development only; do not send real secrets over plain HTTP outside local use). PRs that touch the API run GitHub Actions `api-ci`.
 
 ## Architecture
 

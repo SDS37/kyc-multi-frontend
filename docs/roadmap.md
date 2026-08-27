@@ -8,7 +8,7 @@
 | **W6** | Week 6 | Vue Reports + Security + Seed | KYC-080, KYC-081, KYC-090 to KYC-101, KYC-093 (rate limits when leaving localhost) | All 3 UIs usable, isolation tests green |
 | **W7** | Buffer | Federation attempt, polish, docs | leftover + Module Federation spike | Public README and architecture complete |
 
-Hardening outside the weekly product slices: **KYC-102** (API CI) can land anytime after W1.
+Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. **KYC-093** (rate limits) remains backlog until the API leaves localhost.
 
 ### Weekly checkpoint questions
 

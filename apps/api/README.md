@@ -2,7 +2,7 @@
 
 .NET 10 host with EF Core, talking to local PostgreSQL from Docker Compose.
 
-New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run).
+New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run, test).
 
 `Tenant` and `User` are persisted via EF Core. Public tenant registration and login are temporary REST (`POST /api/register-tenant`, `POST /api/login`) until GraphQL (KYC-020). Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
 
@@ -10,7 +10,7 @@ Local Development listens on **HTTP** (`http://localhost:5295`). That is accepta
 
 ## Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) (`dotnet --version` should print 10.x)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) matching [global.json](../../global.json) (`dotnet --version` → `10.0.400` or a roll-forward allowed by that file)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) running
 - Compose stack up from the **repo root** (see the root README):
 
@@ -21,28 +21,26 @@ docker compose -f infrastructure/docker-compose.yml up -d
 
 Postgres must be healthy on `127.0.0.1:5432`.
 
-## 1. Connection string (do not commit secrets)
+## 1. Local config (Postgres + JWT)
 
-`appsettings.json` has empty `ConnectionStrings:Postgres` and `Jwt:SigningKey` on purpose.
+Committed `appsettings.json` keeps empty `ConnectionStrings:Postgres` and `Jwt:SigningKey` (shape only). Local values live in gitignored `appsettings.Development.json`.
 
-Copy the example (gitignored target). Values match Compose local defaults and include a **local-only** JWT signing key (≥32 chars):
+Copy the example once (Compose defaults + local-only JWT key ≥32 chars, including `Issuer` / `Audience` / `ExpiresMinutes`):
 
 ```bash
 cp apps/api/Kyc.Api/appsettings.Development.json.example apps/api/Kyc.Api/appsettings.Development.json
 ```
 
-If you already have `appsettings.Development.json` from before KYC-013, merge in the `Jwt` block from the example (or the host will refuse to start).
+Do not commit `appsettings.Development.json`.
 
-`appsettings.Development.json` is gitignored. Do not commit it.
-
-Other options (pick one):
+Alternatives (pick one instead of the file):
 
 ```bash
-# Environment variable (__ = nested JSON key)
+# Environment variables (__ = nested JSON key)
 export ConnectionStrings__Postgres="Host=127.0.0.1;Port=5432;Database=kyc_db;Username=kyc;Password=changeme"
 export Jwt__SigningKey="local-dev-only-change-me-32chars-min!!"
 
-# User secrets (stored in your profile, not the repo)
+# User secrets (profile, not the repo)
 cd apps/api/Kyc.Api
 dotnet user-secrets set "ConnectionStrings:Postgres" "Host=127.0.0.1;Port=5432;Database=kyc_db;Username=kyc;Password=changeme"
 dotnet user-secrets set "Jwt:SigningKey" "local-dev-only-change-me-32chars-min!!"
@@ -56,25 +54,21 @@ From the repo root:
 
 ```bash
 dotnet tool restore
-cd apps/api/Kyc.Api
-dotnet restore
+dotnet restore apps/api/Kyc.Api.sln
 ```
 
-`dotnet tool restore` installs `dotnet-ef` from `.config/dotnet-tools.json`.
+`dotnet tool restore` installs `dotnet-ef` from `.config/dotnet-tools.json`. The solution includes `Kyc.Api` and `Kyc.Api.Tests`.
 
 ## 3. Apply migrations
 
-Still in `apps/api/Kyc.Api`, with Compose Postgres running and a connection string set:
+With Compose Postgres running and local config set:
 
 ```bash
+cd apps/api/Kyc.Api
 dotnet ef database update
 ```
 
-Migrations in `Data/Migrations` include `InitialCreate`, `AddTenant`, and `AddUser` (`users` table; unique `(TenantId, Email)`). After pull:
-
-```bash
-dotnet ef database update
-```
+Schema history: `InitialCreate` → `AddTenant` → `AddUser` (unique `(TenantId, Email)`). KYC-014 added filters only (no new migration).
 
 To add another schema change:
 
@@ -118,22 +112,29 @@ Login example:
 
 Successful login returns `{ "accessToken", "tokenType": "Bearer", "expiresInSeconds" }`. Invalid credentials or an inactive tenant return **401** with a generic error. See `Kyc.Api.http`. There is no `/graphql` endpoint yet.
 
+Stop the host with Ctrl+C.
+
+## 5. Build and test
+
+From the repo root:
+
 ```bash
-dotnet build
+dotnet build apps/api/Kyc.Api.sln
 dotnet test apps/api/Kyc.Api.sln
 ```
 
-(from the repo root; or `dotnet test` inside `apps/api`). PRs that touch `apps/api` also run this via GitHub Actions (KYC-102). Stop the host with Ctrl+C.
+PRs that touch `apps/api` (or `global.json` / the workflow file) run the same build/test via GitHub Actions (KYC-102).
 
 ## Done checks
 
 | Story | Proof |
 |---|---|
-| KYC-004 | `dotnet build` / `dotnet run`; OpenAPI at `http://localhost:5295/openapi/v1.json`; connection string not committed |
+| KYC-004 | `dotnet build` / `dotnet run`; OpenAPI at `http://localhost:5295/openapi/v1.json`; ConnectionStrings/Jwt secrets not committed |
 | KYC-010 | `tenants` table with unique `Slug`; entity has Id, Name, Slug, IsActive, CreatedAt |
 | KYC-011 | `users` with Role TenantAdmin/Reviewer/Customer; FK to one tenant; unique `(TenantId, Email)` |
 | KYC-012 | `POST /api/register-tenant` creates Tenant + TenantAdmin in one transaction; password hashed (8–128 chars); validation errors return 400; no JWT required |
 | KYC-013 | `POST /api/login` with tenant slug + email + password; JWT claims `sub`, `tenant_id`, `role`, `email`; generic 401 on bad credentials; inactive tenant cannot log in |
 | KYC-014 | `ICurrentTenant` from JWT `tenant_id`; EF global filter on `ITenantScoped` (fail closed without tenant); `dotnet test` proves tenant A cannot read tenant B users (Case inherits when KYC-030 implements `ITenantScoped`) |
+| KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 
-Out of scope here: GraphQL (KYC-020). Local HTTP is for Development only.
+Out of scope here: GraphQL (KYC-020), auth rate limits (KYC-093). Local HTTP is for Development only.
