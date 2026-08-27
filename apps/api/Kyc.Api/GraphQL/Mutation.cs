@@ -61,12 +61,12 @@ public class Mutation
     /// <summary>
     /// Reviewer-only gate (KYC-022). Placeholder until case review mutations (KYC-030+).
     /// </summary>
-    [Authorize(Roles = [AuthRoles.Reviewer])]
+    [Authorize(Roles = new[] { AuthRoles.Reviewer })]
     public string ReviewerOnlyPing() => "reviewer-ok";
 
     /// <summary>
     /// Customer-only gate (KYC-022). Placeholder until customer case mutations (KYC-030+).
     /// </summary>
-    [Authorize(Roles = [AuthRoles.Customer])]
+    [Authorize(Roles = new[] { AuthRoles.Customer })]
     public string CustomerOnlyPing() => "customer-ok";
 }
