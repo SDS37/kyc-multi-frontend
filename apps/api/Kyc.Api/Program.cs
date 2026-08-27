@@ -27,7 +27,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Public registration endpoint (no JWT). Temporary REST until Hot Chocolate (KYC-020).
+// Public registration (no JWT). Temporary REST until Hot Chocolate (KYC-020).
+// Local Development uses HTTP — fine for Compose defaults only, not for real secrets.
 app.MapPost("/api/register-tenant", async (
     RegisterTenantRequest request,
     RegisterTenantService service,
@@ -42,6 +43,6 @@ app.MapPost("/api/register-tenant", async (
     return Results.Json(result, statusCode: StatusCodes.Status201Created);
 })
 .WithName("RegisterTenant")
-.AllowAnonymous();
+.DisableAntiforgery();
 
 app.Run();

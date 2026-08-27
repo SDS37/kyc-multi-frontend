@@ -1,13 +1,26 @@
 # KYC Multi-Frontend Platform
 
 > Production-oriented multi-tenant KYC & Compliance platform.
-> Angular admin shell, React customer portal, Vue reports, and a .NET GraphQL API.
+> Target: Angular admin shell, React customer portal, Vue reports, and a .NET GraphQL API.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This monorepo is a portfolio project. Three independent frontends share one GraphQL API and auth contract. Module Federation is a later spike, not a Week 1 requirement.
+This monorepo is a portfolio project. The **target** architecture is three frontends on one GraphQL API and auth contract (ADRs). Module Federation is a later spike (ADR-005), not a Week 1 requirement.
 
-## Tech Stack
+## Current status (what works today)
+
+| Area | Status |
+|---|---|
+| Docker Compose (Postgres, Redis, MinIO) | Ready |
+| .NET API host + EF Core | Ready (`apps/api`) |
+| Tenant + User models | Ready |
+| Public `POST /api/register-tenant` | Ready (temporary REST until KYC-020) |
+| GraphQL / JWT login | Not yet (KYC-020, KYC-013) |
+| Angular / React / Vue apps | Placeholders only |
+
+Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
+
+## Target tech stack
 
 | Layer | Technology |
 |---|---|
@@ -24,14 +37,16 @@ This monorepo is a portfolio project. Three independent frontends share one Grap
 ```
 kyc-multi-frontend/
 ├── apps/
-│   ├── angular-admin/     # Angular shell + admin/reviewer portal (not scaffolded yet)
+│   ├── angular-admin/     # Angular shell + admin/reviewer (not scaffolded yet)
 │   ├── react-customer/    # React customer portal (not scaffolded yet)
 │   ├── vue-reports/       # Vue reports portal (not scaffolded yet)
-│   └── api/               # .NET API host + EF Core (GraphQL in KYC-020)
+│   └── api/               # .NET API (EF Core + identity; GraphQL in KYC-020)
 ├── docs/
+│   └── guides/            # Conceptual guides (e.g. .NET for frontend engineers)
 ├── infrastructure/
 │   ├── docker-compose.yml
 │   └── .env.example
+├── .config/               # Local .NET tools (dotnet-ef)
 ├── .editorconfig
 ├── .gitignore
 ├── LICENSE
@@ -41,8 +56,6 @@ kyc-multi-frontend/
 ## Getting Started
 
 **Prerequisites:** Docker Desktop and the .NET 10 SDK (for the API).
-
-Angular, React, and Vue apps are not scaffolded yet. The API host in `apps/api` builds and talks to Compose PostgreSQL. GraphQL comes in KYC-020.
 
 ### 1. Clone
 
@@ -80,11 +93,11 @@ Stop with `docker compose -f infrastructure/docker-compose.yml down`.
 
 ### 3. Run the API
 
-See [apps/api/README.md](apps/api/README.md) (restore, migrate, `dotnet run`). HTTP: `http://localhost:5295`.
+See [apps/api/README.md](apps/api/README.md) (restore, migrate, `dotnet run`). Local HTTP: `http://localhost:5295` (Development only; do not send real secrets over plain HTTP outside local use).
 
 ## Architecture
 
-See [docs/architecture.md](docs/architecture.md) and [ADRs](docs/architecture-decision-records.md).
+Diagrams in [docs/architecture.md](docs/architecture.md) describe the **target end state**. Decisions and sequencing live in [ADRs](docs/architecture-decision-records.md).
 
 ```mermaid
 flowchart TB
@@ -108,8 +121,8 @@ flowchart TB
 ```
 
 - **Multi-tenancy:** tenant and role come from the JWT, never from client-supplied IDs (ADR-007).
-- **CQRS:** commands and queries are separate in the application layer.
-- **GraphQL:** one schema for all three clients (ADR-002).
+- **CQRS:** commands and queries are separate in the application layer (target; applied as modules grow).
+- **GraphQL:** one schema for all three clients (ADR-002; KYC-020).
 - **Frontends:** independent apps for MVP; Module Federation is deferred (ADR-005).
 - **Files:** KYC documents go to MinIO (ADR-006).
 

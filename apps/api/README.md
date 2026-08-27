@@ -4,7 +4,9 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run).
 
-`Tenant` and `User` are persisted via EF Core. Public tenant registration is available as temporary REST until GraphQL (KYC-020). JWT login is KYC-013.
+`Tenant` and `User` are persisted via EF Core. Public tenant registration is temporary REST (`POST /api/register-tenant`) until GraphQL (KYC-020). JWT login is KYC-013.
+
+Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
 
 ## Prerequisites
 
@@ -114,6 +116,6 @@ succeeds if restore worked. Stop the host with Ctrl+C.
 | KYC-004 | `dotnet build` / `dotnet run`; OpenAPI at `http://localhost:5295/openapi/v1.json`; connection string not committed |
 | KYC-010 | `tenants` table with unique `Slug`; entity has Id, Name, Slug, IsActive, CreatedAt |
 | KYC-011 | `users` with Role TenantAdmin/Reviewer/Customer; FK to one tenant; unique `(TenantId, Email)` |
-| KYC-012 | `POST /api/register-tenant` creates Tenant + TenantAdmin in one transaction; password hashed; validation errors return 400; no JWT required |
+| KYC-012 | `POST /api/register-tenant` creates Tenant + TenantAdmin in one transaction; password hashed (8–128 chars); validation errors return 400; no JWT required |
 
-Out of scope here: login/JWT, GraphQL (KYC-013 / KYC-020).
+Out of scope here: login/JWT, GraphQL (KYC-013 / KYC-020). Local HTTP is for Development only.

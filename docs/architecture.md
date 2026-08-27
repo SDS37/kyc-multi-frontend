@@ -1,12 +1,18 @@
 # Architecture – KYC Multi-Frontend (MVP)
 
+This document describes the **target architecture** for the MVP. Implementation follows the [roadmap](roadmap.md): identity and infrastructure first, then GraphQL, cases, documents, and the three frontends.
+
+**Today on `main`:** Compose (Postgres / Redis / MinIO), .NET API with EF Core, Tenant and User models, and a temporary public `POST /api/register-tenant`. GraphQL, JWT login, cases, and UI apps are not built yet.
+
+**MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Section 3 is the **Week 7 target** (Angular shell composing remotes); it is not required for the first release.
+
 ## 1. System Context
 
 ```mermaid
 flowchart LR
     Admin["Tenant Admin / Reviewer<br/>Angular Admin"]
     Customer["Customer<br/>React Portal"]
-    Reports["Reports User<br/>Vue Portal"]
+    Reports["Tenant Admin / Reviewer<br/>Vue Reports"]
     GQL["GraphQL API<br/>Hot Chocolate + .NET"]
     DB[(PostgreSQL)]
     Cache[(Redis)]
@@ -59,7 +65,9 @@ flowchart TB
     API --> Redis
 ```
 
-## 3. Frontend Composition
+## 3. Frontend Composition (target after Module Federation spike)
+
+MVP ships three separate apps. The diagram below is the intended shell composition if the Week 7 federation spike succeeds (ADR-005).
 
 ```mermaid
 flowchart TB
