@@ -1,0 +1,58 @@
+using HotChocolate.Authorization;
+using Kyc.Api.Application.Identity;
+
+namespace Kyc.Api.GraphQL;
+
+/// <summary>
+/// Root GraphQL mutations. Type is deny-by-default; only login/register are anonymous (KYC-021).
+/// </summary>
+[Authorize]
+public class Mutation
+{
+    [AllowAnonymous]
+    public async Task<RegisterTenantResponse> RegisterTenant(
+        RegisterTenantRequest input,
+        RegisterTenantService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, errors) = await service.RegisterAsync(input, cancellationToken);
+        if (errors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", errors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        return result!;
+    }
+
+    [AllowAnonymous]
+    public async Task<LoginResponse> Login(
+        LoginRequest input,
+        LoginService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized) = await service.LoginAsync(input, cancellationToken);
+        if (validationErrors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", validationErrors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        if (unauthorized || result is null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(LoginService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        return result;
+    }
+}

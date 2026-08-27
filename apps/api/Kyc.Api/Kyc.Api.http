@@ -1,35 +1,67 @@
 @Kyc.Api_HostAddress = http://localhost:5295
 
-### Register tenant + first admin (public, no JWT)
+### Register tenant + first admin (anonymous GraphQL)
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($input: RegisterTenantRequestInput!) { registerTenant(input: $input) { tenantId tenantSlug adminUserId adminEmail } }",
+  "variables": {
+    "input": {
+      "tenantName": "Acme Compliance",
+      "tenantSlug": "acme",
+      "adminEmail": "admin@acme.example",
+      "adminPassword": "ChangeMe1"
+    }
+  }
+}
+
+### Login (anonymous GraphQL; returns short-lived JWT)
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($input: LoginRequestInput!) { login(input: $input) { accessToken tokenType expiresInSeconds } }",
+  "variables": {
+    "input": {
+      "tenantSlug": "acme",
+      "email": "admin@acme.example",
+      "password": "ChangeMe1"
+    }
+  }
+}
+
+### Authenticated GraphQL query (paste token from login)
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "query": "query { apiStatus }"
+}
+
+### Health (anonymous)
+GET {{Kyc.Api_HostAddress}}/health
+
+### Temporary REST register (same anonymous allow-list)
 POST {{Kyc.Api_HostAddress}}/api/register-tenant
 Content-Type: application/json
 
 {
   "tenantName": "Acme Compliance",
-  "tenantSlug": "acme",
-  "adminEmail": "admin@acme.example",
+  "tenantSlug": "acme-rest",
+  "adminEmail": "admin@acme-rest.example",
   "adminPassword": "ChangeMe1"
 }
 
-### Login (public; returns short-lived JWT)
+### Temporary REST login
 POST {{Kyc.Api_HostAddress}}/api/login
 Content-Type: application/json
 
 {
-  "tenantSlug": "acme",
-  "email": "admin@acme.example",
+  "tenantSlug": "acme-rest",
+  "email": "admin@acme-rest.example",
   "password": "ChangeMe1"
-}
-
-### Health
-GET {{Kyc.Api_HostAddress}}/health
-
-### GraphQL smoke (Hot Chocolate)
-POST {{Kyc.Api_HostAddress}}/graphql
-Content-Type: application/json
-
-{
-  "query": "query { apiStatus }"
 }
 
 ###

@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run, test).
 
-`Tenant` and `User` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. Public register/login remain temporary REST (`POST /api/register-tenant`, `POST /api/login`) until GraphQL mutations (KYC-021). Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
+`Tenant` and `User` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
 
 Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
 
@@ -88,8 +88,9 @@ dotnet run
 - Health: `GET http://localhost:5295/health`
 - GraphQL: `http://localhost:5295/graphql` (IDE / Banana Cake Pop in Development only)
 - OpenAPI (Development only): `http://localhost:5295/openapi/v1.json`
-- Register tenant (public, temporary REST): `POST /api/register-tenant`
-- Login (public, temporary REST; returns JWT): `POST /api/login`
+- Register tenant (anonymous): GraphQL `registerTenant` or temporary `POST /api/register-tenant`
+- Login (anonymous; returns JWT): GraphQL `login` or temporary `POST /api/login`
+- Authenticated GraphQL fields (e.g. `apiStatus`): `Authorization: Bearer <token>`
 
 Register example:
 
@@ -114,11 +115,31 @@ Login example:
 
 Successful login returns `{ "accessToken", "tokenType": "Bearer", "expiresInSeconds" }`. Invalid credentials or an inactive tenant return **401** with a generic error. See `Kyc.Api.http`.
 
-GraphQL smoke query (or use the IDE at `/graphql`):
+GraphQL smoke (anonymous mutations + authenticated query — or use the IDE at `/graphql`):
 
 ```graphql
+mutation {
+  registerTenant(input: {
+    tenantName: "Acme Compliance"
+    tenantSlug: "acme"
+    adminEmail: "admin@acme.example"
+    adminPassword: "ChangeMe1"
+  }) { tenantSlug }
+}
+
+mutation {
+  login(input: {
+    tenantSlug: "acme"
+    email: "admin@acme.example"
+    password: "ChangeMe1"
+  }) { accessToken tokenType expiresInSeconds }
+}
+
+# Send Authorization: Bearer <accessToken>
 query { apiStatus }
 ```
+
+Unauthenticated `apiStatus` returns GraphQL error `AUTH_NOT_AUTHENTICATED`.
 
 Stop the host with Ctrl+C.
 
@@ -144,6 +165,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-013 | `POST /api/login` with tenant slug + email + password; JWT claims `sub`, `tenant_id`, `role`, `email`; generic 401 on bad credentials; inactive tenant cannot log in |
 | KYC-014 | `ICurrentTenant` from JWT `tenant_id`; EF global filter on `ITenantScoped` (fail closed without tenant); `dotnet test` proves tenant A cannot read tenant B users (Case inherits when KYC-030 implements `ITenantScoped`) |
 | KYC-020 | `/graphql` (Hot Chocolate); GraphQL IDE in Development only; `GET /health` |
+| KYC-021 | Deny-by-default GraphQL JWT auth; anonymous `login` / `registerTenant` only; invalid token rejected; REST on the same allow-list |
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 
-Out of scope here: GraphQL JWT deny-by-default (KYC-021), auth rate limits (KYC-093). Local HTTP is for Development only.
+Out of scope here: role-based GraphQL auth (KYC-022), auth rate limits (KYC-093). Local HTTP is for Development only.
