@@ -9,8 +9,8 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
 | .NET host + EF Core + Postgres | Hot Chocolate GraphQL (KYC-020) |
-| `Tenant` and `User` (+ roles) | JWT login (KYC-013), tenant isolation (KYC-014) |
-| Temporary `POST /api/register-tenant` | Cases, documents, audit, three UI apps |
+| `Tenant` and `User` (+ roles) | Tenant isolation / query filters (KYC-014) |
+| Temporary `POST /api/register-tenant` and `POST /api/login` (JWT) | Cases, documents, audit, three UI apps |
 
 The **target** remains one GraphQL API, CQRS modular monolith, JWT tenant context, and three frontends — see [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md).
 
@@ -40,21 +40,22 @@ KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an
 
 ## What the API project is
 
-- **`Program.cs`** — composition root. Registers EF Core, OpenAPI (Development), password hasher, and the temporary register endpoint.
+- **`Program.cs`** — composition root. Registers EF Core, JWT auth, OpenAPI (Development), password hasher, register + login endpoints.
 - **`AppDbContext`** — EF session with `Tenants` and `Users` (and more as stories land).
 - **`UseNpgsql`** — Postgres provider (the `pg` driver equivalent).
 - **Local HTTP** — Development uses `http://localhost:5295`. Fine for local Compose credentials; do not treat that as a production pattern for passwords.
+- **JWT** — short-lived access token from login (`sub`, `tenant_id`, `role`, `email`). Signing key lives in Development config / user-secrets (not committed).
 
 ## Secrets
 
-`appsettings.json` keeps an empty `ConnectionStrings:Postgres` key so the shape is committed.
+`appsettings.json` keeps empty `ConnectionStrings:Postgres` and `Jwt:SigningKey` so the shape is committed.
 
-Local password `changeme` is the **documented Compose default**, not a production secret. Still do **not** commit `appsettings.Development.json` (it is gitignored). Commit only `appsettings.Development.json.example`.
+Local password `changeme` and the example JWT signing key are **documented Compose/dev defaults**, not production secrets. Still do **not** commit `appsettings.Development.json` (it is gitignored). Commit only `appsettings.Development.json.example`.
 
-Three ways to supply the string (pick one; see the API README):
+Three ways to supply values (pick one; see the API README):
 
-1. Copy the example → `appsettings.Development.json` (simplest).
-2. Environment variable `ConnectionStrings__Postgres` (`__` = nested JSON).
+1. Copy the example → `appsettings.Development.json` (simplest; includes `Jwt`).
+2. Environment variables `ConnectionStrings__Postgres` and `Jwt__SigningKey` (`__` = nested JSON).
 3. `dotnet user-secrets` — stored in your user profile, not the repo.
 
 Do not put passwords in `launchSettings.json`; that file is committed.
@@ -69,4 +70,4 @@ History includes `InitialCreate` (empty pipeline proof), then `AddTenant` and `A
 
 ## Next identity steps
 
-Register is temporary REST. Login + JWT (KYC-013) and GraphQL (KYC-020) replace the long-term public surface. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).
+Register and login are temporary REST. Tenant isolation (KYC-014) and GraphQL (KYC-020) are next. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).

@@ -1,8 +1,11 @@
+using System.Text;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +20,38 @@ if (string.IsNullOrWhiteSpace(postgresConnection))
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(postgresConnection));
 
+var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
+builder.Services.Configure<JwtOptions>(jwtSection);
+var jwtOptions = jwtSection.Get<JwtOptions>() ?? new JwtOptions();
+if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey) || jwtOptions.SigningKey.Length < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:SigningKey must be configured and at least 32 characters. " +
+        "Copy appsettings.Development.json.example or set Jwt__SigningKey.");
+}
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+builder.Services.AddAuthorization();
+
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddScoped<RegisterTenantService>();
+builder.Services.AddScoped<LoginService>();
 
 var app = builder.Build();
 
@@ -26,6 +59,9 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Public registration (no JWT). Temporary REST until Hot Chocolate (KYC-020).
 // Local Development uses HTTP — fine for Compose defaults only, not for real secrets.
@@ -43,6 +79,30 @@ app.MapPost("/api/register-tenant", async (
     return Results.Json(result, statusCode: StatusCodes.Status201Created);
 })
 .WithName("RegisterTenant")
+.DisableAntiforgery();
+
+// Public login (issues JWT). Temporary REST until Hot Chocolate (KYC-020).
+app.MapPost("/api/login", async (
+    LoginRequest request,
+    LoginService service,
+    CancellationToken cancellationToken) =>
+{
+    var (result, validationErrors, unauthorized) = await service.LoginAsync(request, cancellationToken);
+    if (validationErrors.Count > 0)
+    {
+        return Results.BadRequest(new { errors = validationErrors });
+    }
+
+    if (unauthorized || result is null)
+    {
+        return Results.Json(
+            new { error = LoginService.GenericAuthFailure },
+            statusCode: StatusCodes.Status401Unauthorized);
+    }
+
+    return Results.Ok(result);
+})
+.WithName("Login")
 .DisableAntiforgery();
 
 app.Run();

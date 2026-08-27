@@ -15,7 +15,8 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | .NET API host + EF Core | Ready (`apps/api`) |
 | Tenant + User models | Ready |
 | Public `POST /api/register-tenant` | Ready (temporary REST until KYC-020) |
-| GraphQL / JWT login | Not yet (KYC-020, KYC-013) |
+| Public `POST /api/login` (JWT) | Ready (temporary REST until KYC-020) |
+| Tenant isolation / GraphQL | Not yet (KYC-014, KYC-020) |
 | Angular / React / Vue apps | Placeholders only |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
