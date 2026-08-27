@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run).
 
-`Tenant` and `User` (with roles) are persisted via EF Core (KYC-010 / KYC-011). GraphQL and JWT are later stories (KYC-013, KYC-020).
+`Tenant` and `User` are persisted via EF Core. Public tenant registration is available as temporary REST until GraphQL (KYC-020). JWT login is KYC-013.
 
 ## Prerequisites
 
@@ -86,8 +86,20 @@ dotnet run
 
 - HTTP: `http://localhost:5295`
 - OpenAPI (Development only): `http://localhost:5295/openapi/v1.json`
+- Register tenant (public, no JWT): `POST /api/register-tenant`
 
-There is no `/graphql` endpoint yet.
+Example body:
+
+```json
+{
+  "tenantName": "Acme Compliance",
+  "tenantSlug": "acme",
+  "adminEmail": "admin@acme.example",
+  "adminPassword": "ChangeMe1"
+}
+```
+
+See `Kyc.Api.http` for a ready-to-run request. There is no `/graphql` endpoint yet.
 
 ```bash
 dotnet build
@@ -101,6 +113,7 @@ succeeds if restore worked. Stop the host with Ctrl+C.
 |---|---|
 | KYC-004 | `dotnet build` / `dotnet run`; OpenAPI at `http://localhost:5295/openapi/v1.json`; connection string not committed |
 | KYC-010 | `tenants` table with unique `Slug`; entity has Id, Name, Slug, IsActive, CreatedAt |
-| KYC-011 | `users` with Role TenantAdmin/Reviewer/Customer; FK to one tenant; unique `(TenantId, Email)`; `PasswordHash` ready for KYC-012 |
+| KYC-011 | `users` with Role TenantAdmin/Reviewer/Customer; FK to one tenant; unique `(TenantId, Email)` |
+| KYC-012 | `POST /api/register-tenant` creates Tenant + TenantAdmin in one transaction; password hashed; validation errors return 400; no JWT required |
 
-Out of scope here: register/login, GraphQL, JWT (KYC-012 / KYC-013 / KYC-020).
+Out of scope here: login/JWT, GraphQL (KYC-013 / KYC-020).

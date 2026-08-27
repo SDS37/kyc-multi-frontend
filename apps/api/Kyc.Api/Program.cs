@@ -1,4 +1,7 @@
+using Kyc.Api.Application.Identity;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,11 +17,31 @@ if (string.IsNullOrWhiteSpace(postgresConnection))
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(postgresConnection));
 
+builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<RegisterTenantService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+// Public registration endpoint (no JWT). Temporary REST until Hot Chocolate (KYC-020).
+app.MapPost("/api/register-tenant", async (
+    RegisterTenantRequest request,
+    RegisterTenantService service,
+    CancellationToken cancellationToken) =>
+{
+    var (result, errors) = await service.RegisterAsync(request, cancellationToken);
+    if (errors.Count > 0)
+    {
+        return Results.BadRequest(new { errors });
+    }
+
+    return Results.Json(result, statusCode: StatusCodes.Status201Created);
+})
+.WithName("RegisterTenant")
+.AllowAnonymous();
 
 app.Run();
