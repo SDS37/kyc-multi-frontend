@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using HotChocolate.AspNetCore;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
+using Kyc.Api.GraphQL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTenant, HttpCurrentTenant>();
+builder.Services.AddHealthChecks();
 
 var postgresConnection = builder.Configuration.GetConnectionString("Postgres");
 if (string.IsNullOrWhiteSpace(postgresConnection))
@@ -61,6 +64,10 @@ builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddScoped<RegisterTenantService>();
 builder.Services.AddScoped<LoginService>();
 
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<Query>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -71,7 +78,16 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Public registration (no JWT). Temporary REST until Hot Chocolate (KYC-020).
+app.MapHealthChecks("/health");
+
+app.MapGraphQL("/graphql")
+    .WithOptions(options =>
+    {
+        // Banana Cake Pop / Nitro IDE — Development only (KYC-020).
+        options.Tool.Enable = app.Environment.IsDevelopment();
+    });
+
+// Temporary public REST until GraphQL mutations land (KYC-021).
 // Local Development uses HTTP — fine for Compose defaults only, not for real secrets.
 app.MapPost("/api/register-tenant", async (
     RegisterTenantRequest request,
@@ -89,7 +105,6 @@ app.MapPost("/api/register-tenant", async (
 .WithName("RegisterTenant")
 .DisableAntiforgery();
 
-// Public login (issues JWT). Temporary REST until Hot Chocolate (KYC-020).
 app.MapPost("/api/login", async (
     LoginRequest request,
     LoginService service,

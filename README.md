@@ -14,11 +14,12 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Docker Compose (Postgres, Redis, MinIO) | Ready |
 | .NET API host + EF Core | Ready (`apps/api`) |
 | Tenant + User models | Ready |
-| Public `POST /api/register-tenant` | Ready (temporary REST until KYC-020) |
-| Public `POST /api/login` (JWT) | Ready (temporary REST until KYC-020) |
+| Public `POST /api/register-tenant` | Ready (temporary REST until KYC-021) |
+| Public `POST /api/login` (JWT) | Ready (temporary REST until KYC-021) |
 | Tenant isolation (JWT → EF filters) | Ready (KYC-014; Cases inherit in KYC-030) |
+| GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE in Development) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102) |
-| GraphQL | Not yet (KYC-020) |
+| GraphQL auth (deny by default) | Not yet (KYC-021) |
 | Angular / React / Vue apps | Placeholders only |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
