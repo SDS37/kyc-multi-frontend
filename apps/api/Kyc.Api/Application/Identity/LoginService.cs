@@ -36,7 +36,9 @@ public sealed class LoginService(
             return (null, Array.Empty<string>(), true);
         }
 
+        // Auth is cross-tenant by slug; ignore tenant filters if a JWT was also sent.
         var user = await db.Users
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.TenantId == tenant.Id && u.Email == email, cancellationToken);
 
