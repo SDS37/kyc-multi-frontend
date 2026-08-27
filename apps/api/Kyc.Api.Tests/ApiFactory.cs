@@ -27,7 +27,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await db.Database.EnsureCreatedAsync();
     }
 
-    Task IAsyncLifetime.DisposeAsync() => Task.CompletedTask;
+    Task IAsyncLifetime.DisposeAsync() => DisposeAsync().AsTask();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

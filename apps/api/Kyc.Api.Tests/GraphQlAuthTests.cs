@@ -159,6 +159,7 @@ public sealed class GraphQlAuthTests : IClassFixture<ApiFactory>, IAsyncLifetime
             new StringContent(jsonBody, Encoding.UTF8, "application/json"));
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.IsSuccessStatusCode, $"HTTP {(int)response.StatusCode}: {body}");
-        return JsonDocument.Parse(body).RootElement.Clone();
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.Clone();
     }
 }

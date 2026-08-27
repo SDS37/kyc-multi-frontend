@@ -1,3 +1,4 @@
+using HotChocolate;
 using HotChocolate.Authorization;
 using Kyc.Api.Application.Identity;
 
