@@ -75,6 +75,7 @@ public sealed class StartCaseReviewService(
             return (null, Array.Empty<string>(), false, "DOMAIN", NotSubmittedMessage);
         }
 
+        db.Entry(entity).State = EntityState.Detached;
         entity.Status = CaseStatus.InReview;
         entity.ReviewedBy = reviewerUserId.Value;
         entity.UpdatedAt = now;
