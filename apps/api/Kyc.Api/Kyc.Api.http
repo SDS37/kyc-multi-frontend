@@ -75,7 +75,21 @@ Authorization: Bearer {{customerAccessToken}}
     "input": {
       "id": "{{caseId}}",
       "title": "Onboarding ACME (updated)",
-      "formData": "{\"step\":2}"
+      "formData": "{\"fullName\":\"Ada Lovelace\",\"dateOfBirth\":\"1815-12-10\",\"nationality\":\"British\",\"address\":\"12 Analytical Engine Rd\"}"
+    }
+  }
+}
+
+### Customer submits draft case (KYC-033) — owner + Draft + required FormData
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "query": "mutation($input: SubmitCaseRequestInput!) { submitCase(input: $input) { id status submittedAt updatedAt } }",
+  "variables": {
+    "input": {
+      "id": "{{caseId}}"
     }
   }
 }

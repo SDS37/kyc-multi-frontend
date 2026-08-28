@@ -137,4 +137,46 @@ public class Mutation
 
         return result!;
     }
+
+    /// <summary>
+    /// Customer submits their own draft (KYC-033). Required FormData fields must already be persisted.
+    /// </summary>
+    [Authorize(Roles = new[] { AuthRoles.Customer })]
+    public async Task<CaseResponse> SubmitCase(
+        SubmitCaseRequest input,
+        SubmitCaseService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized, errorCode, errorMessage) =
+            await service.SubmitAsync(input, cancellationToken);
+
+        if (validationErrors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", validationErrors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        if (unauthorized)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(CreateDraftCaseService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        if (errorCode is not null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(errorMessage ?? "Request failed.")
+                    .SetCode(errorCode)
+                    .Build());
+        }
+
+        return result!;
+    }
 }
