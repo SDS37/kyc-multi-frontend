@@ -14,8 +14,10 @@ public sealed class LoginService(
     public const string GenericAuthFailure = "Invalid email, password, or tenant.";
     public const string RejectedLog = "Login rejected";
 
-    private static readonly string DummyPasswordHash =
-        new PasswordHasher<User>().HashPassword(new User(), "kyc-login-dummy");
+    private string? _dummyPasswordHash;
+
+    private string DummyPasswordHash =>
+        _dummyPasswordHash ??= passwordHasher.HashPassword(new User(), "kyc-login-dummy");
 
     public async Task<(LoginResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized)> LoginAsync(
         LoginRequest request,

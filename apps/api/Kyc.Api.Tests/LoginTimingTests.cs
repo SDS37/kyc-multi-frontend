@@ -1,10 +1,12 @@
 using System.Text;
 using System.Text.Json;
 using Kyc.Api.Application.Identity;
+using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -72,6 +74,26 @@ public sealed class LoginTimingTests : IClassFixture<LoginTimingApiFactory>
             LoginBody("no-such-tenant", "a@example.com", "ChangeMe1"));
         Assert.Contains("AUTH_FAILED", payload.GetProperty("errors").ToString(), StringComparison.Ordinal);
         Assert.True(_factory.Hasher.VerifyCount > before, "missing tenant must still call VerifyHashedPassword");
+    }
+
+    [Fact]
+    public async Task Inactive_tenant_still_verifies_a_password_hash()
+    {
+        using var client = _factory.CreateClient();
+        var slug = await RegisterAsync(client, "inactive");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var tenant = await db.Tenants.SingleAsync(t => t.Slug == slug);
+            tenant.IsActive = false;
+            await db.SaveChangesAsync();
+        }
+
+        var before = _factory.Hasher.VerifyCount;
+        var payload = await PostGraphqlAsync(client, LoginBody(slug, $"a@{slug}.example", "ChangeMe1"));
+        Assert.Contains("AUTH_FAILED", payload.GetProperty("errors").ToString(), StringComparison.Ordinal);
+        Assert.True(_factory.Hasher.VerifyCount > before, "inactive tenant must still call VerifyHashedPassword");
     }
 
     private static async Task<string> RegisterAsync(HttpClient client, string prefix)
