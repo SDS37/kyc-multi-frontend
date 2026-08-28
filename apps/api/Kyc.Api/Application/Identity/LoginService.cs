@@ -8,9 +8,11 @@ namespace Kyc.Api.Application.Identity;
 public sealed class LoginService(
     AppDbContext db,
     IPasswordHasher<User> passwordHasher,
-    JwtTokenService jwtTokenService)
+    JwtTokenService jwtTokenService,
+    ILogger<LoginService> logger)
 {
     public const string GenericAuthFailure = "Invalid email, password, or tenant.";
+    public const string RejectedLog = "Login rejected";
 
     public async Task<(LoginResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized)> LoginAsync(
         LoginRequest request,
@@ -33,6 +35,7 @@ public sealed class LoginService(
         // so we do not leak whether the slug exists or the tenant is disabled.
         if (tenant is null || !tenant.IsActive)
         {
+            logger.LogWarning(RejectedLog);
             return (null, Array.Empty<string>(), true);
         }
 
@@ -44,12 +47,14 @@ public sealed class LoginService(
 
         if (user is null)
         {
+            logger.LogWarning(RejectedLog);
             return (null, Array.Empty<string>(), true);
         }
 
         var verify = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         if (verify == PasswordVerificationResult.Failed)
         {
+            logger.LogWarning(RejectedLog);
             return (null, Array.Empty<string>(), true);
         }
 

@@ -6,10 +6,14 @@ namespace Kyc.Api.Infrastructure;
 /// <summary>
 /// Readiness probe: Postgres is reachable. Keep this off <c>/health</c> so liveness stays a process check.
 /// Connection/command timeouts are short so orchestrators are not blocked on the EF command timeout.
+/// Failures are logged without the connection string or exception text (KYC-104).
 /// </summary>
-public sealed class PostgresReadyHealthCheck(string connectionString) : IHealthCheck
+public sealed class PostgresReadyHealthCheck(
+    string connectionString,
+    ILogger<PostgresReadyHealthCheck> logger) : IHealthCheck
 {
-    internal const int ProbeTimeoutSeconds = 2;
+    public const int ProbeTimeoutSeconds = 2;
+    public const string UnreachableLog = "Readiness check failed: Postgres is unreachable";
 
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
@@ -34,7 +38,8 @@ public sealed class PostgresReadyHealthCheck(string connectionString) : IHealthC
         }
         catch (Exception ex)
         {
-            return HealthCheckResult.Unhealthy("Postgres is unreachable.", ex);
+            logger.LogWarning("{Message} ({ExceptionType})", UnreachableLog, ex.GetType().Name);
+            return HealthCheckResult.Unhealthy("Postgres is unreachable.");
         }
     }
 }

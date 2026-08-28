@@ -13,7 +13,7 @@ namespace Kyc.Api.Tests;
 /// <summary>
 /// Hosts the API against an in-memory SQLite database so GraphQL auth tests run without Postgres.
 /// </summary>
-public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private SqliteConnection _connection = null!;
 
