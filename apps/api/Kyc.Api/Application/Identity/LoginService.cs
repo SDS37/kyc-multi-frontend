@@ -14,6 +14,11 @@ public sealed class LoginService(
     public const string GenericAuthFailure = "Invalid email, password, or tenant.";
     public const string RejectedLog = "Login rejected";
 
+    private string? _dummyPasswordHash;
+
+    private string DummyPasswordHash =>
+        _dummyPasswordHash ??= passwordHasher.HashPassword(new User(), "kyc-login-dummy");
+
     public async Task<(LoginResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized)> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default)
@@ -35,7 +40,7 @@ public sealed class LoginService(
         // so we do not leak whether the slug exists or the tenant is disabled.
         if (tenant is null || !tenant.IsActive)
         {
-            logger.LogWarning(RejectedLog);
+            RejectUnverified(request.Password);
             return (null, Array.Empty<string>(), true);
         }
 
@@ -45,14 +50,9 @@ public sealed class LoginService(
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.TenantId == tenant.Id && u.Email == email, cancellationToken);
 
-        if (user is null)
-        {
-            logger.LogWarning(RejectedLog);
-            return (null, Array.Empty<string>(), true);
-        }
-
-        var verify = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-        if (verify == PasswordVerificationResult.Failed)
+        var hash = user?.PasswordHash ?? DummyPasswordHash;
+        var verify = passwordHasher.VerifyHashedPassword(user ?? new User(), hash, request.Password);
+        if (user is null || verify == PasswordVerificationResult.Failed)
         {
             logger.LogWarning(RejectedLog);
             return (null, Array.Empty<string>(), true);
@@ -85,5 +85,11 @@ public sealed class LoginService(
         }
 
         return errors;
+    }
+
+    private void RejectUnverified(string password)
+    {
+        passwordHasher.VerifyHashedPassword(new User(), DummyPasswordHash, password);
+        logger.LogWarning(RejectedLog);
     }
 }

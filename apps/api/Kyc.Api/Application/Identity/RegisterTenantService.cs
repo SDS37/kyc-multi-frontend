@@ -4,6 +4,7 @@ using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Kyc.Api.Application.Identity;
 
@@ -56,18 +57,22 @@ public sealed partial class RegisterTenantService(
         };
         admin.PasswordHash = passwordHasher.HashPassword(admin, request.AdminPassword);
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var strategy = db.Database.CreateExecutionStrategy();
         try
         {
-            db.Tenants.Add(tenant);
-            db.Users.Add(admin);
-            await db.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await strategy.ExecuteAsync(async () =>
+            {
+                db.ChangeTracker.Clear();
+                db.Tenants.Add(tenant);
+                db.Users.Add(admin);
+                await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+                await db.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
-            await transaction.RollbackAsync(cancellationToken);
-            // Unique slug race (or other constraint). Do not claim a specific cause.
+            // Unique slug/email race. Do not claim a specific cause.
             return (null, ["Could not register tenant. Please try a different slug."]);
         }
 
@@ -130,5 +135,24 @@ public sealed partial class RegisterTenantService(
         {
             return false;
         }
+    }
+
+    private static bool IsUniqueConstraintViolation(DbUpdateException exception)
+    {
+        for (var inner = exception.InnerException; inner is not null; inner = inner.InnerException)
+        {
+            if (inner is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                return true;
+            }
+
+            // SQLite test host (no Npgsql exception type).
+            if (inner.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
