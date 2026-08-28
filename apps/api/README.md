@@ -175,7 +175,7 @@ Stdout is **JSON** (`Logging:Console:FormatterName` = `json` in `appsettings.jso
 | Readiness failures | `Readiness check failed: Postgres is unreachable ({ExceptionType})`. No connection string. |
 | Liveness probes | `GET /health` is **not** logged at Information (avoids probe flood). |
 
-**Read local logs:** run the API in a terminal (`dotnet run` from `apps/api/Kyc.Api`). Pretty-print with `jq` if you have it (`dotnet run | jq -c`). Filter one request: look for the `X-Request-Id` response header, then grep that value in stdout (`RequestId` scope).
+**Read local logs:** run the API in a terminal (`dotnet run` from `apps/api/Kyc.Api`). Pretty-print with `jq` if you have it (`dotnet run | jq .`). Filter one request: look for the `X-Request-Id` response header, then grep that value in stdout (`RequestId` scope).
 
 **Minimal metrics / signals (no APM vendor):** there is no scrape endpoint in MVP. Operators can (later) alert on `GET /ready` → 503 and count `HTTP … {status}` log lines. OpenTelemetry exporters can be added later without changing this contract.
 
