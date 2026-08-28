@@ -236,5 +236,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-104 | JSON stdout logs with `RequestId`; auth and `/ready` failures logged without secrets; README documents local logs + `/ready`-based signals |
 | KYC-105 | Introspection + SDL Development-only; execution depth 10; EF `Database.Command` Warning in `appsettings.json`; MinIO image pinned |
 | KYC-106 | Non-owner update/submit → `NOT_FOUND`; FormData 64 KiB / depth 8; atomic submit and start-review status updates |
+| KYC-107 | Login dummy password verify on miss paths; `registerTenant` uses EF execution strategy |
 
 Out of scope here: auth rate limits (KYC-093). CORS/headers are KYC-091. Local HTTP is for Development only.
