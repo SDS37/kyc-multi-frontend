@@ -56,17 +56,21 @@ public sealed partial class RegisterTenantService(
         };
         admin.PasswordHash = passwordHasher.HashPassword(admin, request.AdminPassword);
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var strategy = db.Database.CreateExecutionStrategy();
         try
         {
-            db.Tenants.Add(tenant);
-            db.Users.Add(admin);
-            await db.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await strategy.ExecuteAsync(async () =>
+            {
+                db.ChangeTracker.Clear();
+                db.Tenants.Add(tenant);
+                db.Users.Add(admin);
+                await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+                await db.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
         catch (DbUpdateException)
         {
-            await transaction.RollbackAsync(cancellationToken);
             // Unique slug race (or other constraint). Do not claim a specific cause.
             return (null, ["Could not register tenant. Please try a different slug."]);
         }
