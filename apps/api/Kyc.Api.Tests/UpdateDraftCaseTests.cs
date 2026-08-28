@@ -20,6 +20,7 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
     private Guid _ownerId;
     private Guid _otherCustomerId;
     private Guid _draftCaseId;
+    private Guid _omitFormDataCaseId;
     private Guid _submittedCaseId;
 
     public UpdateDraftCaseTests(ApiFactory factory)
@@ -35,6 +36,7 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         _ownerId = Guid.NewGuid();
         _otherCustomerId = Guid.NewGuid();
         _draftCaseId = Guid.NewGuid();
+        _omitFormDataCaseId = Guid.NewGuid();
         _submittedCaseId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
@@ -76,6 +78,17 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
                 Title = "Original title",
                 Status = CaseStatus.Draft,
                 FormData = """{"step":1}""",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new Case
+            {
+                Id = _omitFormDataCaseId,
+                TenantId = _tenantId,
+                CustomerUserId = _ownerId,
+                Title = "Omit form title",
+                Status = CaseStatus.Draft,
+                FormData = """{"keep":true}""",
                 CreatedAt = now,
                 UpdatedAt = now
             },
@@ -207,6 +220,88 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Contains("AUTH_NOT_AUTHORIZED", document.RootElement.GetProperty("errors").ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Omitting_formData_leaves_existing_formData_unchanged()
+    {
+        Authenticate(_ownerId);
+
+        var payload = await PostGraphqlAsync(
+            $$"""
+            {
+              "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id title formData } }",
+              "variables": {
+                "input": {
+                  "id": "{{_omitFormDataCaseId}}",
+                  "title": "Title only"
+                }
+              }
+            }
+            """);
+
+        Assert.False(payload.TryGetProperty("errors", out _), payload.ToString());
+        var updated = payload.GetProperty("data").GetProperty("updateDraftCase");
+        Assert.Equal("Title only", updated.GetProperty("title").GetString());
+        Assert.Equal("""{"keep":true}""", updated.GetProperty("formData").GetString());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == _omitFormDataCaseId);
+        Assert.Equal("""{"keep":true}""", row.FormData);
+    }
+
+    [Fact]
+    public async Task Missing_case_returns_NOT_FOUND()
+    {
+        Authenticate(_ownerId);
+        var missingId = Guid.NewGuid();
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id } }",
+                  "variables": {
+                    "input": { "id": "{{missingId}}", "title": "Ghost" }
+                  }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("NOT_FOUND", errors, StringComparison.Ordinal);
+        Assert.Contains(UpdateDraftCaseService.NotFoundMessage, errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Stale_customer_JWT_returns_AUTH_FAILED()
+    {
+        Authenticate(Guid.NewGuid());
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id } }",
+                  "variables": {
+                    "input": { "id": "{{_draftCaseId}}", "title": "Stale" }
+                  }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("AUTH_FAILED", errors, StringComparison.Ordinal);
+        Assert.Contains(CreateDraftCaseService.GenericAuthFailure, errors, StringComparison.Ordinal);
     }
 
     private void Authenticate(Guid userId) => AuthenticateRole(UserRole.Customer, userId);

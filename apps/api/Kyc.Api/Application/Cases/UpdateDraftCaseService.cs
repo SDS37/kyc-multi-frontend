@@ -37,6 +37,18 @@ public sealed class UpdateDraftCaseService(
             return (null, Array.Empty<string>(), true, null, null);
         }
 
+        // Same stale-token guard as create: JWT subject must still exist in this tenant.
+        var customerExists = await db.Users
+            .AsNoTracking()
+            .AnyAsync(
+                u => u.Id == customerUserId && u.TenantId == tenantId,
+                cancellationToken);
+
+        if (!customerExists)
+        {
+            return (null, Array.Empty<string>(), true, null, null);
+        }
+
         // Tenant filter applies — other tenants never see the row.
         var entity = await db.Cases
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
