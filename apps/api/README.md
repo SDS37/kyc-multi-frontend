@@ -211,7 +211,7 @@ dotnet build apps/api/Kyc.Api.sln
 dotnet test apps/api/Kyc.Api.sln
 ```
 
-PRs that touch `apps/api` (or `global.json` / the workflow file) run the same build/test via GitHub Actions (KYC-102).
+PRs that touch `apps/api` (or `global.json` / the workflow file) run the same build/test via GitHub Actions (KYC-102 / KYC-108). Live Postgres tests run in CI when `KYC_TEST_POSTGRES` is set; locally they skip unless you export that connection string (Compose defaults work).
 
 ## Done checks
 
@@ -237,5 +237,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-105 | Introspection + SDL Development-only; execution depth 10; EF `Database.Command` Warning in `appsettings.json`; MinIO image pinned |
 | KYC-106 | Non-owner update/submit → `NOT_FOUND`; FormData 64 KiB / depth 8; atomic submit and start-review status updates |
 | KYC-107 | Login dummy password verify on miss paths; `registerTenant` uses EF execution strategy |
+| KYC-108 | `api-ci` SHA-pinned actions, `contents: read`, vuln list (warn), thin Postgres migrate + jsonb tests |
 
 Out of scope here: auth rate limits (KYC-093). CORS/headers are KYC-091. Local HTTP is for Development only.
