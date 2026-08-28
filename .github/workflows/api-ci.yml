@@ -18,6 +18,9 @@ concurrency:
   group: api-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build-test:
     name: build and test
@@ -25,18 +28,38 @@ jobs:
     defaults:
       run:
         working-directory: apps/api
+    env:
+      KYC_TEST_POSTGRES: Host=127.0.0.1;Port=5432;Database=kyc_test;Username=kyc;Password=changeme
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: kyc
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: kyc_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kyc -d kyc_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           global-json-file: global.json
 
       - name: Restore
         run: dotnet restore Kyc.Api.sln
+
+      - name: Vulnerable packages (warn)
+        continue-on-error: true
+        run: dotnet list Kyc.Api.sln package --vulnerable --include-transitive
 
       - name: Build
         run: dotnet build Kyc.Api.sln --no-restore --configuration Release
