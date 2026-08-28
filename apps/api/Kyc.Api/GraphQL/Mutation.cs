@@ -1,12 +1,13 @@
 using HotChocolate;
 using HotChocolate.Authorization;
+using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Identity;
 
 namespace Kyc.Api.GraphQL;
 
 /// <summary>
 /// Root GraphQL mutations. Type is deny-by-default; only login/register are anonymous (KYC-021).
-/// Role gates (KYC-022) protect reviewer/customer operations until Cases land.
+/// Role gates (KYC-022) protect reviewer stubs and customer case operations.
 /// </summary>
 [Authorize]
 public class Mutation
@@ -59,14 +60,30 @@ public class Mutation
     }
 
     /// <summary>
-    /// Reviewer-only gate (KYC-022). Placeholder until case review mutations (KYC-030+).
+    /// Reviewer-only gate (KYC-022). Placeholder until case review mutations.
     /// </summary>
     [Authorize(Roles = new[] { AuthRoles.Reviewer })]
     public string ReviewerOnlyPing() => "reviewer-ok";
 
     /// <summary>
-    /// Customer-only gate (KYC-022). Placeholder until customer case mutations (KYC-030+).
+    /// Customer creates a draft KYC case (KYC-031). Tenant and owner come from the JWT only.
     /// </summary>
     [Authorize(Roles = new[] { AuthRoles.Customer })]
-    public string CustomerOnlyPing() => "customer-ok";
+    public async Task<CreateDraftCaseResponse> CreateDraftCase(
+        CreateDraftCaseRequest input,
+        CreateDraftCaseService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, errors) = await service.CreateAsync(input, cancellationToken);
+        if (errors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", errors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        return result!;
+    }
 }
