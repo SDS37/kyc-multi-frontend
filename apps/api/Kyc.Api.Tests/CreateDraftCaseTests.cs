@@ -120,7 +120,7 @@ public sealed class CreateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
     public async Task Deeply_nested_formData_returns_VALIDATION()
     {
         AuthenticateCustomer();
-        var nested = "1";
+        var nested = "{}";
         for (var i = 0; i < CreateDraftCaseService.MaxFormDataDepth + 2; i++)
         {
             nested = $$"""{"a":{{nested}}}""";

@@ -167,9 +167,9 @@ internal static class CaseDraftValidation
         try
         {
             using var document = JsonDocument.Parse(trimmed, FormDataParseOptions);
-            if (document.RootElement.ValueKind is not JsonValueKind.Object and not JsonValueKind.Array)
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
             {
-                return ["FormData must be valid JSON when provided."];
+                return ["FormData must be a JSON object."];
             }
         }
         catch (JsonException)
