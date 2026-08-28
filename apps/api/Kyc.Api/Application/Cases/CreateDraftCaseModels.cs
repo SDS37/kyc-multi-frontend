@@ -26,3 +26,6 @@ public sealed record CaseResponse(
 
 /// <summary>Customer submits a draft by id (KYC-033). Form is read from persisted FormData.</summary>
 public sealed record SubmitCaseRequest(Guid Id);
+
+/// <summary>Reviewer/TenantAdmin starts review on a submitted case (KYC-034).</summary>
+public sealed record StartCaseReviewRequest(Guid Id);

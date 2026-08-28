@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Cases;
 using Kyc.Api.Domain.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,8 @@ public sealed class RoleAuthorizationTests : IClassFixture<ApiFactory>, IAsyncLi
     private HttpClient _client = null!;
     private Guid _tenantId;
     private Guid _customerId;
+    private Guid _reviewerId;
+    private Guid _submittedCaseId;
 
     public RoleAuthorizationTests(ApiFactory factory)
     {
@@ -27,6 +30,8 @@ public sealed class RoleAuthorizationTests : IClassFixture<ApiFactory>, IAsyncLi
 
         _tenantId = Guid.NewGuid();
         _customerId = Guid.NewGuid();
+        _reviewerId = Guid.NewGuid();
+        _submittedCaseId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
         using var scope = _factory.Services.CreateScope();
@@ -39,14 +44,36 @@ public sealed class RoleAuthorizationTests : IClassFixture<ApiFactory>, IAsyncLi
             IsActive = true,
             CreatedAt = now
         });
-        db.Users.Add(new User
+        db.Users.AddRange(
+            new User
+            {
+                Id = _customerId,
+                TenantId = _tenantId,
+                Email = "customer@role.example",
+                PasswordHash = "unused",
+                Role = UserRole.Customer,
+                CreatedAt = now
+            },
+            new User
+            {
+                Id = _reviewerId,
+                TenantId = _tenantId,
+                Email = "reviewer@role.example",
+                PasswordHash = "unused",
+                Role = UserRole.Reviewer,
+                CreatedAt = now
+            });
+        db.Cases.Add(new Case
         {
-            Id = _customerId,
+            Id = _submittedCaseId,
             TenantId = _tenantId,
-            Email = "customer@role.example",
-            PasswordHash = "unused",
-            Role = UserRole.Customer,
-            CreatedAt = now
+            CustomerUserId = _customerId,
+            Title = "Role gate submitted",
+            Status = CaseStatus.Submitted,
+            FormData = """{"fullName":"Ada"}""",
+            CreatedAt = now,
+            UpdatedAt = now,
+            SubmittedAt = now
         });
         await db.SaveChangesAsync();
     }
@@ -58,20 +85,35 @@ public sealed class RoleAuthorizationTests : IClassFixture<ApiFactory>, IAsyncLi
     }
 
     [Fact]
-    public async Task Reviewer_can_call_reviewerOnlyPing()
+    public async Task Reviewer_can_call_startCaseReview()
     {
-        Authenticate(UserRole.Reviewer, Guid.NewGuid(), Guid.NewGuid());
-        var payload = await PostGraphqlAsync("""{ "query": "mutation { reviewerOnlyPing }" }""");
-        Assert.Equal("reviewer-ok", payload.GetProperty("data").GetProperty("reviewerOnlyPing").GetString());
+        Authenticate(UserRole.Reviewer, _tenantId, _reviewerId);
+        var payload = await PostGraphqlAsync(
+            $$"""
+            {
+              "query": "mutation($input: StartCaseReviewRequestInput!) { startCaseReview(input: $input) { status } }",
+              "variables": { "input": { "id": "{{_submittedCaseId}}" } }
+            }
+            """);
+        Assert.False(payload.TryGetProperty("errors", out _), payload.ToString());
+        Assert.Equal("IN_REVIEW", payload.GetProperty("data").GetProperty("startCaseReview").GetProperty("status").GetString());
     }
 
     [Fact]
-    public async Task Customer_cannot_call_reviewerOnlyPing()
+    public async Task Customer_cannot_call_startCaseReview()
     {
         Authenticate(UserRole.Customer, _tenantId, _customerId);
         using var response = await _client.PostAsync(
             "/graphql",
-            new StringContent("""{"query":"mutation { reviewerOnlyPing }"}""", Encoding.UTF8, "application/json"));
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: StartCaseReviewRequestInput!) { startCaseReview(input: $input) { id } }",
+                  "variables": { "input": { "id": "{{_submittedCaseId}}" } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
 
         Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
@@ -83,8 +125,8 @@ public sealed class RoleAuthorizationTests : IClassFixture<ApiFactory>, IAsyncLi
         Assert.False(
             root.TryGetProperty("data", out var data) &&
             data.ValueKind != JsonValueKind.Null &&
-            data.TryGetProperty("reviewerOnlyPing", out var value) &&
-            value.ValueKind == JsonValueKind.String);
+            data.TryGetProperty("startCaseReview", out var value) &&
+            value.ValueKind != JsonValueKind.Null);
     }
 
     [Fact]
@@ -106,7 +148,7 @@ public sealed class RoleAuthorizationTests : IClassFixture<ApiFactory>, IAsyncLi
     [Fact]
     public async Task Reviewer_cannot_call_createDraftCase()
     {
-        Authenticate(UserRole.Reviewer, Guid.NewGuid(), Guid.NewGuid());
+        Authenticate(UserRole.Reviewer, _tenantId, _reviewerId);
         using var response = await _client.PostAsync(
             "/graphql",
             new StringContent(

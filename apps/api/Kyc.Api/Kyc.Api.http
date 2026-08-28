@@ -40,13 +40,18 @@ Authorization: Bearer {{accessToken}}
   "query": "query { apiStatus }"
 }
 
-### Role gates (KYC-022 / KYC-031) — JWT `role` must match
+### Start case review (KYC-034) — Reviewer or TenantAdmin; Submitted → InReview
 POST {{Kyc.Api_HostAddress}}/graphql
 Content-Type: application/json
 Authorization: Bearer {{reviewerAccessToken}}
 
 {
-  "query": "mutation { reviewerOnlyPing }"
+  "query": "mutation($input: StartCaseReviewRequestInput!) { startCaseReview(input: $input) { id status updatedAt } }",
+  "variables": {
+    "input": {
+      "id": "{{caseId}}"
+    }
+  }
 }
 
 ### Customer creates draft case (KYC-031) — tenant/owner from JWT only
