@@ -87,6 +87,7 @@ public sealed class SubmitCaseService(
             return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
         }
 
+        db.Entry(entity).State = EntityState.Detached;
         entity.Status = CaseStatus.Submitted;
         entity.SubmittedAt = now;
         entity.UpdatedAt = now;
