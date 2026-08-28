@@ -8,7 +8,17 @@
 | **W6** | Week 6 | Vue Reports + Security + Seed | KYC-080, KYC-081, KYC-090 to KYC-101, KYC-093 (rate limits when leaving localhost), KYC-103 / KYC-104 (readiness + observability backlog) | All 3 UIs usable, isolation tests green |
 | **W7** | Buffer | Federation attempt, polish, docs | leftover + Module Federation spike | Public README and architecture complete |
 
-Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. **KYC-103** (readiness / EF retries / timeouts) and **KYC-104** (structured logs / request id) are implemented on the API. Backlog until the API leaves localhost: **KYC-093** (rate limits).
+Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. **KYC-103** (readiness / EF retries / timeouts) and **KYC-104** (structured logs / request id) are implemented on the API. **KYC-105** (GraphQL introspection/depth, EF command log level, MinIO pin) is the next host slice.
+
+Backlog until the API leaves localhost (do not treat this as “only rate limits”):
+
+- **KYC-093** — rate-limit `registerTenant` and `login`
+- **KYC-091** (W6) — CORS allow-list and security headers (when the first UI exists)
+- TLS / HTTPS redirect and HSTS on any non-local deploy
+- Production log levels (EF SQL already Warning in committed `appsettings.json`; keep host noise down)
+- Bind or authenticate `GET /ready` (liveness `/health` can stay anonymous)
+- Abuse controls on public `registerTenant` beyond login throttling (KYC-093)
+- GraphQL cost analyzer when list/document fields land (KYC-035+ / W3); depth limit is KYC-105
 
 ### Weekly checkpoint questions
 

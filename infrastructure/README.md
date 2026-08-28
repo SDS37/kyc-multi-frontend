@@ -18,6 +18,8 @@ Compose loads `infrastructure/.env` automatically. Defaults are local-only; chan
 | MinIO API  | `127.0.0.1:9000`       | `minio` / `changeme1`    |
 | MinIO UI   | `127.0.0.1:9001`       | same as API              |
 
+Images: Postgres `postgres:18-alpine`, Redis `redis:8-alpine`, MinIO `minio/minio:RELEASE.2025-09-07T16-13-09Z` (Hub no longer updates `:latest` for community).
+
 Data is stored in named volumes: `postgres_data`, `redis_data`, `minio_data`.
 
 The API and frontends are **not** Compose services yet. Run the API on the host with `dotnet run` — see [apps/api/README.md](../apps/api/README.md). Frontends are still placeholders (W4–W6). Target architecture: [docs/architecture.md](../docs/architecture.md).

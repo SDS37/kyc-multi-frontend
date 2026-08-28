@@ -50,7 +50,7 @@ Three frontends need different slices of the same KYC data. The API must act as 
 ### Decision
 Use Hot Chocolate GraphQL as the single public API for all frontends.
 
-Until KYC-020 lands, the only client-facing surface is temporary REST (`POST /api/register-tenant`, `POST /api/login`). That interim does not change the GraphQL target.
+GraphQL is the public contract (KYC-020). Temporary REST (`POST /api/register-tenant`, `POST /api/login`) stays on the anonymous allow-list until clients consume GraphQL (DoD). That interim does not change the GraphQL target.
 
 ### Alternatives
 - REST + OpenAPI
@@ -64,7 +64,7 @@ Until KYC-020 lands, the only client-facing surface is temporary REST (`POST /ap
 - More setup than REST
 - Need DataLoaders to avoid N+1 queries
 - File upload/download may still use a dedicated path
-- Temporary REST must be retired or folded into GraphQL when KYC-020 ships
+- Temporary REST is retired or folded into GraphQL after clients use `login` / `registerTenant` (DoD); KYC-020 shipping the host was not that cutover
 
 ---
 
