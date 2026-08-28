@@ -168,8 +168,9 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var errors = document.RootElement.GetProperty("errors").ToString();
-        Assert.Contains("DOMAIN", errors, StringComparison.Ordinal);
-        Assert.Contains(UpdateDraftCaseService.NotOwnerMessage, errors, StringComparison.Ordinal);
+        Assert.Contains("NOT_FOUND", errors, StringComparison.Ordinal);
+        Assert.Contains(UpdateDraftCaseService.NotFoundMessage, errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("DOMAIN", errors, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -276,6 +277,70 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         var errors = document.RootElement.GetProperty("errors").ToString();
         Assert.Contains("NOT_FOUND", errors, StringComparison.Ordinal);
         Assert.Contains(UpdateDraftCaseService.NotFoundMessage, errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Oversized_formData_returns_VALIDATION()
+    {
+        Authenticate(_ownerId);
+        var oversized = $$"""{"pad":"{{new string('x', CreateDraftCaseService.MaxFormDataUtf8Bytes)}}"}""";
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id } }",
+                  "variables": {
+                    "input": {
+                      "id": "{{_draftCaseId}}",
+                      "title": "Too big",
+                      "formData": {{JsonSerializer.Serialize(oversized)}}
+                    }
+                  }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains("65536", errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Deeply_nested_formData_returns_VALIDATION()
+    {
+        Authenticate(_ownerId);
+        var nested = "{}";
+        for (var i = 0; i < CreateDraftCaseService.MaxFormDataDepth + 2; i++)
+        {
+            nested = $$"""{"a":{{nested}}}""";
+        }
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id } }",
+                  "variables": {
+                    "input": {
+                      "id": "{{_draftCaseId}}",
+                      "title": "Too deep",
+                      "formData": {{JsonSerializer.Serialize(nested)}}
+                    }
+                  }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains("valid JSON", errors, StringComparison.Ordinal);
     }
 
     [Fact]

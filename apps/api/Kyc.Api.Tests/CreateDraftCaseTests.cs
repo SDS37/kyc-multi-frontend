@@ -93,6 +93,58 @@ public sealed class CreateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
     }
 
     [Fact]
+    public async Task Oversized_formData_returns_VALIDATION()
+    {
+        AuthenticateCustomer();
+        var oversized = $$"""{"pad":"{{new string('x', CreateDraftCaseService.MaxFormDataUtf8Bytes)}}"}""";
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: CreateDraftCaseRequestInput!) { createDraftCase(input: $input) { id } }",
+                  "variables": { "input": { "title": "Too big", "formData": {{JsonSerializer.Serialize(oversized)}} } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains("65536", errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Deeply_nested_formData_returns_VALIDATION()
+    {
+        AuthenticateCustomer();
+        var nested = "{}";
+        for (var i = 0; i < CreateDraftCaseService.MaxFormDataDepth + 2; i++)
+        {
+            nested = $$"""{"a":{{nested}}}""";
+        }
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: CreateDraftCaseRequestInput!) { createDraftCase(input: $input) { id } }",
+                  "variables": { "input": { "title": "Too deep", "formData": {{JsonSerializer.Serialize(nested)}} } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains("valid JSON", errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Title_is_required()
     {
         AuthenticateCustomer();

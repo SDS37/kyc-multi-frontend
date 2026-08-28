@@ -12,7 +12,6 @@ public sealed class UpdateDraftCaseService(
     ICurrentUser currentUser)
 {
     public const string NotFoundMessage = "Case was not found.";
-    public const string NotOwnerMessage = "Only the case owner can update this draft.";
     public const string NotDraftMessage = "Only draft cases can be updated.";
 
     public async Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> UpdateAsync(
@@ -53,14 +52,9 @@ public sealed class UpdateDraftCaseService(
         var entity = await db.Cases
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
 
-        if (entity is null)
+        if (entity is null || entity.CustomerUserId != customerUserId.Value)
         {
             return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
-        }
-
-        if (entity.CustomerUserId != customerUserId.Value)
-        {
-            return (null, Array.Empty<string>(), false, "DOMAIN", NotOwnerMessage);
         }
 
         if (entity.Status != CaseStatus.Draft)

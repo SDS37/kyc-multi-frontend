@@ -133,7 +133,7 @@ public class Mutation
     }
 
     /// <summary>
-    /// Customer updates their own draft case (KYC-032). Non-draft status returns DOMAIN.
+    /// Customer updates their own draft case (KYC-032 / KYC-106). Missing or not owner → NOT_FOUND; non-draft → DOMAIN.
     /// </summary>
     [Authorize(Roles = new[] { AuthRoles.Customer })]
     public async Task<CaseResponse> UpdateDraftCase(
