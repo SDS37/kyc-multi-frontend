@@ -11,7 +11,7 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 | .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | Remaining case lifecycle, documents, audit, three UI apps |
 | GraphQL role gates + Customer `createDraftCase` / `updateDraftCase` | Submit / review / list mutations |
 | Temporary register/login (JWT) + fail-closed tenant filters | Auth rate limits when leaving localhost (KYC-093) |
-| Hot Chocolate `/graphql` + `/health` (KYC-020); deny-by-default JWT (KYC-021) | Domain GraphQL fields (cases, etc.) |
+| Hot Chocolate `/graphql` + `/health` (KYC-020); `/ready` + EF retries / timeouts (KYC-103); deny-by-default JWT (KYC-021) | Domain GraphQL fields (cases, etc.) |
 | `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` (KYC-102); SDK in `global.json` | |
 
 The **target** remains one GraphQL API, CQRS modular monolith, JWT tenant context, and three frontends — see [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md).
@@ -43,11 +43,12 @@ KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an
 
 ## What the API project is
 
-- **`Program.cs`** — composition root. Registers EF Core, JWT auth, `ICurrentTenant`, Hot Chocolate, health checks, OpenAPI (Development), register + login REST.
+- **`Program.cs`** — composition root. Registers EF Core (retries + command timeout), JWT auth, `ICurrentTenant`, Hot Chocolate, `/health` + `/ready`, request timeouts, OpenAPI (Development), register + login REST.
 - **`AppDbContext`** — EF session with `Tenants` and `Users`; global query filters on `ITenantScoped` from JWT `tenant_id` (fail closed when unauthenticated).
 - **`/graphql`** — Hot Chocolate endpoint; IDE enabled in Development only.
-- **`/health`** — ASP.NET health checks endpoint.
-- **`UseNpgsql`** — Postgres provider (the `pg` driver equivalent).
+- **`/health`** — liveness; process check only (does not open Postgres).
+- **`/ready`** — readiness; **503** when Postgres is unreachable (KYC-103).
+- **`UseNpgsql`** — Postgres provider (the `pg` driver equivalent), with `EnableRetryOnFailure` and a 30s command timeout.
 - **Local HTTP** — Development uses `http://localhost:5295`. Fine for local Compose credentials; do not treat that as a production pattern for passwords.
 - **JWT** — short-lived access token from login (`sub`, `tenant_id`, `role`, `email`). Signing key lives in Development config / user-secrets (not committed).
 - **Tenant isolation** — never trust client-supplied tenant IDs (ADR-007). Login bypasses filters with `IgnoreQueryFilters()`. Case (KYC-030) must implement `ITenantScoped` to inherit the filter.

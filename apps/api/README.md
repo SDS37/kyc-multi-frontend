@@ -85,7 +85,8 @@ dotnet run
 ```
 
 - HTTP: `http://localhost:5295`
-- Health: `GET http://localhost:5295/health`
+- Health (liveness): `GET http://localhost:5295/health`
+- Ready (Postgres): `GET http://localhost:5295/ready`
 - GraphQL: `http://localhost:5295/graphql` (IDE / Banana Cake Pop in Development only)
 - OpenAPI (Development only): `http://localhost:5295/openapi/v1.json`
 - Register tenant (anonymous): GraphQL `registerTenant` or temporary `POST /api/register-tenant`
@@ -143,6 +144,25 @@ Unauthenticated `apiStatus` returns GraphQL error `AUTH_NOT_AUTHENTICATED`.
 
 Stop the host with Ctrl+C.
 
+## Health vs readiness (KYC-103)
+
+| Endpoint | Role | Auth | When it fails |
+|---|---|---|---|
+| `GET /health` | Liveness (process is up) | Anonymous | Almost never — tagged `live` only; does **not** open Postgres |
+| `GET /ready` | Readiness (can serve traffic) | Anonymous | **503** when Postgres is unreachable |
+
+Orchestrators should restart on `/health` failure and stop sending traffic on `/ready` failure. Do not point liveness at `/ready`.
+
+Timeouts and retries (configured in `Resilience` in `appsettings.json`):
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `NpgsqlCommandTimeoutSeconds` | 30 | Per-command Npgsql timeout (EF Core) |
+| `EfMaxRetryCount` / `EfMaxRetryDelaySeconds` | 5 / 10 | `EnableRetryOnFailure` for transient Postgres errors |
+| `RequestTimeoutSeconds` | 60 | ASP.NET request-timeout middleware (cooperative via `RequestAborted`) |
+
+The request timeout is longer than a single command timeout so a brief retry can still succeed. `/health` and `/ready` disable the request-timeout policy; the ready probe uses a 2s Npgsql timeout of its own.
+
 ## GraphQL operations
 
 Endpoint: `POST /graphql` (IDE in Development). Auth is **deny by default**; send `Authorization: Bearer <accessToken>` unless noted. Copy-paste bodies live in [`Kyc.Api/Kyc.Api.http`](Kyc.Api/Kyc.Api.http). Keep this table as an index when adding fields — prefer the IDE / schema for full types.
@@ -193,5 +213,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-031 | Customer `createDraftCase`; status `Draft`; title required; empty `FormData` → `{}`; `TenantId`/`CustomerUserId` from JWT only |
 | KYC-032 | Customer `updateDraftCase`; owner-only; Draft-only; title/FormData; other statuses → `DOMAIN` |
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
+| KYC-103 | `GET /health` stays a process check; `GET /ready` fails when Postgres is unreachable; EF `EnableRetryOnFailure`; Npgsql command timeout 30s; ASP.NET request timeout 60s |
 
 Out of scope here: auth rate limits (KYC-093). Local HTTP is for Development only.

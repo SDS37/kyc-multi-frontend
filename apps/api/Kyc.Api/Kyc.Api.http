@@ -83,6 +83,9 @@ Authorization: Bearer {{customerAccessToken}}
 ### Health (anonymous)
 GET {{Kyc.Api_HostAddress}}/health
 
+### Ready (anonymous; 503 if Postgres is unreachable)
+GET {{Kyc.Api_HostAddress}}/ready
+
 ### Temporary REST register (same anonymous allow-list)
 POST {{Kyc.Api_HostAddress}}/api/register-tenant
 Content-Type: application/json
