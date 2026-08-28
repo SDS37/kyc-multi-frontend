@@ -64,6 +64,22 @@ Authorization: Bearer {{customerAccessToken}}
   }
 }
 
+### Customer updates draft case (KYC-032) — owner + Draft only
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id title status formData updatedAt } }",
+  "variables": {
+    "input": {
+      "id": "{{caseId}}",
+      "title": "Onboarding ACME (updated)",
+      "formData": "{\"step\":2}"
+    }
+  }
+}
+
 ### Health (anonymous)
 GET {{Kyc.Api_HostAddress}}/health
 

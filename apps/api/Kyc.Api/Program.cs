@@ -105,6 +105,7 @@ builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddScoped<RegisterTenantService>();
 builder.Services.AddScoped<LoginService>();
 builder.Services.AddScoped<CreateDraftCaseService>();
+builder.Services.AddScoped<UpdateDraftCaseService>();
 
 builder.Services
     .AddGraphQLServer()

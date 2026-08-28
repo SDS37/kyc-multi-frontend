@@ -2,7 +2,7 @@
 
 This document describes the **target architecture** for the MVP. Implementation follows the [roadmap](roadmap.md): identity and infrastructure first, then GraphQL, cases, documents, and the three frontends.
 
-**Today on `main`:** Compose (Postgres / Redis / MinIO); .NET API with EF Core, Tenant/User/Case, JWT login, fail-closed `ICurrentTenant` / `ICurrentUser` + `ITenantScoped` EF filters; Hot Chocolate `/graphql` + `/health` (GraphQL IDE in Development); GraphQL deny-by-default JWT auth with anonymous `login` / `registerTenant` (KYC-021); field-level Reviewer stub + Customer `createDraftCase` (KYC-022 / KYC-031); temporary REST register/login on the same allow-list; `apps/api/Kyc.Api.sln` + tests; GitHub Actions `api-ci` (KYC-102). Remaining case lifecycle GraphQL and UI apps are not built yet.
+**Today on `main`:** Compose (Postgres / Redis / MinIO); .NET API with EF Core, Tenant/User/Case, JWT login, fail-closed `ICurrentTenant` / `ICurrentUser` + `ITenantScoped` EF filters; Hot Chocolate `/graphql` + `/health` (GraphQL IDE in Development); GraphQL deny-by-default JWT auth with anonymous `login` / `registerTenant` (KYC-021); field-level Reviewer stub + Customer `createDraftCase` / `updateDraftCase` (KYC-022 / KYC-031 / KYC-032); temporary REST register/login on the same allow-list; `apps/api/Kyc.Api.sln` + tests; GitHub Actions `api-ci` (KYC-102). Remaining case lifecycle GraphQL and UI apps are not built yet.
 
 **Health vs ready (KYC-103):** `GET /health` stays a process check. `GET /ready` returns 503 when Postgres is unreachable. EF Core uses `EnableRetryOnFailure`; Npgsql command timeout is 30s and the ASP.NET request timeout is 60s.
 
