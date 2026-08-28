@@ -122,7 +122,8 @@ internal static class CaseDraftValidation
     /// </summary>
     public static List<string> ValidateSubmitFormData(string formData)
     {
-        var documentErrors = ValidateFormDataDocument(formData);
+        var trimmed = formData.Trim();
+        var documentErrors = ValidateFormDataDocument(trimmed);
         if (documentErrors.Count > 0)
         {
             return documentErrors;
@@ -130,7 +131,7 @@ internal static class CaseDraftValidation
 
         var errors = new List<string>();
 
-        using var document = JsonDocument.Parse(formData, FormDataParseOptions);
+        using var document = JsonDocument.Parse(trimmed, FormDataParseOptions);
         if (document.RootElement.ValueKind != JsonValueKind.Object)
         {
             return ["FormData must be a JSON object."];
