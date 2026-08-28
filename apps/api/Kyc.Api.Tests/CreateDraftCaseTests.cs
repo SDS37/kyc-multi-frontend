@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Cases;
@@ -170,6 +171,27 @@ public sealed class CreateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         var root = document.RootElement;
         Assert.True(root.TryGetProperty("errors", out var errors));
         Assert.Contains("AUTH_NOT_AUTHORIZED", errors.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Stale_customer_JWT_returns_AUTH_FAILED()
+    {
+        // Customer role token whose sub is not in the database.
+        Authenticate(UserRole.Customer, _tenantId, Guid.NewGuid());
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                """{"query":"mutation($input: CreateDraftCaseRequestInput!) { createDraftCase(input: $input) { id } }","variables":{"input":{"title":"Stale"}}}""",
+                Encoding.UTF8,
+                "application/json"));
+
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = document.RootElement;
+        Assert.True(root.TryGetProperty("errors", out var errors));
+        Assert.Contains("AUTH_FAILED", errors.ToString(), StringComparison.Ordinal);
+        Assert.Contains(CreateDraftCaseService.GenericAuthFailure, errors.ToString(), StringComparison.Ordinal);
     }
 
     private void AuthenticateCustomer() => Authenticate(UserRole.Customer, _tenantId, _customerId);

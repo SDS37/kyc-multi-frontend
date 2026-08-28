@@ -15,21 +15,24 @@ public sealed class CreateDraftCaseService(
     public const int MaxTitleLength = 200;
     public const string EmptyFormData = "{}";
 
-    public async Task<(CreateDraftCaseResponse? Result, IReadOnlyList<string> Errors)> CreateAsync(
+    /// <summary>Generic message for missing claims or stale JWT subject (do not leak existence details).</summary>
+    public const string GenericAuthFailure = "Authentication failed.";
+
+    public async Task<(CreateDraftCaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized)> CreateAsync(
         CreateDraftCaseRequest request,
         CancellationToken cancellationToken = default)
     {
-        var errors = Validate(request);
-        if (errors.Count > 0)
+        var validationErrors = Validate(request);
+        if (validationErrors.Count > 0)
         {
-            return (null, errors);
+            return (null, validationErrors, false);
         }
 
         var tenantId = currentTenant.TenantId;
         var customerUserId = currentUser.UserId;
         if (tenantId is null || customerUserId is null)
         {
-            return (null, ["Authentication context is incomplete."]);
+            return (null, Array.Empty<string>(), true);
         }
 
         // Ensure the JWT subject is a real user in this tenant (FK + tenant consistency).
@@ -41,7 +44,7 @@ public sealed class CreateDraftCaseService(
 
         if (!customerExists)
         {
-            return (null, ["Customer user was not found for this tenant."]);
+            return (null, Array.Empty<string>(), true);
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -72,7 +75,8 @@ public sealed class CreateDraftCaseService(
                 entity.CustomerUserId,
                 entity.CreatedAt,
                 entity.UpdatedAt),
-            Array.Empty<string>());
+            Array.Empty<string>(),
+            false);
     }
 
     private static List<string> Validate(CreateDraftCaseRequest request)

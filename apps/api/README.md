@@ -162,7 +162,7 @@ Endpoint: `POST /graphql` (IDE in Development). Auth is **deny by default**; sen
 | `createDraftCase` | Customer | Create draft case; `TenantId` / `CustomerUserId` from JWT only; title required; empty `formData` → `"{}"`; status `DRAFT` |
 | `reviewerOnlyPing` | Reviewer | Stub gate until review mutations (returns `"reviewer-ok"`) |
 
-Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED` (login). Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations.
+Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED` (login or stale/incomplete JWT context on `createDraftCase`). Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations.
 
 ## 5. Build and test
 

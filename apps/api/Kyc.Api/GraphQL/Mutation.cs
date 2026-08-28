@@ -74,16 +74,25 @@ public class Mutation
         CreateDraftCaseService service,
         CancellationToken cancellationToken)
     {
-        var (result, errors) = await service.CreateAsync(input, cancellationToken);
-        if (errors.Count > 0)
+        var (result, validationErrors, unauthorized) = await service.CreateAsync(input, cancellationToken);
+        if (validationErrors.Count > 0)
         {
             throw new GraphQLException(
                 ErrorBuilder.New()
-                    .SetMessage(string.Join(" ", errors))
+                    .SetMessage(string.Join(" ", validationErrors))
                     .SetCode("VALIDATION")
                     .Build());
         }
 
-        return result!;
+        if (unauthorized || result is null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(CreateDraftCaseService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        return result;
     }
 }
