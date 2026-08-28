@@ -40,7 +40,7 @@ Authorization: Bearer {{accessToken}}
   "query": "query { apiStatus }"
 }
 
-### Role gates (KYC-022) — need a JWT whose `role` claim is Reviewer or Customer
+### Role gates (KYC-022 / KYC-031) — JWT `role` must match
 POST {{Kyc.Api_HostAddress}}/graphql
 Content-Type: application/json
 Authorization: Bearer {{reviewerAccessToken}}
@@ -49,12 +49,19 @@ Authorization: Bearer {{reviewerAccessToken}}
   "query": "mutation { reviewerOnlyPing }"
 }
 
+### Customer creates draft case (KYC-031) — tenant/owner from JWT only
 POST {{Kyc.Api_HostAddress}}/graphql
 Content-Type: application/json
 Authorization: Bearer {{customerAccessToken}}
 
 {
-  "query": "mutation { customerOnlyPing }"
+  "query": "mutation($input: CreateDraftCaseRequestInput!) { createDraftCase(input: $input) { id title status formData tenantId customerUserId createdAt } }",
+  "variables": {
+    "input": {
+      "title": "Onboarding ACME",
+      "formData": "{}"
+    }
+  }
 }
 
 ### Health (anonymous)

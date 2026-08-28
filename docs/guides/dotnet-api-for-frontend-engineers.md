@@ -8,8 +8,8 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
-| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | Cases, documents, audit, three UI apps |
-| GraphQL role gates (KYC-022 stub mutations) | Domain case mutations replace the stubs |
+| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | Remaining case lifecycle, documents, audit, three UI apps |
+| GraphQL role gates + Customer `createDraftCase` (KYC-031) | Submit / review / list mutations |
 | Temporary register/login (JWT) + fail-closed tenant filters | Auth rate limits when leaving localhost (KYC-093) |
 | Hot Chocolate `/graphql` + `/health` (KYC-020); deny-by-default JWT (KYC-021) | Domain GraphQL fields (cases, etc.) |
 | `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` (KYC-102); SDK in `global.json` | |

@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run, test).
 
-`Tenant`, `User`, and `Case` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Role gates protect `reviewerOnlyPing` / `customerOnlyPing` (KYC-022; real case mutations later). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014). `Case` is tenant-scoped (KYC-030); GraphQL case operations come in later stories.
+`Tenant`, `User`, and `Case` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Customers create drafts with `createDraftCase` (KYC-031); `reviewerOnlyPing` remains a Reviewer gate stub (KYC-022). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014). `Case` is tenant-scoped (KYC-030); further case lifecycle GraphQL arrives in later stories.
 
 Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
 
@@ -143,6 +143,27 @@ Unauthenticated `apiStatus` returns GraphQL error `AUTH_NOT_AUTHENTICATED`.
 
 Stop the host with Ctrl+C.
 
+## GraphQL operations
+
+Endpoint: `POST /graphql` (IDE in Development). Auth is **deny by default**; send `Authorization: Bearer <accessToken>` unless noted. Copy-paste bodies live in [`Kyc.Api/Kyc.Api.http`](Kyc.Api/Kyc.Api.http). Keep this table as an index when adding fields — prefer the IDE / schema for full types.
+
+### Queries
+
+| Field | Auth | Purpose |
+|---|---|---|
+| `apiStatus` | Authenticated (any role) | Liveness; returns `"ok"` |
+
+### Mutations
+
+| Field | Auth | Purpose |
+|---|---|---|
+| `registerTenant` | Anonymous | Create tenant + first TenantAdmin |
+| `login` | Anonymous | Issue JWT (`sub`, `tenant_id`, `role`, `email`) |
+| `createDraftCase` | Customer | Create draft case; `TenantId` / `CustomerUserId` from JWT only; title required; empty `formData` → `"{}"`; status `DRAFT` |
+| `reviewerOnlyPing` | Reviewer | Stub gate until review mutations (returns `"reviewer-ok"`) |
+
+Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED` (login or stale/incomplete JWT context on `createDraftCase`). Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations.
+
 ## 5. Build and test
 
 From the repo root:
@@ -168,6 +189,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-021 | Deny-by-default GraphQL JWT auth; anonymous `login` / `registerTenant` only; invalid token rejected; REST on the same allow-list |
 | KYC-022 | `[Authorize(Roles = ...)]` on Reviewer/Customer mutations; wrong role → GraphQL `AUTH_NOT_AUTHORIZED` (not HTTP 500) |
 | KYC-030 | `Case` with required fields + status enum; `ITenantScoped`; migration `AddCase`; isolation test tenant A cannot read tenant B cases |
+| KYC-031 | Customer `createDraftCase`; status `Draft`; title required; empty `FormData` → `{}`; `TenantId`/`CustomerUserId` from JWT only |
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 
 Out of scope here: auth rate limits (KYC-093). Local HTTP is for Development only.

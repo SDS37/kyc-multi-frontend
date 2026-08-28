@@ -18,10 +18,11 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Public `POST /api/login` (JWT) | Ready (anonymous allow-list; GraphQL `login` preferred) |
 | Tenant isolation (JWT → EF filters) | Ready (KYC-014; Cases use `ITenantScoped`) |
 | Case model | Ready (KYC-030) |
+| Customer create draft case | Ready (KYC-031 GraphQL `createDraftCase`) |
 | GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE in Development) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102) |
 | GraphQL auth (deny by default) | Ready (KYC-021) |
-| GraphQL role authorization | Ready (KYC-022; stub Reviewer/Customer gates until Cases) |
+| GraphQL role authorization | Ready (KYC-022; Reviewer stub + Customer `createDraftCase`) |
 | Angular / React / Vue apps | Placeholders only |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
