@@ -195,9 +195,9 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 |---|---|---|
 | `registerTenant` | Anonymous | Create tenant + first TenantAdmin |
 | `login` | Anonymous | Issue JWT (`sub`, `tenant_id`, `role`, `email`) |
-| `createDraftCase` | Customer | Create draft case; `TenantId` / `CustomerUserId` from JWT only; title required; empty `formData` → `"{}"`; status `DRAFT` |
+| `createDraftCase` | Customer | Create draft case; `TenantId` / `CustomerUserId` from JWT only; title required; empty `formData` → `"{}"`; `formData` max 64 KiB / depth 8; status `DRAFT` |
 | `updateDraftCase` | Customer | Update own draft (`title` required; `formData` optional, max 64 KiB / depth 8); missing / not owner → `NOT_FOUND`; owner non-draft → `DOMAIN` |
-| `submitCase` | Customer | Submit own draft by `id`; missing / not owner → `NOT_FOUND`; FormData `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`; sets `SUBMITTED` + `submittedAt` |
+| `submitCase` | Customer | Submit own draft by `id`; missing / not owner → `NOT_FOUND`; FormData max 64 KiB / depth 8 with `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`; owner non-draft → `DOMAIN`; sets `SUBMITTED` + `submittedAt` |
 | `startCaseReview` | Reviewer or TenantAdmin | Move submitted case to `IN_REVIEW`; sets `ReviewedBy` from JWT; same-tenant only |
 
 Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED`, `NOT_FOUND`, `DOMAIN`. Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations.
