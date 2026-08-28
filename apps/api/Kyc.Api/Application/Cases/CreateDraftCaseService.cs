@@ -18,11 +18,11 @@ public sealed class CreateDraftCaseService(
     /// <summary>Generic message for missing claims or stale JWT subject (do not leak existence details).</summary>
     public const string GenericAuthFailure = "Authentication failed.";
 
-    public async Task<(CreateDraftCaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized)> CreateAsync(
+    public async Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized)> CreateAsync(
         CreateDraftCaseRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationErrors = Validate(request);
+        var validationErrors = CaseDraftValidation.ValidateTitleAndFormData(request.Title, request.FormData);
         if (validationErrors.Count > 0)
         {
             return (null, validationErrors, false);
@@ -48,7 +48,7 @@ public sealed class CreateDraftCaseService(
         }
 
         var now = DateTimeOffset.UtcNow;
-        var formData = NormalizeFormData(request.FormData);
+        var formData = CaseDraftValidation.NormalizeFormData(request.FormData);
 
         var entity = new Case
         {
@@ -65,34 +65,38 @@ public sealed class CreateDraftCaseService(
         db.Cases.Add(entity);
         await db.SaveChangesAsync(cancellationToken);
 
-        return (
-            new CreateDraftCaseResponse(
-                entity.Id,
-                entity.Title,
-                entity.Status,
-                entity.FormData,
-                entity.TenantId,
-                entity.CustomerUserId,
-                entity.CreatedAt,
-                entity.UpdatedAt),
-            Array.Empty<string>(),
-            false);
+        return (ToResponse(entity), Array.Empty<string>(), false);
     }
 
-    private static List<string> Validate(CreateDraftCaseRequest request)
+    internal static CaseResponse ToResponse(Case entity) =>
+        new(
+            entity.Id,
+            entity.Title,
+            entity.Status,
+            entity.FormData,
+            entity.TenantId,
+            entity.CustomerUserId,
+            entity.CreatedAt,
+            entity.UpdatedAt);
+}
+
+/// <summary>Shared title / FormData rules for draft create and update.</summary>
+internal static class CaseDraftValidation
+{
+    public static List<string> ValidateTitleAndFormData(string title, string? formData)
     {
         var errors = new List<string>();
 
-        if (string.IsNullOrWhiteSpace(request.Title))
+        if (string.IsNullOrWhiteSpace(title))
         {
             errors.Add("Title is required.");
         }
-        else if (request.Title.Trim().Length > MaxTitleLength)
+        else if (title.Trim().Length > CreateDraftCaseService.MaxTitleLength)
         {
-            errors.Add($"Title must be at most {MaxTitleLength} characters.");
+            errors.Add($"Title must be at most {CreateDraftCaseService.MaxTitleLength} characters.");
         }
 
-        if (!string.IsNullOrWhiteSpace(request.FormData) && !IsValidJson(request.FormData))
+        if (!string.IsNullOrWhiteSpace(formData) && !IsValidJson(formData))
         {
             errors.Add("FormData must be valid JSON when provided.");
         }
@@ -100,8 +104,8 @@ public sealed class CreateDraftCaseService(
         return errors;
     }
 
-    private static string NormalizeFormData(string? formData) =>
-        string.IsNullOrWhiteSpace(formData) ? EmptyFormData : formData.Trim();
+    public static string NormalizeFormData(string? formData) =>
+        string.IsNullOrWhiteSpace(formData) ? CreateDraftCaseService.EmptyFormData : formData.Trim();
 
     private static bool IsValidJson(string value)
     {
