@@ -21,4 +21,8 @@ public sealed record CaseResponse(
     Guid TenantId,
     Guid CustomerUserId,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    DateTimeOffset? SubmittedAt);
+
+/// <summary>Customer submits a draft by id (KYC-033). Form is read from persisted FormData.</summary>
+public sealed record SubmitCaseRequest(Guid Id);

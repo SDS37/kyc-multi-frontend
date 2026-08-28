@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
@@ -77,12 +78,16 @@ public sealed class CreateDraftCaseService(
             entity.TenantId,
             entity.CustomerUserId,
             entity.CreatedAt,
-            entity.UpdatedAt);
+            entity.UpdatedAt,
+            entity.SubmittedAt);
 }
 
 /// <summary>Shared title / FormData rules for draft create and update.</summary>
 internal static class CaseDraftValidation
 {
+    private static readonly string[] SubmitRequiredFields =
+        ["fullName", "dateOfBirth", "nationality", "address"];
+
     public static List<string> ValidateTitleAndFormData(string title, string? formData)
     {
         var errors = new List<string>();
@@ -104,8 +109,65 @@ internal static class CaseDraftValidation
         return errors;
     }
 
+    /// <summary>
+    /// MVP submit rules (KYC-033): required person fields in FormData JSON; company fields optional.
+    /// </summary>
+    public static List<string> ValidateSubmitFormData(string formData)
+    {
+        var errors = new List<string>();
+
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(formData);
+        }
+        catch (JsonException)
+        {
+            return ["FormData must be valid JSON."];
+        }
+
+        using (document)
+        {
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return ["FormData must be a JSON object."];
+            }
+
+            foreach (var field in SubmitRequiredFields)
+            {
+                if (!TryGetNonEmptyString(document.RootElement, field, out var value))
+                {
+                    errors.Add($"{field} is required.");
+                    continue;
+                }
+
+                if (field == "dateOfBirth" && !IsIsoDate(value))
+                {
+                    errors.Add("dateOfBirth must be an ISO date (YYYY-MM-DD).");
+                }
+            }
+        }
+
+        return errors;
+    }
+
     public static string NormalizeFormData(string? formData) =>
         string.IsNullOrWhiteSpace(formData) ? CreateDraftCaseService.EmptyFormData : formData.Trim();
+
+    private static bool TryGetNonEmptyString(JsonElement root, string propertyName, out string value)
+    {
+        value = string.Empty;
+        if (!root.TryGetProperty(propertyName, out var element) || element.ValueKind != JsonValueKind.String)
+        {
+            return false;
+        }
+
+        value = element.GetString()?.Trim() ?? string.Empty;
+        return value.Length > 0;
+    }
+
+    private static bool IsIsoDate(string value) =>
+        DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
 
     private static bool IsValidJson(string value)
     {
