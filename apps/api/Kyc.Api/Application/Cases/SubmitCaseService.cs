@@ -49,6 +49,11 @@ public sealed class SubmitCaseService(
             return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
         }
 
+        if (entity.Status != CaseStatus.Draft)
+        {
+            return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
+        }
+
         var formErrors = CaseDraftValidation.ValidateSubmitFormData(entity.FormData);
         if (formErrors.Count > 0)
         {
@@ -70,6 +75,15 @@ public sealed class SubmitCaseService(
 
         if (rows == 0)
         {
+            db.Entry(entity).State = EntityState.Detached;
+            var current = await db.Cases
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == entity.Id, cancellationToken);
+            if (current is null || current.CustomerUserId != customerUserId.Value)
+            {
+                return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
+            }
+
             return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
         }
 

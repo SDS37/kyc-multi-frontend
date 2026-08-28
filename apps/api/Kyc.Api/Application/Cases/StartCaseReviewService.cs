@@ -63,6 +63,15 @@ public sealed class StartCaseReviewService(
 
         if (rows == 0)
         {
+            db.Entry(entity).State = EntityState.Detached;
+            var current = await db.Cases
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == entity.Id, cancellationToken);
+            if (current is null)
+            {
+                return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
+            }
+
             return (null, Array.Empty<string>(), false, "DOMAIN", NotSubmittedMessage);
         }
 

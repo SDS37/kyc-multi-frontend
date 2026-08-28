@@ -242,6 +242,138 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
     }
 
     [Fact]
+    public async Task Non_draft_with_invalid_formData_still_returns_DOMAIN()
+    {
+        var submittedId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Cases.Add(new Case
+            {
+                Id = submittedId,
+                TenantId = _tenantId,
+                CustomerUserId = _ownerId,
+                Title = "Submitted incomplete",
+                Status = CaseStatus.Submitted,
+                FormData = """{"fullName":"Only name"}""",
+                CreatedAt = now,
+                UpdatedAt = now,
+                SubmittedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Authenticate(_ownerId);
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: SubmitCaseRequestInput!) { submitCase(input: $input) { id } }",
+                  "variables": { "input": { "id": "{{submittedId}}" } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("DOMAIN", errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains(SubmitCaseService.NotDraftMessage, errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Oversized_formData_returns_VALIDATION()
+    {
+        var draftId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var oversized = $$"""{"pad":"{{new string('x', CreateDraftCaseService.MaxFormDataUtf8Bytes)}}"}""";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Cases.Add(new Case
+            {
+                Id = draftId,
+                TenantId = _tenantId,
+                CustomerUserId = _ownerId,
+                Title = "Huge form",
+                Status = CaseStatus.Draft,
+                FormData = oversized,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Authenticate(_ownerId);
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: SubmitCaseRequestInput!) { submitCase(input: $input) { id } }",
+                  "variables": { "input": { "id": "{{draftId}}" } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains("65536", errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Deeply_nested_formData_returns_VALIDATION()
+    {
+        var draftId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var nested = "{}";
+        for (var i = 0; i < CreateDraftCaseService.MaxFormDataDepth + 2; i++)
+        {
+            nested = $$"""{"a":{{nested}}}""";
+        }
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Cases.Add(new Case
+            {
+                Id = draftId,
+                TenantId = _tenantId,
+                CustomerUserId = _ownerId,
+                Title = "Deep form",
+                Status = CaseStatus.Draft,
+                FormData = nested,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Authenticate(_ownerId);
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: SubmitCaseRequestInput!) { submitCase(input: $input) { id } }",
+                  "variables": { "input": { "id": "{{draftId}}" } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains("valid JSON", errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Reviewer_cannot_submit()
     {
         AuthenticateRole(UserRole.Reviewer, Guid.NewGuid());
