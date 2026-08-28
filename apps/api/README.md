@@ -181,7 +181,7 @@ Stdout is **JSON** (`Logging:Console:FormatterName` = `json` in `appsettings.jso
 
 ## GraphQL operations
 
-Endpoint: `POST /graphql` (IDE in Development). Auth is **deny by default**; send `Authorization: Bearer <accessToken>` unless noted. Copy-paste bodies live in [`Kyc.Api/Kyc.Api.http`](Kyc.Api/Kyc.Api.http). Keep this table as an index when adding fields — prefer the IDE / schema for full types.
+Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development — KYC-105). Auth is **deny by default**; send `Authorization: Bearer <accessToken>` unless noted. Copy-paste bodies live in [`Kyc.Api/Kyc.Api.http`](Kyc.Api/Kyc.Api.http). Keep this table as an index when adding fields — prefer the IDE / schema for full types.
 
 ### Queries
 
@@ -234,5 +234,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 | KYC-103 | `GET /health` stays a process check; `GET /ready` fails when Postgres is unreachable; EF `EnableRetryOnFailure`; Npgsql command timeout 30s; ASP.NET request timeout 60s |
 | KYC-104 | JSON stdout logs with `RequestId`; auth and `/ready` failures logged without secrets; README documents local logs + `/ready`-based signals |
+| KYC-105 | Introspection + SDL Development-only; execution depth 10; EF `Database.Command` Warning in `appsettings.json`; MinIO image pinned |
 
-Out of scope here: auth rate limits (KYC-093). Local HTTP is for Development only.
+Out of scope here: auth rate limits (KYC-093). CORS/headers are KYC-091. Local HTTP is for Development only.

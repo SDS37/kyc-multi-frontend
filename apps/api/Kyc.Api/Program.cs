@@ -130,6 +130,9 @@ builder.Services
     .AddErrorFilter<GraphQlAuthErrorLoggingFilter>()
     .AddQueryType<Query>()
     .AddMutationType<Mutation>()
+    // Explicit: HC default security already turns introspection off outside Development.
+    .DisableIntrospection(!builder.Environment.IsDevelopment())
+    .AddMaxExecutionDepthRule(maxAllowedExecutionDepth: 10, skipIntrospectionFields: true)
     .ModifyRequestOptions(options =>
         options.IncludeExceptionDetails = builder.Environment.IsDevelopment());
 
@@ -162,8 +165,11 @@ app.MapGraphQL("/graphql")
     .AllowAnonymous()
     .WithOptions(options =>
     {
+        var development = app.Environment.IsDevelopment();
         // Banana Cake Pop / Nitro IDE — Development only (KYC-020).
-        options.Tool.Enable = app.Environment.IsDevelopment();
+        options.Tool.Enable = development;
+        // SDL via ?sdl / schema file — same gate (KYC-105).
+        options.EnableSchemaRequests = development;
     });
 
 // Temporary REST identity surface — same anonymous allow-list as GraphQL (KYC-021).
