@@ -85,7 +85,7 @@ public sealed class CreateDraftCaseService(
 /// <summary>Shared title / FormData rules for draft create and update.</summary>
 internal static class CaseDraftValidation
 {
-    public static readonly string[] SubmitRequiredFields =
+    private static readonly string[] SubmitRequiredFields =
         ["fullName", "dateOfBirth", "nationality", "address"];
 
     public static List<string> ValidateTitleAndFormData(string title, string? formData)

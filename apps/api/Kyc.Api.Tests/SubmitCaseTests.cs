@@ -126,13 +126,33 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
     [Fact]
     public async Task Owner_can_submit_complete_draft()
     {
+        // Fresh draft per test — do not mutate shared class seed (order-independent).
+        var draftId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Cases.Add(new Case
+            {
+                Id = draftId,
+                TenantId = _tenantId,
+                CustomerUserId = _ownerId,
+                Title = "Fresh submit",
+                Status = CaseStatus.Draft,
+                FormData = CompleteFormData,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
         Authenticate(_ownerId);
 
         var payload = await PostGraphqlAsync(
             $$"""
             {
               "query": "mutation($input: SubmitCaseRequestInput!) { submitCase(input: $input) { id status submittedAt } }",
-              "variables": { "input": { "id": "{{_readyDraftId}}" } }
+              "variables": { "input": { "id": "{{draftId}}" } }
             }
             """);
 
@@ -141,11 +161,13 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
         Assert.Equal("SUBMITTED", submitted.GetProperty("status").GetString());
         Assert.NotEqual(JsonValueKind.Null, submitted.GetProperty("submittedAt").ValueKind);
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == _readyDraftId);
-        Assert.Equal(CaseStatus.Submitted, row.Status);
-        Assert.NotNull(row.SubmittedAt);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == draftId);
+            Assert.Equal(CaseStatus.Submitted, row.Status);
+            Assert.NotNull(row.SubmittedAt);
+        }
     }
 
     [Fact]
