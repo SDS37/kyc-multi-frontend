@@ -7,7 +7,7 @@ namespace Kyc.Api.GraphQL;
 
 /// <summary>
 /// Root GraphQL mutations. Type is deny-by-default; only login/register are anonymous (KYC-021).
-/// Role gates (KYC-022) protect reviewer stubs and customer case operations.
+/// Role gates protect Customer case mutations and Reviewer/TenantAdmin review start (KYC-022+).
 /// </summary>
 [Authorize]
 public class Mutation
@@ -60,10 +60,46 @@ public class Mutation
     }
 
     /// <summary>
-    /// Reviewer-only gate (KYC-022). Placeholder until case review mutations.
+    /// Reviewer or TenantAdmin moves a submitted case to In Review (KYC-034). Same-tenant via JWT filters.
     /// </summary>
-    [Authorize(Roles = new[] { AuthRoles.Reviewer })]
-    public string ReviewerOnlyPing() => "reviewer-ok";
+    [Authorize(Roles = new[] { AuthRoles.Reviewer, AuthRoles.TenantAdmin })]
+    public async Task<CaseResponse> StartCaseReview(
+        StartCaseReviewRequest input,
+        StartCaseReviewService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized, errorCode, errorMessage) =
+            await service.StartAsync(input, cancellationToken);
+
+        if (validationErrors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", validationErrors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        if (unauthorized)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(CreateDraftCaseService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        if (errorCode is not null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(errorMessage ?? "Request failed.")
+                    .SetCode(errorCode)
+                    .Build());
+        }
+
+        return result!;
+    }
 
     /// <summary>
     /// Customer creates a draft KYC case (KYC-031). Tenant and owner come from the JWT only.
