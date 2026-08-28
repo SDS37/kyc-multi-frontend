@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
@@ -14,6 +15,8 @@ public sealed class CreateDraftCaseService(
     ICurrentUser currentUser)
 {
     public const int MaxTitleLength = 200;
+    public const int MaxFormDataUtf8Bytes = 64 * 1024;
+    public const int MaxFormDataDepth = 8;
     public const string EmptyFormData = "{}";
 
     /// <summary>Generic message for missing claims or stale JWT subject (do not leak existence details).</summary>
@@ -88,6 +91,11 @@ internal static class CaseDraftValidation
     private static readonly string[] SubmitRequiredFields =
         ["fullName", "dateOfBirth", "nationality", "address"];
 
+    private static readonly JsonDocumentOptions FormDataParseOptions = new()
+    {
+        MaxDepth = CreateDraftCaseService.MaxFormDataDepth
+    };
+
     public static List<string> ValidateTitleAndFormData(string title, string? formData)
     {
         var errors = new List<string>();
@@ -101,9 +109,9 @@ internal static class CaseDraftValidation
             errors.Add($"Title must be at most {CreateDraftCaseService.MaxTitleLength} characters.");
         }
 
-        if (!string.IsNullOrWhiteSpace(formData) && !IsValidJson(formData))
+        if (!string.IsNullOrWhiteSpace(formData))
         {
-            errors.Add("FormData must be valid JSON when provided.");
+            errors.AddRange(ValidateFormDataDocument(formData));
         }
 
         return errors;
@@ -114,37 +122,31 @@ internal static class CaseDraftValidation
     /// </summary>
     public static List<string> ValidateSubmitFormData(string formData)
     {
+        var documentErrors = ValidateFormDataDocument(formData);
+        if (documentErrors.Count > 0)
+        {
+            return documentErrors;
+        }
+
         var errors = new List<string>();
 
-        JsonDocument document;
-        try
+        using var document = JsonDocument.Parse(formData, FormDataParseOptions);
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
         {
-            document = JsonDocument.Parse(formData);
-        }
-        catch (JsonException)
-        {
-            return ["FormData must be valid JSON."];
+            return ["FormData must be a JSON object."];
         }
 
-        using (document)
+        foreach (var field in SubmitRequiredFields)
         {
-            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            if (!TryGetNonEmptyString(document.RootElement, field, out var value))
             {
-                return ["FormData must be a JSON object."];
+                errors.Add($"{field} is required.");
+                continue;
             }
 
-            foreach (var field in SubmitRequiredFields)
+            if (field == "dateOfBirth" && !IsIsoDate(value))
             {
-                if (!TryGetNonEmptyString(document.RootElement, field, out var value))
-                {
-                    errors.Add($"{field} is required.");
-                    continue;
-                }
-
-                if (field == "dateOfBirth" && !IsIsoDate(value))
-                {
-                    errors.Add("dateOfBirth must be an ISO date (YYYY-MM-DD).");
-                }
+                errors.Add("dateOfBirth must be an ISO date (YYYY-MM-DD).");
             }
         }
 
@@ -153,6 +155,30 @@ internal static class CaseDraftValidation
 
     public static string NormalizeFormData(string? formData) =>
         string.IsNullOrWhiteSpace(formData) ? CreateDraftCaseService.EmptyFormData : formData.Trim();
+
+    private static List<string> ValidateFormDataDocument(string formData)
+    {
+        var trimmed = formData.Trim();
+        if (Encoding.UTF8.GetByteCount(trimmed) > CreateDraftCaseService.MaxFormDataUtf8Bytes)
+        {
+            return [$"FormData must be at most {CreateDraftCaseService.MaxFormDataUtf8Bytes} bytes."];
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(trimmed, FormDataParseOptions);
+            if (document.RootElement.ValueKind is not JsonValueKind.Object and not JsonValueKind.Array)
+            {
+                return ["FormData must be valid JSON when provided."];
+            }
+        }
+        catch (JsonException)
+        {
+            return ["FormData must be valid JSON when provided."];
+        }
+
+        return [];
+    }
 
     private static bool TryGetNonEmptyString(JsonElement root, string propertyName, out string value)
     {
@@ -168,17 +194,4 @@ internal static class CaseDraftValidation
 
     private static bool IsIsoDate(string value) =>
         DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
-
-    private static bool IsValidJson(string value)
-    {
-        try
-        {
-            using var _ = JsonDocument.Parse(value);
-            return true;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-    }
 }

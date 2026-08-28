@@ -51,18 +51,25 @@ public sealed class StartCaseReviewService(
             return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
         }
 
-        if (entity.Status != CaseStatus.Submitted)
+        var now = DateTimeOffset.UtcNow;
+        var rows = await db.Cases
+            .Where(c => c.Id == entity.Id && c.Status == CaseStatus.Submitted)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(c => c.Status, CaseStatus.InReview)
+                    .SetProperty(c => c.ReviewedBy, reviewerUserId.Value)
+                    .SetProperty(c => c.UpdatedAt, now),
+                cancellationToken);
+
+        if (rows == 0)
         {
             return (null, Array.Empty<string>(), false, "DOMAIN", NotSubmittedMessage);
         }
 
-        var now = DateTimeOffset.UtcNow;
         entity.Status = CaseStatus.InReview;
         entity.ReviewedBy = reviewerUserId.Value;
         entity.UpdatedAt = now;
         // ReviewedAt is set on approve/reject, not when review starts.
-        await db.SaveChangesAsync(cancellationToken);
-
         return (CreateDraftCaseService.ToResponse(entity), Array.Empty<string>(), false, null, null);
     }
 }

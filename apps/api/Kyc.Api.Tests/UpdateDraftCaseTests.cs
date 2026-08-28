@@ -168,8 +168,9 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var errors = document.RootElement.GetProperty("errors").ToString();
-        Assert.Contains("DOMAIN", errors, StringComparison.Ordinal);
-        Assert.Contains(UpdateDraftCaseService.NotOwnerMessage, errors, StringComparison.Ordinal);
+        Assert.Contains("NOT_FOUND", errors, StringComparison.Ordinal);
+        Assert.Contains(UpdateDraftCaseService.NotFoundMessage, errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("DOMAIN", errors, StringComparison.Ordinal);
     }
 
     [Fact]

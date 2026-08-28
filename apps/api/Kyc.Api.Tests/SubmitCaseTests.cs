@@ -213,8 +213,9 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var errors = document.RootElement.GetProperty("errors").ToString();
-        Assert.Contains("DOMAIN", errors, StringComparison.Ordinal);
-        Assert.Contains(SubmitCaseService.NotOwnerMessage, errors, StringComparison.Ordinal);
+        Assert.Contains("NOT_FOUND", errors, StringComparison.Ordinal);
+        Assert.Contains(SubmitCaseService.NotFoundMessage, errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("DOMAIN", errors, StringComparison.Ordinal);
     }
 
     [Fact]

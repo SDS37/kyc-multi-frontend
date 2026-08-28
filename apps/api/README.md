@@ -196,8 +196,8 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 | `registerTenant` | Anonymous | Create tenant + first TenantAdmin |
 | `login` | Anonymous | Issue JWT (`sub`, `tenant_id`, `role`, `email`) |
 | `createDraftCase` | Customer | Create draft case; `TenantId` / `CustomerUserId` from JWT only; title required; empty `formData` → `"{}"`; status `DRAFT` |
-| `updateDraftCase` | Customer | Update own draft (`title` required; `formData` optional); non-owner / non-draft → `DOMAIN`; missing case → `NOT_FOUND` |
-| `submitCase` | Customer | Submit own draft by `id`; requires FormData `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`; sets `SUBMITTED` + `submittedAt` |
+| `updateDraftCase` | Customer | Update own draft (`title` required; `formData` optional, max 64 KiB / depth 8); missing / not owner → `NOT_FOUND`; owner non-draft → `DOMAIN` |
+| `submitCase` | Customer | Submit own draft by `id`; missing / not owner → `NOT_FOUND`; FormData `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`; sets `SUBMITTED` + `submittedAt` |
 | `startCaseReview` | Reviewer or TenantAdmin | Move submitted case to `IN_REVIEW`; sets `ReviewedBy` from JWT; same-tenant only |
 
 Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED`, `NOT_FOUND`, `DOMAIN`. Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations.
@@ -228,12 +228,13 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-022 | `[Authorize(Roles = ...)]` on Reviewer/Customer mutations; wrong role → GraphQL `AUTH_NOT_AUTHORIZED` (not HTTP 500) |
 | KYC-030 | `Case` with required fields + status enum; `ITenantScoped`; migration `AddCase`; isolation test tenant A cannot read tenant B cases |
 | KYC-031 | Customer `createDraftCase`; status `Draft`; title required; empty `FormData` → `{}`; `TenantId`/`CustomerUserId` from JWT only |
-| KYC-032 | Customer `updateDraftCase`; owner-only; Draft-only; title/FormData; other statuses → `DOMAIN` |
-| KYC-033 | Customer `submitCase`; owner-only Draft→Submitted; FormData requires fullName/dateOfBirth/nationality/address; `SubmittedAt` set |
+| KYC-032 | Customer `updateDraftCase`; missing/not owner → `NOT_FOUND`; Draft-only; title/FormData; owner other statuses → `DOMAIN` |
+| KYC-033 | Customer `submitCase`; missing/not owner → `NOT_FOUND`; Draft→Submitted; FormData requires fullName/dateOfBirth/nationality/address; `SubmittedAt` set |
 | KYC-034 | Reviewer/TenantAdmin `startCaseReview`; Submitted→InReview; same tenant; sets `ReviewedBy` |
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 | KYC-103 | `GET /health` stays a process check; `GET /ready` fails when Postgres is unreachable; EF `EnableRetryOnFailure`; Npgsql command timeout 30s; ASP.NET request timeout 60s |
 | KYC-104 | JSON stdout logs with `RequestId`; auth and `/ready` failures logged without secrets; README documents local logs + `/ready`-based signals |
 | KYC-105 | Introspection + SDL Development-only; execution depth 10; EF `Database.Command` Warning in `appsettings.json`; MinIO image pinned |
+| KYC-106 | Non-owner update/submit → `NOT_FOUND`; FormData 64 KiB / depth 8; atomic submit and start-review status updates |
 
 Out of scope here: auth rate limits (KYC-093). CORS/headers are KYC-091. Local HTTP is for Development only.

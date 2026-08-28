@@ -12,7 +12,6 @@ public sealed class SubmitCaseService(
     ICurrentUser currentUser)
 {
     public const string NotFoundMessage = "Case was not found.";
-    public const string NotOwnerMessage = "Only the case owner can submit this case.";
     public const string NotDraftMessage = "Only draft cases can be submitted.";
 
     public async Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> SubmitAsync(
@@ -45,19 +44,9 @@ public sealed class SubmitCaseService(
         var entity = await db.Cases
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
 
-        if (entity is null)
+        if (entity is null || entity.CustomerUserId != customerUserId.Value)
         {
             return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
-        }
-
-        if (entity.CustomerUserId != customerUserId.Value)
-        {
-            return (null, Array.Empty<string>(), false, "DOMAIN", NotOwnerMessage);
-        }
-
-        if (entity.Status != CaseStatus.Draft)
-        {
-            return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
         }
 
         var formErrors = CaseDraftValidation.ValidateSubmitFormData(entity.FormData);
@@ -67,11 +56,26 @@ public sealed class SubmitCaseService(
         }
 
         var now = DateTimeOffset.UtcNow;
+        var rows = await db.Cases
+            .Where(c =>
+                c.Id == entity.Id &&
+                c.CustomerUserId == customerUserId.Value &&
+                c.Status == CaseStatus.Draft)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(c => c.Status, CaseStatus.Submitted)
+                    .SetProperty(c => c.SubmittedAt, now)
+                    .SetProperty(c => c.UpdatedAt, now),
+                cancellationToken);
+
+        if (rows == 0)
+        {
+            return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
+        }
+
         entity.Status = CaseStatus.Submitted;
         entity.SubmittedAt = now;
         entity.UpdatedAt = now;
-        await db.SaveChangesAsync(cancellationToken);
-
         return (CreateDraftCaseService.ToResponse(entity), Array.Empty<string>(), false, null, null);
     }
 }
