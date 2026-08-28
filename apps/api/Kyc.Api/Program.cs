@@ -7,10 +7,14 @@ using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
 using Kyc.Api.GraphQL;
+using Kyc.Api.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,7 +23,6 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTenant, HttpCurrentTenant>();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
-builder.Services.AddHealthChecks();
 
 var postgresConnection = builder.Configuration.GetConnectionString("Postgres");
 if (string.IsNullOrWhiteSpace(postgresConnection))
@@ -27,8 +30,36 @@ if (string.IsNullOrWhiteSpace(postgresConnection))
     throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
 }
 
+var resilienceSection = builder.Configuration.GetSection(ResilienceOptions.SectionName);
+builder.Services.Configure<ResilienceOptions>(resilienceSection);
+var resilience = resilienceSection.Get<ResilienceOptions>() ?? new ResilienceOptions();
+resilience.Validate();
+
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddCheck(
+        "postgres",
+        new PostgresReadyHealthCheck(postgresConnection),
+        failureStatus: HealthStatus.Unhealthy,
+        tags: ["ready"]);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(postgresConnection));
+    options.UseNpgsql(postgresConnection, npgsql =>
+    {
+        npgsql.CommandTimeout(resilience.NpgsqlCommandTimeoutSeconds);
+        npgsql.EnableRetryOnFailure(
+            maxRetryCount: resilience.EfMaxRetryCount,
+            maxRetryDelay: TimeSpan.FromSeconds(resilience.EfMaxRetryDelaySeconds),
+            errorCodesToAdd: null);
+    }));
+
+builder.Services.AddRequestTimeouts(options =>
+{
+    options.DefaultPolicy = new RequestTimeoutPolicy
+    {
+        Timeout = TimeSpan.FromSeconds(resilience.RequestTimeoutSeconds)
+    };
+});
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 builder.Services.Configure<JwtOptions>(jwtSection);
@@ -92,8 +123,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRequestTimeouts();
 
-app.MapHealthChecks("/health").AllowAnonymous();
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+}).AllowAnonymous().DisableRequestTimeout();
+
+app.MapHealthChecks("/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+}).AllowAnonymous().DisableRequestTimeout();
 
 // HTTP endpoint is anonymous so login/register mutations can run;
 // field auth (Query/Mutation [Authorize] + [AllowAnonymous]) enforces deny-by-default.
