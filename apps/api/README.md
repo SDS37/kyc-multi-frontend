@@ -143,6 +143,27 @@ Unauthenticated `apiStatus` returns GraphQL error `AUTH_NOT_AUTHENTICATED`.
 
 Stop the host with Ctrl+C.
 
+## GraphQL operations
+
+Endpoint: `POST /graphql` (IDE in Development). Auth is **deny by default**; send `Authorization: Bearer <accessToken>` unless noted. Copy-paste bodies live in [`Kyc.Api/Kyc.Api.http`](Kyc.Api/Kyc.Api.http). Keep this table as an index when adding fields — prefer the IDE / schema for full types.
+
+### Queries
+
+| Field | Auth | Purpose |
+|---|---|---|
+| `apiStatus` | Authenticated (any role) | Liveness; returns `"ok"` |
+
+### Mutations
+
+| Field | Auth | Purpose |
+|---|---|---|
+| `registerTenant` | Anonymous | Create tenant + first TenantAdmin |
+| `login` | Anonymous | Issue JWT (`sub`, `tenant_id`, `role`, `email`) |
+| `createDraftCase` | Customer | Create draft case; `TenantId` / `CustomerUserId` from JWT only; title required; empty `formData` → `"{}"`; status `DRAFT` |
+| `reviewerOnlyPing` | Reviewer | Stub gate until review mutations (returns `"reviewer-ok"`) |
+
+Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED` (login). Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations.
+
 ## 5. Build and test
 
 From the repo root:
