@@ -24,6 +24,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE in Development) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102) |
 | Postgres readiness (`/ready`) + EF retries / timeouts | Ready (KYC-103) |
+| Structured logs + request id | Ready (KYC-104) |
 | GraphQL auth (deny by default) | Ready (KYC-021) |
 | GraphQL role authorization | Ready (KYC-022; Reviewer stub + Customer case mutations) |
 | Angular / React / Vue apps | Placeholders only |

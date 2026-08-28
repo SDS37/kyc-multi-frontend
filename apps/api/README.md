@@ -163,6 +163,22 @@ Timeouts and retries (configured in `Resilience` in `appsettings.json`):
 
 The request timeout is longer than a single command timeout so a brief retry can still succeed. `/health` and `/ready` disable the request-timeout policy; the ready probe uses a 2s Npgsql timeout of its own.
 
+## Observability (KYC-104)
+
+Stdout is **JSON** (`Logging:Console:FormatterName` = `json` in `appsettings.json`) with scopes enabled so every line can carry `RequestId`.
+
+| What | Where |
+|---|---|
+| Correlation id | Request header / response `X-Request-Id` (safe token echoed; otherwise Kestrel `TraceIdentifier`). Also in the log scope as `RequestId` (and `TraceId` when an `Activity` exists). |
+| HTTP/GraphQL calls | One `HTTP {method} {path} {status} {ms}` Information line per request. **No** bodies, query strings, or headers (login passwords, JWTs, and FormData stay out). |
+| Auth failures | `Login rejected` (REST/GraphQL login); `GraphQL auth failure {code}`; `JWT authentication failed {type}`. Codes/types only — no email, password, or token. |
+| Readiness failures | `Readiness check failed: Postgres is unreachable ({ExceptionType})`. No connection string. |
+| Liveness probes | `GET /health` is **not** logged at Information (avoids probe flood). |
+
+**Read local logs:** run the API in a terminal (`dotnet run` from `apps/api/Kyc.Api`). Pretty-print with `jq` if you have it (`dotnet run | jq .`). Filter one request: look for the `X-Request-Id` response header, then grep that value in stdout (`RequestId` scope).
+
+**Minimal metrics / signals (no APM vendor):** there is no scrape endpoint in MVP. Operators can (later) alert on `GET /ready` → 503 and count `HTTP … {status}` log lines. OpenTelemetry exporters can be added later without changing this contract.
+
 ## GraphQL operations
 
 Endpoint: `POST /graphql` (IDE in Development). Auth is **deny by default**; send `Authorization: Bearer <accessToken>` unless noted. Copy-paste bodies live in [`Kyc.Api/Kyc.Api.http`](Kyc.Api/Kyc.Api.http). Keep this table as an index when adding fields — prefer the IDE / schema for full types.
@@ -216,5 +232,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-033 | Customer `submitCase`; owner-only Draft→Submitted; FormData requires fullName/dateOfBirth/nationality/address; `SubmittedAt` set |
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 | KYC-103 | `GET /health` stays a process check; `GET /ready` fails when Postgres is unreachable; EF `EnableRetryOnFailure`; Npgsql command timeout 30s; ASP.NET request timeout 60s |
+| KYC-104 | JSON stdout logs with `RequestId`; auth and `/ready` failures logged without secrets; README documents local logs + `/ready`-based signals |
 
 Out of scope here: auth rate limits (KYC-093). Local HTTP is for Development only.

@@ -35,11 +35,15 @@ builder.Services.Configure<ResilienceOptions>(resilienceSection);
 var resilience = resilienceSection.Get<ResilienceOptions>() ?? new ResilienceOptions();
 resilience.Validate();
 
+builder.Services.AddSingleton(sp =>
+    new PostgresReadyHealthCheck(
+        postgresConnection,
+        sp.GetRequiredService<ILogger<PostgresReadyHealthCheck>>()));
+
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
-    .AddCheck(
+    .AddCheck<PostgresReadyHealthCheck>(
         "postgres",
-        new PostgresReadyHealthCheck(postgresConnection),
         failureStatus: HealthStatus.Unhealthy,
         tags: ["ready"]);
 
@@ -90,6 +94,17 @@ builder.Services
             NameClaimType = JwtRegisteredClaimNames.Sub,
             RoleClaimType = "role"
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                var log = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Kyc.Api.Auth");
+                log.LogWarning("JWT authentication failed {FailureType}", context.Exception.GetType().Name);
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // Deny by default for ASP.NET endpoints (KYC-021). Opt in with AllowAnonymous.
@@ -111,6 +126,7 @@ builder.Services.AddScoped<SubmitCaseService>();
 builder.Services
     .AddGraphQLServer()
     .AddAuthorization()
+    .AddErrorFilter<GraphQlAuthErrorLoggingFilter>()
     .AddQueryType<Query>()
     .AddMutationType<Mutation>()
     .ModifyRequestOptions(options =>
@@ -123,6 +139,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi().AllowAnonymous();
 }
 
+app.UseMiddleware<RequestCorrelationMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRequestTimeouts();
