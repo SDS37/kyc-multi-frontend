@@ -327,6 +327,41 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
     }
 
     [Fact]
+    public async Task Whitespace_padded_complete_formData_still_submits()
+    {
+        var draftId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Cases.Add(new Case
+            {
+                Id = draftId,
+                TenantId = _tenantId,
+                CustomerUserId = _ownerId,
+                Title = "Padded form",
+                Status = CaseStatus.Draft,
+                FormData = $"  \n{CompleteFormData}\n  ",
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Authenticate(_ownerId);
+        var payload = await PostGraphqlAsync(
+            $$"""
+            {
+              "query": "mutation($input: SubmitCaseRequestInput!) { submitCase(input: $input) { id status } }",
+              "variables": { "input": { "id": "{{draftId}}" } }
+            }
+            """);
+
+        Assert.False(payload.TryGetProperty("errors", out _), payload.ToString());
+        Assert.Equal("SUBMITTED", payload.GetProperty("data").GetProperty("submitCase").GetProperty("status").GetString());
+    }
+
+    [Fact]
     public async Task Deeply_nested_formData_returns_VALIDATION()
     {
         var draftId = Guid.NewGuid();
