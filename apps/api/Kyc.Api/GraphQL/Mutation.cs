@@ -69,7 +69,7 @@ public class Mutation
     /// Customer creates a draft KYC case (KYC-031). Tenant and owner come from the JWT only.
     /// </summary>
     [Authorize(Roles = new[] { AuthRoles.Customer })]
-    public async Task<CreateDraftCaseResponse> CreateDraftCase(
+    public async Task<CaseResponse> CreateDraftCase(
         CreateDraftCaseRequest input,
         CreateDraftCaseService service,
         CancellationToken cancellationToken)
@@ -94,5 +94,47 @@ public class Mutation
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Customer updates their own draft case (KYC-032). Non-draft status returns DOMAIN.
+    /// </summary>
+    [Authorize(Roles = new[] { AuthRoles.Customer })]
+    public async Task<CaseResponse> UpdateDraftCase(
+        UpdateDraftCaseRequest input,
+        UpdateDraftCaseService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized, errorCode, errorMessage) =
+            await service.UpdateAsync(input, cancellationToken);
+
+        if (validationErrors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", validationErrors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        if (unauthorized)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(CreateDraftCaseService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        if (errorCode is not null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(errorMessage ?? "Request failed.")
+                    .SetCode(errorCode)
+                    .Build());
+        }
+
+        return result!;
     }
 }
