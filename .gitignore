@@ -146,6 +146,8 @@ out/
 # Docker
 # -----------------------------------------------------------------------------
 docker-compose.override.yml
+# Local-only Compose helper (documented commands live in README)
+start-services.sh
 
 # -----------------------------------------------------------------------------
 # macOS
