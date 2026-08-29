@@ -45,9 +45,21 @@ public sealed class GetCaseDetailService(
             ? Array.Empty<CaseCommentResponse>()
             : [new CaseCommentResponse(entity.ReviewComment.Trim(), entity.ReviewedAt, entity.ReviewedBy)];
 
-        // Document metadata arrives with KYC-040/041; empty list satisfies AC without file bytes.
+        var documents = await db.Documents
+            .AsNoTracking()
+            .Where(d => d.CaseId == entity.Id)
+            .OrderByDescending(d => d.Id)
+            .Select(d => new CaseDocumentMetadataResponse(
+                d.Id,
+                d.FileName,
+                d.ContentType,
+                d.SizeBytes,
+                d.UploadedAt,
+                d.UploadedByUserId))
+            .ToListAsync(cancellationToken);
+
         return (
-            new CaseDetailResponse(caseResponse, comments, Array.Empty<CaseDocumentMetadataResponse>()),
+            new CaseDetailResponse(caseResponse, comments, documents),
             Array.Empty<string>(),
             false,
             null,

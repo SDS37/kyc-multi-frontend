@@ -3,6 +3,7 @@ using System.Reflection;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Domain;
 using Kyc.Api.Domain.Cases;
+using Kyc.Api.Domain.Documents;
 using Kyc.Api.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +21,7 @@ public class AppDbContext(
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Case> Cases => Set<Case>();
+    public DbSet<Document> Documents => Set<Document>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
