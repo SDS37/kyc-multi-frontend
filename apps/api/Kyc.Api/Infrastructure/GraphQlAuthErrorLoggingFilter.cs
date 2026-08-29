@@ -1,4 +1,3 @@
-using HotChocolate;
 using HotChocolate.Execution;
 
 namespace Kyc.Api.Infrastructure;

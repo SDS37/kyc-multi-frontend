@@ -1,5 +1,3 @@
-using Kyc.Api.Domain;
-
 namespace Kyc.Api.Domain.Identity;
 
 public class User : ITenantScoped

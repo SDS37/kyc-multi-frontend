@@ -25,7 +25,8 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Reviewer approve / reject case | Ready (KYC-035 GraphQL `approveCase` / `rejectCase`) |
 | List cases | Ready (KYC-036 GraphQL `cases`) |
 | Case detail | Ready (KYC-037 GraphQL `case`) |
-| Document upload | Ready (KYC-040 REST multipart → MinIO; metadata on `case`) |
+| Document upload | Ready (KYC-040 REST multipart → MinIO; metadata on `case` / `documents`) |
+| Document list | Ready (KYC-041 GraphQL `documents(caseId)`; metadata only) |
 | GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE / introspection / SDL in Development — KYC-105) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102; SHA pins + Postgres slice — KYC-108) |
 | Postgres readiness (`/ready`) + EF retries / timeouts | Ready (KYC-103) |

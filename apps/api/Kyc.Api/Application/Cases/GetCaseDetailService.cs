@@ -1,3 +1,4 @@
+using Kyc.Api.Application.Documents;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
@@ -45,21 +46,7 @@ public sealed class GetCaseDetailService(
             ? Array.Empty<CaseCommentResponse>()
             : [new CaseCommentResponse(entity.ReviewComment.Trim(), entity.ReviewedAt, entity.ReviewedBy)];
 
-        // Newest first. Order in memory: SQLite tests cannot ORDER BY DateTimeOffset (same constraint as list cases).
-        var documents = (await db.Documents
-            .AsNoTracking()
-            .Where(d => d.CaseId == entity.Id)
-            .Select(d => new CaseDocumentMetadataResponse(
-                d.Id,
-                d.FileName,
-                d.ContentType,
-                d.SizeBytes,
-                d.UploadedAt,
-                d.UploadedByUserId))
-            .ToListAsync(cancellationToken))
-            .OrderByDescending(d => d.UploadedAt)
-            .ThenByDescending(d => d.Id)
-            .ToList();
+        var documents = await ListDocumentsService.LoadMetadataAsync(db, entity.Id, cancellationToken);
 
         return (
             new CaseDetailResponse(caseResponse, comments, documents),

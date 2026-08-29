@@ -39,7 +39,7 @@ public sealed partial class LoginService(
 
         // Inactive tenant cannot log in (AC). Same generic message as bad credentials
         // so we do not leak whether the slug exists or the tenant is disabled.
-        if (tenant is null || !tenant.IsActive)
+        if (tenant?.IsActive is not true)
         {
             RejectUnverified(request.Password);
             return (null, Array.Empty<string>(), true);

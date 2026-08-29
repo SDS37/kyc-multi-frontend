@@ -57,6 +57,7 @@ flowchart LR
 | `CreateDraftCaseTests` / `UpdateDraftCaseTests` / `SubmitCaseTests` | JWT-owned drafts; NOT_FOUND vs DOMAIN; FormData rules. |
 | `StartCaseReviewTests` / `CompleteCaseReviewTests` | Lifecycle + reject comment. |
 | `ListCasesTests` / `GetCaseDetailTests` | Shared visibility; list has no FormData; detail can include documents. |
+| `ListDocumentsTests` | KYC-041 `documents(caseId)`; owner / peer NOT_FOUND / reviewer+admin; metadata only (no storage key); newest first. |
 | `UploadDocumentTests` | Customer multipart upload; Draft/Submitted; peer `NOT_FOUND`; reviewer 403; magic/size `VALIDATION`; InMemory object store via `ObjectStorage:Provider=InMemory` on factories. |
 | `GraphQlHostHardeningTests` | Introspection/depth in Development vs not. |
 | `HostResilienceTests` | Timeouts / ready vs health behavior. |

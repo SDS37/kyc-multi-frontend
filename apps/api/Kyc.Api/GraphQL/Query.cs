@@ -1,6 +1,6 @@
-using HotChocolate;
 using HotChocolate.Authorization;
 using Kyc.Api.Application.Cases;
+using Kyc.Api.Application.Documents;
 using Kyc.Api.Domain.Cases;
 
 namespace Kyc.Api.GraphQL;
@@ -50,7 +50,7 @@ public class Query
     }
 
     /// <summary>
-    /// Case detail (KYC-037). Same visibility as <c>cases</c>; includes FormData, review comments, and document metadata (empty until KYC-040).
+    /// Case detail (KYC-037 / KYC-040). Same visibility as <c>cases</c>; includes FormData, review comments, and document metadata.
     /// </summary>
     public async Task<CaseDetailResponse> Case(
         Guid id,
@@ -59,6 +59,47 @@ public class Query
     {
         var (result, validationErrors, unauthorized, errorCode, errorMessage) =
             await service.GetAsync(id, cancellationToken);
+
+        if (validationErrors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", validationErrors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        if (unauthorized)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(CreateDraftCaseService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        if (errorCode is not null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(errorMessage ?? "Request failed.")
+                    .SetCode(errorCode)
+                    .Build());
+        }
+
+        return result!;
+    }
+
+    /// <summary>
+    /// Document metadata for a case (KYC-041). Same visibility as <c>case</c>; never file bytes or storage keys.
+    /// </summary>
+    public async Task<IReadOnlyList<CaseDocumentMetadataResponse>> Documents(
+        Guid caseId,
+        ListDocumentsService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized, errorCode, errorMessage) =
+            await service.ListAsync(caseId, cancellationToken);
 
         if (validationErrors.Count > 0)
         {
