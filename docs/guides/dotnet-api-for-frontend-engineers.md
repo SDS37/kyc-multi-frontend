@@ -2,14 +2,14 @@
 
 Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vue and new to backend .NET.
 
-**Commands to run the app** live in [`apps/api/README.md`](../../apps/api/README.md). This file is not a runbook; versions and flags change.
+**Commands to run the app** live in [`apps/api/README.md`](../../apps/api/README.md). **How to write C# in this repo** lives in [`docs/dotnet-code-standards.md`](../dotnet-code-standards.md). This file is not a runbook; versions and flags change.
 
 ## Where we are vs the target
 
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
 | .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | Remaining case lifecycle, documents, audit, three UI apps |
-| GraphQL role gates: Customer create/update/submit; Reviewer/TenantAdmin review lifecycle; authenticated `cases` / `case`; Customer document upload (REST) | Document download / remaining domain queries |
+| GraphQL role gates: Customer create/update/submit; Reviewer/TenantAdmin review lifecycle; authenticated `cases` / `case`; Customer document upload (REST); document download stream (REST) | Remaining domain queries |
 | Temporary register/login (JWT) + fail-closed tenant filters | Auth rate limits when leaving localhost (KYC-093) |
 | Hot Chocolate `/graphql` + `/health` (KYC-020); `/ready` + EF retries / timeouts (KYC-103); JSON logs + request id (KYC-104); deny-by-default JWT (KYC-021); introspection/SDL Development-only + depth 10 (KYC-105) | Domain GraphQL fields (cases, etc.) |
 | `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` (KYC-102); SDK in `global.json` | |

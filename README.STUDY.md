@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-040 (case lifecycle + document upload). The three UIs are still placeholders.
+**Aligned with:** `feat/kyc-042-download-document` (case lifecycle + document upload/list/download). The three UIs are still placeholders.
 
 Tracked in git so they render on GitHub. They are a tour, not a contract — ADRs and official READMEs win if anything disagrees. Update these files when the code or architecture moves; they can be deleted from the repo later.
 
@@ -49,7 +49,7 @@ sequenceDiagram
     API-->>You: metadata JSON (no StorageKey)
 ```
 
-Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds document **metadata** (KYC-040).
+Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds document **metadata** (KYC-040–042).
 
 ## Today vs target
 
@@ -61,7 +61,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 | GraphQL as the only public API | Cases are GraphQL; **upload is dedicated REST**; login/register still have temporary REST twins |
 | MinIO for KYC files | Compose + API `IObjectStorage` / MinIO (InMemory in tests) |
 
-**What you can say with confidence:** “Week 2 delivered the case lifecycle on Hot Chocolate with fail-closed JWT tenant isolation. Week 3 KYC-040 added Customer document upload to MinIO with metadata on `case.documents`. Download and audit are still ahead.”
+**What you can say with confidence:** “Week 2 delivered the case lifecycle on Hot Chocolate with fail-closed JWT tenant isolation. Week 3 KYC-040–042 added Customer document upload to MinIO, metadata list, and authenticated download streams. Audit is still ahead.”
 
 ## Suggested reading order
 
@@ -85,6 +85,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 - Run the repo: [README.md](README.md)
 - API runbook: [apps/api/README.md](apps/api/README.md)
 - Frontend-oriented .NET map: [docs/guides/dotnet-api-for-frontend-engineers.md](docs/guides/dotnet-api-for-frontend-engineers.md) — still useful; its “still ahead” table lags Week 2 (cases GraphQL is on `main`).
+- How to write C# here: [docs/dotnet-code-standards.md](docs/dotnet-code-standards.md)
 - [Roadmap](docs/roadmap.md) (W2 = KYC-020–037)
 - [ADR-001 monorepo](docs/architecture-decision-records.md)
 - [ADR-007 tenant from JWT](docs/architecture-decision-records.md)

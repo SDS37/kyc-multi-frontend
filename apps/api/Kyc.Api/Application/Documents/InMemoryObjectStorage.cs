@@ -19,6 +19,17 @@ public sealed class InMemoryObjectStorage : IObjectStorage
         _objects[key] = ms.ToArray();
     }
 
+    public Task<Stream?> OpenReadAsync(string key, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!_objects.TryGetValue(key, out var bytes))
+        {
+            return Task.FromResult<Stream?>(null);
+        }
+
+        return Task.FromResult<Stream?>(new MemoryStream(bytes, writable: false));
+    }
+
     public Task DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         _objects.TryRemove(key, out _);

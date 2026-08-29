@@ -27,6 +27,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Case detail | Ready (KYC-037 GraphQL `case`) |
 | Document upload | Ready (KYC-040 REST multipart → MinIO; metadata on `case` / `documents`) |
 | Document list | Ready (KYC-041 GraphQL `documents(caseId)`; metadata only) |
+| Document download | Ready (KYC-042 REST stream; same visibility as list; private bucket) |
 | GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE / introspection / SDL in Development — KYC-105) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102; SHA pins + Postgres slice — KYC-108) |
 | Postgres readiness (`/ready`) + EF retries / timeouts | Ready (KYC-103) |
@@ -154,6 +155,7 @@ flowchart TB
 - [Definition of Done](docs/DoD.md)
 - [Architecture Decision Records](docs/architecture-decision-records.md)
 - [Commit Convention](docs/commits.md)
+- [.NET code standards](docs/dotnet-code-standards.md)
 - [API runbook](apps/api/README.md)
 - [.NET API for frontend engineers](docs/guides/dotnet-api-for-frontend-engineers.md)
 

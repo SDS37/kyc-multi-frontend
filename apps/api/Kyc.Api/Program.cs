@@ -160,6 +160,7 @@ builder.Services.AddScoped<ListCasesService>();
 builder.Services.AddScoped<GetCaseDetailService>();
 builder.Services.AddScoped<ListDocumentsService>();
 builder.Services.AddScoped<UploadDocumentService>();
+builder.Services.AddScoped<DownloadDocumentService>();
 
 builder.Services
     .AddGraphQLServer()
@@ -310,6 +311,55 @@ app.MapPost("/api/cases/{caseId:guid}/documents", async (
 .DisableAntiforgery()
 .WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(
     DocumentUploadValidation.MaxFileBytes + (1024 * 1024)));
+
+// Document download (KYC-042) — authenticated stream; same case visibility as GraphQL documents list.
+app.MapGet("/api/cases/{caseId:guid}/documents/{documentId:guid}", async (
+    Guid caseId,
+    Guid documentId,
+    DownloadDocumentService service,
+    CancellationToken cancellationToken) =>
+{
+    var (result, validationErrors, unauthorized, errorCode, errorMessage) =
+        await service.DownloadAsync(caseId, documentId, cancellationToken);
+
+    if (validationErrors.Count > 0)
+    {
+        return Results.BadRequest(new { errors = validationErrors, code = "VALIDATION" });
+    }
+
+    if (unauthorized)
+    {
+        return Results.Json(
+            new { error = CreateDraftCaseService.GenericAuthFailure, code = "AUTH_FAILED" },
+            statusCode: StatusCodes.Status401Unauthorized);
+    }
+
+    if (errorCode == "NOT_FOUND")
+    {
+        return Results.Json(
+            new { error = errorMessage ?? DownloadDocumentService.NotFoundMessage, code = "NOT_FOUND" },
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    if (errorCode is not null)
+    {
+        return Results.Json(
+            new { error = errorMessage ?? "Request failed.", code = errorCode },
+            statusCode: StatusCodes.Status422UnprocessableEntity);
+    }
+
+    // Results.File disposes the stream after the response completes.
+    return Results.File(
+        result!.Content,
+        result.ContentType,
+        fileDownloadName: result.FileName,
+        enableRangeProcessing: false);
+})
+.WithName("DownloadDocument")
+.RequireAuthorization(new AuthorizeAttribute
+{
+    Roles = $"{AuthRoles.Customer},{AuthRoles.Reviewer},{AuthRoles.TenantAdmin}"
+});
 
 app.Run();
 

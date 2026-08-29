@@ -83,6 +83,10 @@ Authorization: Bearer {{accessToken}}
 #   -H "Authorization: Bearer {{customerAccessToken}}" \
 #   -F "file=@./id.pdf;type=application/pdf"
 
+### Download document (KYC-042) — Customer owner / Reviewer / TenantAdmin; same visibility as list; streams bytes (bucket stays private)
+GET {{Kyc.Api_HostAddress}}/api/cases/{{caseId}}/documents/{{documentId}}
+Authorization: Bearer {{accessToken}}
+
 ### Start case review (KYC-034) — Reviewer or TenantAdmin; Submitted → InReview
 POST {{Kyc.Api_HostAddress}}/graphql
 Content-Type: application/json

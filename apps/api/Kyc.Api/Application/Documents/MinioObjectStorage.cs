@@ -1,9 +1,14 @@
+using System.Net;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Options;
 
 namespace Kyc.Api.Application.Documents;
 
+/// <summary>
+/// S3-compatible MinIO adapter. Bucket is created without a public policy — clients never read objects
+/// directly; downloads go through the authenticated API (KYC-042).
+/// </summary>
 public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposable
 {
     private readonly AmazonS3Client _s3;
@@ -48,6 +53,28 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
         };
 
         await _s3.PutObjectAsync(request, cancellationToken);
+    }
+
+    public async Task<Stream?> OpenReadAsync(string key, CancellationToken cancellationToken = default)
+    {
+        await EnsureBucketAsync(cancellationToken);
+
+        try
+        {
+            // Buffer within KYC-040 max size so ASP.NET can set Content-Length and dispose cleanly.
+            // Presigned URLs are deferred — browser/CORS and InMemory tests favor API streaming for MVP.
+            using var response = await _s3.GetObjectAsync(_bucket, key, cancellationToken);
+            var buffer = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(buffer, cancellationToken);
+            buffer.Position = 0;
+            return buffer;
+        }
+        catch (AmazonS3Exception ex) when (
+            ex.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Forbidden
+            || string.Equals(ex.ErrorCode, "NoSuchKey", StringComparison.Ordinal))
+        {
+            return null;
+        }
     }
 
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)

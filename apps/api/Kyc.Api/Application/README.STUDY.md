@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** `feat/kyc-042-download-document`.
 
 ## Purpose
 
@@ -15,7 +15,7 @@ This is the folder to study if you want to argue behavior: validation, status tr
 | Folder | Why it is separate |
 |---|---|
 | [Cases/](Cases/README.STUDY.md) | Week 2 product: create/update/submit/review/list/detail. Detail now loads real documents. |
-| [Documents/](Documents/README.STUDY.md) | Week 3 KYC-040: upload validation, `IObjectStorage`, metadata persistence. |
+| [Documents/](Documents/README.STUDY.md) | Week 3 KYC-040–042: upload, list metadata, download stream via `IObjectStorage`. |
 | `Identity/` | Register tenant, login, JWT issuance, password policy, `ICurrentUser`. |
 | `Tenancy/` | `ICurrentTenant` + HTTP implementation. Tiny on purpose: **one place** that reads `tenant_id`. |
 
@@ -91,7 +91,7 @@ Services return tuples `(result, validationErrors, unauthorized, errorCode, …)
 ## Today vs target
 
 - Services + `DbContext` = transaction script / modest application layer. Fine.
-- Documents **copied this pattern** (service + port/adapter for MinIO). Download (KYC-042) and audit (KYC-050) should keep mirroring — not introduce MediatR unless CQRS is an explicit decision.
+- Documents **copied this pattern** (service + port/adapter for MinIO). Download (KYC-042) follows the same; audit (KYC-050) should keep mirroring — not introduce MediatR unless CQRS is an explicit decision.
 
 ## What to skip until you need it
 

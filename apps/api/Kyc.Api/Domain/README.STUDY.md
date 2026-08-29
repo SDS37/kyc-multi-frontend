@@ -68,7 +68,7 @@ stateDiagram-v2
 |---|---|
 | `Document` | One uploaded file’s **metadata** for a case: file name, content type, size, `UploadedByUserId`, `UploadedAt`, and opaque `StorageKey`. Implements `ITenantScoped`. Never expose `StorageKey` on GraphQL/REST responses. |
 
-Bytes are not columns — they are objects in MinIO (or InMemory in tests). Download is a later story (KYC-042).
+Bytes are not columns — they are objects in MinIO (or InMemory in tests). Download streams through the authenticated REST API (KYC-042); GraphQL never carries bytes.
 
 ## How a request touches this folder
 
@@ -79,7 +79,7 @@ Invariant that is easy to miss: **ownership is data**, not a GraphQL argument. `
 ## Today vs target
 
 - **Today:** anemic-ish entities (public setters, services hold the rules). Fine for MVP; do not oversell “rich domain model.”
-- **Target:** Audit entries; possibly more comment history; document download path. CQRS does not require Domain to split into two models yet.
+- **Target:** Audit entries; possibly more comment history. CQRS does not require Domain to split into two models yet.
 
 ## What to skip
 
