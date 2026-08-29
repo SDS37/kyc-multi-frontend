@@ -54,6 +54,36 @@ Authorization: Bearer {{reviewerAccessToken}}
   }
 }
 
+### Approve case (KYC-035) — Reviewer or TenantAdmin; InReview → Approved; comment optional
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{reviewerAccessToken}}
+
+{
+  "query": "mutation($input: ApproveCaseRequestInput!) { approveCase(input: $input) { id status reviewedAt reviewedBy reviewComment } }",
+  "variables": {
+    "input": {
+      "id": "{{caseId}}",
+      "comment": null
+    }
+  }
+}
+
+### Reject case (KYC-035) — Reviewer or TenantAdmin; InReview → Rejected; comment required
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{reviewerAccessToken}}
+
+{
+  "query": "mutation($input: RejectCaseRequestInput!) { rejectCase(input: $input) { id status reviewedAt reviewedBy reviewComment } }",
+  "variables": {
+    "input": {
+      "id": "{{caseId}}",
+      "comment": "Missing proof of address"
+    }
+  }
+}
+
 ### Customer creates draft case (KYC-031) — tenant/owner from JWT only
 POST {{Kyc.Api_HostAddress}}/graphql
 Content-Type: application/json

@@ -82,7 +82,10 @@ public sealed class CreateDraftCaseService(
             entity.CustomerUserId,
             entity.CreatedAt,
             entity.UpdatedAt,
-            entity.SubmittedAt);
+            entity.SubmittedAt,
+            entity.ReviewedAt,
+            entity.ReviewedBy,
+            entity.ReviewComment);
 }
 
 /// <summary>Shared title / FormData rules for draft create and update.</summary>

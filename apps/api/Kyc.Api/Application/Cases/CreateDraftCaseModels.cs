@@ -22,10 +22,19 @@ public sealed record CaseResponse(
     Guid CustomerUserId,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    DateTimeOffset? SubmittedAt);
+    DateTimeOffset? SubmittedAt,
+    DateTimeOffset? ReviewedAt,
+    Guid? ReviewedBy,
+    string? ReviewComment);
 
 /// <summary>Customer submits a draft by id (KYC-033). Form is read from persisted FormData.</summary>
 public sealed record SubmitCaseRequest(Guid Id);
 
 /// <summary>Reviewer/TenantAdmin starts review on a submitted case (KYC-034).</summary>
 public sealed record StartCaseReviewRequest(Guid Id);
+
+/// <summary>Reviewer/TenantAdmin approves an InReview case (KYC-035). Comment optional.</summary>
+public sealed record ApproveCaseRequest(Guid Id, string? Comment);
+
+/// <summary>Reviewer/TenantAdmin rejects an InReview case (KYC-035). Comment required.</summary>
+public sealed record RejectCaseRequest(Guid Id, string Comment);

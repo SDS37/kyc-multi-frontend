@@ -7,7 +7,7 @@ namespace Kyc.Api.GraphQL;
 
 /// <summary>
 /// Root GraphQL mutations. Type is deny-by-default; only login/register are anonymous (KYC-021).
-/// Role gates protect Customer case mutations and Reviewer/TenantAdmin review start (KYC-022+).
+/// Role gates protect Customer case mutations and Reviewer/TenantAdmin review lifecycle (KYC-022+).
 /// </summary>
 [Authorize]
 public class Mutation
@@ -186,6 +186,71 @@ public class Mutation
         var (result, validationErrors, unauthorized, errorCode, errorMessage) =
             await service.SubmitAsync(input, cancellationToken);
 
+        if (validationErrors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", validationErrors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        if (unauthorized)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(CreateDraftCaseService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        if (errorCode is not null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(errorMessage ?? "Request failed.")
+                    .SetCode(errorCode)
+                    .Build());
+        }
+
+        return result!;
+    }
+
+    /// <summary>
+    /// Reviewer or TenantAdmin approves an InReview case (KYC-035). Comment optional.
+    /// </summary>
+    [Authorize(Roles = new[] { AuthRoles.Reviewer, AuthRoles.TenantAdmin })]
+    public async Task<CaseResponse> ApproveCase(
+        ApproveCaseRequest input,
+        CompleteCaseReviewService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized, errorCode, errorMessage) =
+            await service.ApproveAsync(input, cancellationToken);
+        return MapCaseMutationResult(result, validationErrors, unauthorized, errorCode, errorMessage);
+    }
+
+    /// <summary>
+    /// Reviewer or TenantAdmin rejects an InReview case (KYC-035). Comment required.
+    /// </summary>
+    [Authorize(Roles = new[] { AuthRoles.Reviewer, AuthRoles.TenantAdmin })]
+    public async Task<CaseResponse> RejectCase(
+        RejectCaseRequest input,
+        CompleteCaseReviewService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized, errorCode, errorMessage) =
+            await service.RejectAsync(input, cancellationToken);
+        return MapCaseMutationResult(result, validationErrors, unauthorized, errorCode, errorMessage);
+    }
+
+    private static CaseResponse MapCaseMutationResult(
+        CaseResponse? result,
+        IReadOnlyList<string> validationErrors,
+        bool unauthorized,
+        string? errorCode,
+        string? errorMessage)
+    {
         if (validationErrors.Count > 0)
         {
             throw new GraphQLException(
