@@ -48,17 +48,6 @@ public sealed class CompleteCaseReviewService(
             return (null, ["Case id is required."], false, null, null);
         }
 
-        var normalizedComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
-        if (commentRequired && normalizedComment is null)
-        {
-            return (null, [RejectCommentRequiredMessage], false, null, null);
-        }
-
-        if (normalizedComment is { Length: > MaxCommentLength })
-        {
-            return (null, [$"Comment must be at most {MaxCommentLength} characters."], false, null, null);
-        }
-
         var tenantId = currentTenant.TenantId;
         var reviewerUserId = currentUser.UserId;
         if (tenantId is null || reviewerUserId is null)
@@ -83,6 +72,22 @@ public sealed class CompleteCaseReviewService(
         if (entity is null)
         {
             return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
+        }
+
+        if (entity.Status != CaseStatus.InReview)
+        {
+            return (null, Array.Empty<string>(), false, "DOMAIN", NotInReviewMessage);
+        }
+
+        var normalizedComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
+        if (commentRequired && normalizedComment is null)
+        {
+            return (null, [RejectCommentRequiredMessage], false, null, null);
+        }
+
+        if (normalizedComment is { Length: > MaxCommentLength })
+        {
+            return (null, [$"Comment must be at most {MaxCommentLength} characters."], false, null, null);
         }
 
         var now = DateTimeOffset.UtcNow;

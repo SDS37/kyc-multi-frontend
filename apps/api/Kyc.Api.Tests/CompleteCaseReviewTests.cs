@@ -307,6 +307,55 @@ public sealed class CompleteCaseReviewTests : IClassFixture<ApiFactory>, IAsyncL
     }
 
     [Fact]
+    public async Task Non_in_review_reject_without_comment_returns_DOMAIN()
+    {
+        Authenticate(UserRole.Reviewer, _reviewerId);
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: RejectCaseRequestInput!) { rejectCase(input: $input) { id } }",
+                  "variables": { "input": { "id": "{{_submittedCaseId}}", "comment": "   " } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("DOMAIN", errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains(CompleteCaseReviewService.NotInReviewMessage, errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Missing_case_reject_without_comment_returns_NOT_FOUND()
+    {
+        Authenticate(UserRole.Reviewer, _reviewerId);
+        var missingId = Guid.NewGuid();
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: RejectCaseRequestInput!) { rejectCase(input: $input) { id } }",
+                  "variables": { "input": { "id": "{{missingId}}", "comment": "   " } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("NOT_FOUND", errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains(CompleteCaseReviewService.NotFoundMessage, errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Other_tenant_case_returns_NOT_FOUND()
     {
         Authenticate(UserRole.Reviewer, _reviewerId);
