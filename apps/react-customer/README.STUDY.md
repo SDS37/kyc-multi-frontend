@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Official stub: [README.md](README.md).
 
-**Aligned with:** `main` after Week 2. **No React app exists yet.**
+**Aligned with:** `main` after KYC-040. **No React app exists yet.**
 
 ## Purpose
 
@@ -21,11 +21,12 @@ ADR-004/005: three stacks, one API. A Customer route inside Angular admin would 
 | Create / edit draft | `createDraftCase` / `updateDraftCase` — **Customer role only** |
 | Submit | `submitCase` — required FormData fields (see Cases STUDY) |
 | List own cases | `cases` — server already filters to `CustomerUserId == JWT sub` |
-| Detail | `case(id)` — `NOT_FOUND` if not owner (even in-tenant) |
+| Detail | `case(id)` — `NOT_FOUND` if not owner (even in-tenant); includes `documents` metadata |
+| Upload | REST `POST /api/cases/{id}/documents` multipart field `file` (Customer; Draft\|Submitted; PDF/PNG/JPG ≤10 MB) — not GraphQL |
 
 Do not send `customerUserId` or `tenantId` on create. If a React form includes them, you are fighting ADR-007.
 
-Documents: API returns empty `documents` until KYC-040 (Week 3). Uploads will likely be a dedicated path (ADR-002: files may not be pure GraphQL). Plan the UI, do not fake a REST upload against today’s API.
+Documents: metadata on GraphQL detail; bytes via the REST upload above (ADR-001). Never expect `StorageKey` in the API response. Download is KYC-042.
 
 ```mermaid
 stateDiagram-v2

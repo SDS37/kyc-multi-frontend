@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Parent: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `main` after `AddCaseReviewComment`.
+**Aligned with:** `main` after `AddDocument` (KYC-040).
 
 ## Purpose
 
@@ -29,6 +29,7 @@ History on `main` (order matters):
 | `AddUser` | `users` + unique (TenantId, Email) |
 | `AddCase` | `cases` + FormData |
 | `AddCaseReviewComment` | `ReviewComment` on cases (KYC-035) |
+| `AddDocument` | `documents` table + unique `StorageKey` (KYC-040) |
 
 **KYC-014 (tenant filters) added no migration.** Filters are C# in `AppDbContext`, not columns. If someone says “isolation is a migration,” correct them.
 
@@ -57,7 +58,7 @@ CI (`PostgresApiFactory`) calls `MigrateAsync()` when `KYC_TEST_POSTGRES` is set
 
 ## Today vs target
 
-More migrations will appear for documents and audit. Never rewrite old migrations that already ran elsewhere; add a new one. Same rule as Prisma in production.
+Audit (and download-related columns if any) will add more migrations. Never rewrite old migrations that already ran elsewhere; add a new one. Same rule as Prisma in production.
 
 ## What to skip
 

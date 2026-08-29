@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-037.
+**Aligned with:** `main` after KYC-040.
 
 ## Purpose
 
-Domain is the **language of the product**: Tenant, User, Case, statuses, roles. It does not know GraphQL, JWT, or HTTP. It barely knows persistence (`ITenantScoped` exists so EF can filter — a pragmatic leak, not a pure DDD fortress).
+Domain is the **language of the product**: Tenant, User, Case, Document, statuses, roles. It does not know GraphQL, JWT, or HTTP. It barely knows persistence (`ITenantScoped` exists so EF can filter — a pragmatic leak, not a pure DDD fortress).
 
 If Application is “what the system *does*,” Domain is “what the system *is*.”
 
@@ -17,10 +17,9 @@ If Application is “what the system *does*,” Domain is “what the system *is
 | `ITenantScoped.cs` | Marker: “this row belongs to one tenant.” EF applies a global filter to every implementing type. New tenant-owned entities **must** implement it or they skip isolation. |
 | `Identity/` | `Tenant`, `User`, `UserRole`. Identity bounded context (still a folder, not a project). |
 | `Cases/` | `Case`, `CaseStatus`. Case bounded context. |
+| `Documents/` | `Document` — metadata only; bytes live in object storage (KYC-040). |
 
-No `Documents/` or `Audit/` types yet (Week 3).
-
-**Tenant is not `ITenantScoped`.** A tenant *is* the isolation boundary; it does not have a `TenantId` pointing at itself. Users and cases do.
+**Tenant is not `ITenantScoped`.** A tenant *is* the isolation boundary; it does not have a `TenantId` pointing at itself. Users, cases, and documents do.
 
 ## Angular / Java analog
 
@@ -63,16 +62,24 @@ stateDiagram-v2
 
 `ReviewedBy` / `ReviewedAt` / `ReviewComment` are columns on `Case`, not a child table. Detail query maps the one comment into a `comments[]` array so the UI contract can grow later.
 
+### Documents
+
+| Type | Meaning |
+|---|---|
+| `Document` | One uploaded file’s **metadata** for a case: file name, content type, size, `UploadedByUserId`, `UploadedAt`, and opaque `StorageKey`. Implements `ITenantScoped`. Never expose `StorageKey` on GraphQL/REST responses. |
+
+Bytes are not columns — they are objects in MinIO (or InMemory in tests). Download is a later story (KYC-042).
+
 ## How a request touches this folder
 
-Domain types are **constructed and mutated in Application services**, then tracked by EF. GraphQL never new-s up a `Case` itself.
+Domain types are **constructed and mutated in Application services**, then tracked by EF. GraphQL never new-s up a `Case` itself. Upload constructs `Document` in `UploadDocumentService` after a successful object put.
 
 Invariant that is easy to miss: **ownership is data**, not a GraphQL argument. `CustomerUserId` is set from `ICurrentUser.UserId` on create. Update/submit compare that column to the JWT subject; mismatch → `NOT_FOUND` (KYC-106), not `AUTH_NOT_AUTHORIZED`. That is deliberate: do not teach an attacker that the case exists in another user’s account.
 
 ## Today vs target
 
 - **Today:** anemic-ish entities (public setters, services hold the rules). Fine for MVP; do not oversell “rich domain model.”
-- **Target:** Documents entity + object storage keys; Audit entries; possibly more comment history. CQRS does not require Domain to split into two models yet.
+- **Target:** Audit entries; possibly more comment history; document download path. CQRS does not require Domain to split into two models yet.
 
 ## What to skip
 

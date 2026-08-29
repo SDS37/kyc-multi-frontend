@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after Week 2 (KYC-037). Case GraphQL lifecycle is live; the three UIs are still placeholders.
+**Aligned with:** `main` after KYC-040 (case lifecycle + document upload). The three UIs are still placeholders.
 
 Tracked in git so they render on GitHub. They are a tour, not a contract — ADRs and official READMEs win if anything disagrees. Update these files when the code or architecture moves; they can be deleted from the repo later.
 
@@ -37,26 +37,31 @@ sequenceDiagram
     participant You as You (host)
     participant API as Kyc.Api (dotnet run)
     participant PG as Postgres (Compose)
+    participant MN as MinIO (Compose)
 
-    You->>API: POST /graphql + JWT
+    You->>API: POST /graphql + JWT (cases)
     API->>PG: EF Core (tenant filter on)
     PG-->>API: rows for JWT tenant only
     API-->>You: typed GraphQL payload
+    You->>API: POST /api/cases/{id}/documents multipart
+    API->>MN: Put object (StorageKey)
+    API->>PG: Insert Document metadata
+    API-->>You: metadata JSON (no StorageKey)
 ```
 
-Redis and MinIO are **up but unused** until Week 3 (documents) and later cache/token work. Saying “we use Redis” in a review would be inaccurate today.
+Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds document **metadata** (KYC-040).
 
 ## Today vs target
 
 | Target ([architecture](docs/architecture.md), [ADRs](docs/architecture-decision-records.md)) | Today on `main` |
 |---|---|
 | Three UIs + GraphQL API | API is real; UIs are README placeholders |
-| Modular monolith (Identity, Cases, Documents, Audit) | **Layer folders** inside one .NET project |
-| CQRS + MediatR | Application **services** called from GraphQL |
-| GraphQL as the only public API | Cases are GraphQL; login/register still have temporary REST twins |
-| MinIO for KYC files | Compose image is pinned; API does not store files yet |
+| Modular monolith (Identity, Cases, Documents, Audit) | **Layer folders** inside one .NET project; Documents use-cases exist |
+| CQRS + MediatR | Application **services** called from GraphQL / REST upload |
+| GraphQL as the only public API | Cases are GraphQL; **upload is dedicated REST**; login/register still have temporary REST twins |
+| MinIO for KYC files | Compose + API `IObjectStorage` / MinIO (InMemory in tests) |
 
-**What you can say with confidence:** “Week 2 delivered the case lifecycle on Hot Chocolate, with JWT tenant isolation fail-closed in EF. The modular-monolith *shape* is still layers in one host; Documents/Audit are not modules yet.”
+**What you can say with confidence:** “Week 2 delivered the case lifecycle on Hot Chocolate with fail-closed JWT tenant isolation. Week 3 KYC-040 added Customer document upload to MinIO with metadata on `case.documents`. Download and audit are still ahead.”
 
 ## Suggested reading order
 
@@ -64,7 +69,7 @@ Redis and MinIO are **up but unused** until Week 3 (documents) and later cache/t
 2. [docs/README.STUDY.md](docs/README.STUDY.md) — how committed docs relate; do not duplicate them.
 3. [infrastructure/README.STUDY.md](infrastructure/README.STUDY.md) — why Postgres is on `127.0.0.1`.
 4. [apps/api/README.STUDY.md](apps/api/README.STUDY.md) — solution vs project vs tests.
-5. Follow **one mutation** through [Kyc.Api](apps/api/Kyc.Api/README.STUDY.md) → [GraphQL](apps/api/Kyc.Api/GraphQL/README.STUDY.md) → [Application](apps/api/Kyc.Api/Application/README.STUDY.md) → [Domain](apps/api/Kyc.Api/Domain/README.STUDY.md) → [Data](apps/api/Kyc.Api/Data/README.STUDY.md).
+5. Follow **one mutation** through [Kyc.Api](apps/api/Kyc.Api/README.STUDY.md) → [GraphQL](apps/api/Kyc.Api/GraphQL/README.STUDY.md) → [Application](apps/api/Kyc.Api/Application/README.STUDY.md) → [Domain](apps/api/Kyc.Api/Domain/README.STUDY.md) → [Data](apps/api/Kyc.Api/Data/README.STUDY.md). Then skim [Documents](apps/api/Kyc.Api/Application/Documents/README.STUDY.md) for the REST upload path.
 6. [Tests](apps/api/Kyc.Api.Tests/README.STUDY.md) — especially tenant isolation. This is the sentence isolation conversations hang on.
 7. [api-ci](.github/workflows/README.STUDY.md) — what CI actually proves.
 8. Frontend placeholders last: [angular-admin](apps/angular-admin/README.STUDY.md), [react-customer](apps/react-customer/README.STUDY.md), [vue-reports](apps/vue-reports/README.STUDY.md).

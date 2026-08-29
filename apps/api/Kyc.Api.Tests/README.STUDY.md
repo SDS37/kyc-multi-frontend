@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-037.
+**Aligned with:** `main` after KYC-040.
 
 ## Purpose
 
@@ -45,7 +45,7 @@ flowchart LR
 | `ApiFactory` | Almost all GraphQL/HTTP tests | `EnsureCreated` on SQLite. **No** jsonb, no migration history. Fast. |
 | `PostgresApiFactory` + `[PostgresFact]` | `PostgresIntegrationTests` | Real migrations. Skips unless env `KYC_TEST_POSTGRES` is set. CI always sets it. |
 
-`ApiFactory` still **configures** a dummy Postgres connection string because `Program.cs` throws if it is missing — then **replaces** `DbContext` with SQLite in `ConfigureTestServices`. That swap is the ASP.NET equivalent of overriding a provider in TestBed.
+`ApiFactory` still **configures** a dummy Postgres connection string because `Program.cs` throws if it is missing — then **replaces** `DbContext` with SQLite in `ConfigureTestServices`. Factories also set `ObjectStorage:Provider=InMemory` so MinIO is not required for CI/laptop tests. That swap is the ASP.NET equivalent of overriding a provider in TestBed.
 
 ## What the test files prove (conversation index)
 
@@ -56,7 +56,8 @@ flowchart LR
 | `RoleAuthorizationTests` | Customer cannot call reviewer mutations (and vice versa) → `AUTH_NOT_AUTHORIZED`. |
 | `CreateDraftCaseTests` / `UpdateDraftCaseTests` / `SubmitCaseTests` | JWT-owned drafts; NOT_FOUND vs DOMAIN; FormData rules. |
 | `StartCaseReviewTests` / `CompleteCaseReviewTests` | Lifecycle + reject comment. |
-| `ListCasesTests` / `GetCaseDetailTests` | Shared visibility; list has no FormData; detail documents empty. |
+| `ListCasesTests` / `GetCaseDetailTests` | Shared visibility; list has no FormData; detail can include documents. |
+| `UploadDocumentTests` | Customer multipart upload; Draft/Submitted; peer `NOT_FOUND`; reviewer 403; magic/size `VALIDATION`; InMemory object store via `ObjectStorage:Provider=InMemory` on factories. |
 | `GraphQlHostHardeningTests` | Introspection/depth in Development vs not. |
 | `HostResilienceTests` | Timeouts / ready vs health behavior. |
 | `ObservabilityTests` | JSON logs, request id, no secret leakage. |

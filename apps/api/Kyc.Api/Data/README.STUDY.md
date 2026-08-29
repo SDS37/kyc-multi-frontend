@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-037.
+**Aligned with:** `main` after KYC-040.
 
 ## Purpose
 
@@ -56,6 +56,7 @@ flowchart TB
 | `TenantConfiguration` | Unique `Slug`. Table `tenants`. |
 | `UserConfiguration` | Unique `(TenantId, Email)`. Role stored as **string**. FK Restrict (do not cascade-delete users if a tenant row were deleted). |
 | `CaseConfiguration` | Indexes `(TenantId, CustomerUserId)` and `(TenantId, Status)` — list/filter shaped. `ReviewComment` max 2000. FKs Restrict. Status as string. |
+| `DocumentConfiguration` | Table `documents`. Unique `StorageKey`. Index `(TenantId, CaseId)`. FKs to case/tenant/uploader Restrict. |
 
 `ApplyConfigurationsFromAssembly` loads all `IEntityTypeConfiguration<>` in this project automatically — like Angular `import.meta.glob`, but compile-time.
 
@@ -65,7 +66,7 @@ Every authenticated GraphQL field that loads cases goes: service → `db.Cases` 
 
 ## Today vs target
 
-One `AppDbContext` for all modules. A modular monolith *may* later keep one context or split by module; today one context is correct. Redis/MinIO will not appear here (cache/files are not relational).
+One `AppDbContext` for all modules (including `Documents`). Redis will not appear here. MinIO is **not** EF — only `StorageKey` strings live in Postgres.
 
 ## What to skip
 
