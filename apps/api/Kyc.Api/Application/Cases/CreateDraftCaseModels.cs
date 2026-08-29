@@ -38,3 +38,17 @@ public sealed record ApproveCaseRequest(Guid Id, string? Comment);
 
 /// <summary>Reviewer/TenantAdmin rejects an InReview case (KYC-035). Comment required.</summary>
 public sealed record RejectCaseRequest(Guid Id, string Comment);
+
+/// <summary>
+/// List cases visible to the caller (KYC-036). Tenant from JWT; ownership depends on role.
+/// <see cref="Skip"/> defaults to 0; <see cref="Take"/> defaults to <see cref="ListCasesService.DefaultPageSize"/>.
+/// </summary>
+public sealed record ListCasesRequest(CaseStatus? Status, int? Skip, int? Take);
+
+/// <summary>Paginated case list for GraphQL <c>cases</c>.</summary>
+public sealed record CaseListResponse(
+    IReadOnlyList<CaseResponse> Items,
+    int TotalCount,
+    int Skip,
+    int Take);
+

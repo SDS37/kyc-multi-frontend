@@ -40,6 +40,20 @@ Authorization: Bearer {{accessToken}}
   "query": "query { apiStatus }"
 }
 
+### List cases (KYC-036) — Customer: own; Reviewer/TenantAdmin: tenant; optional status + pagination
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "query": "query($status: CaseStatus, $skip: Int, $take: Int) { cases(status: $status, skip: $skip, take: $take) { totalCount skip take items { id title status customerUserId updatedAt } } }",
+  "variables": {
+    "status": null,
+    "skip": 0,
+    "take": 20
+  }
+}
+
 ### Start case review (KYC-034) — Reviewer or TenantAdmin; Submitted → InReview
 POST {{Kyc.Api_HostAddress}}/graphql
 Content-Type: application/json

@@ -18,7 +18,7 @@ Backlog until the API leaves localhost (do not treat this as “only rate limits
 - Production log levels (EF SQL already Warning in committed `appsettings.json`; keep host noise down)
 - Bind or authenticate `GET /ready` (liveness `/health` can stay anonymous)
 - Abuse controls on public `registerTenant` beyond login throttling (KYC-093)
-- GraphQL cost analyzer when list/document fields land (KYC-036+ / W3); depth limit is KYC-105
+- GraphQL cost analyzer when document/list volume grows (post KYC-036 / W3); depth limit is KYC-105
 
 ### Weekly checkpoint questions
 

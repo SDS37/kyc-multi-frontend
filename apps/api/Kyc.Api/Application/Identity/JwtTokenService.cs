@@ -21,7 +21,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options)
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(HttpCurrentTenant.TenantIdClaimType, user.TenantId.ToString()),
-            new("role", user.Role.ToString()),
+            new(HttpCurrentUser.RoleClaimType, user.Role.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
