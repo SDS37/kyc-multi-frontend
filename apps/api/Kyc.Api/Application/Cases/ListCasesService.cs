@@ -79,15 +79,25 @@ public sealed class ListCasesService(
 
         var totalCount = await query.CountAsync(cancellationToken);
         // Stable key only: SQLite tests cannot ORDER BY DateTimeOffset; Id works on all providers.
-        var entities = await query
+        // Project without FormData so list pages do not pull large JSON payloads.
+        var items = await query
             .OrderByDescending(c => c.Id)
             .Skip(skip)
             .Take(take)
+            .Select(c => new CaseListItemResponse(
+                c.Id,
+                c.Title,
+                c.Status,
+                c.TenantId,
+                c.CustomerUserId,
+                c.CreatedAt,
+                c.UpdatedAt,
+                c.SubmittedAt,
+                c.ReviewedAt,
+                c.ReviewedBy,
+                c.ReviewComment))
             .ToListAsync(cancellationToken);
 
-
-
-        var items = entities.Select(CreateDraftCaseService.ToResponse).ToList();
         return (new CaseListResponse(items, totalCount, skip, take), Array.Empty<string>(), false);
     }
 }

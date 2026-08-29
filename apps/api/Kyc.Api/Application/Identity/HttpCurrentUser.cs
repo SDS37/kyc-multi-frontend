@@ -35,7 +35,15 @@ public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor) : 
             }
 
             var raw = user.FindFirstValue(RoleClaimType);
-            return Enum.TryParse<UserRole>(raw, ignoreCase: false, out var role) ? role : null;
+            // Only named roles (e.g. "Reviewer") — reject numeric strings that Enum.TryParse would accept.
+            if (raw is null ||
+                !Enum.TryParse<UserRole>(raw, ignoreCase: false, out var role) ||
+                !string.Equals(raw, role.ToString(), StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return role;
         }
     }
 }

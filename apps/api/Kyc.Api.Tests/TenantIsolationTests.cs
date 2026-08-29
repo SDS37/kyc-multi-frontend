@@ -222,6 +222,25 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         Assert.Equal(UserRole.Reviewer, current.Role);
     }
 
+    [Fact]
+    public void HttpCurrentUser_rejects_numeric_role_claim()
+    {
+        var http = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+                new ClaimsIdentity(
+                    [
+                        new Claim(HttpCurrentUser.UserIdClaimType, Guid.NewGuid().ToString()),
+                        new Claim(HttpCurrentUser.RoleClaimType, ((int)UserRole.Reviewer).ToString())
+                    ],
+                    authenticationType: "Test"))
+        };
+
+        var current = new HttpCurrentUser(new HttpContextAccessor { HttpContext = http });
+
+        Assert.Null(current.Role);
+    }
+
     private AppDbContext CreateDb()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

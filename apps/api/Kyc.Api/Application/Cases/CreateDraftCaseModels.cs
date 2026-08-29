@@ -45,9 +45,23 @@ public sealed record RejectCaseRequest(Guid Id, string Comment);
 /// </summary>
 public sealed record ListCasesRequest(CaseStatus? Status, int? Skip, int? Take);
 
+/// <summary>List row without FormData (KYC-036) — keeps list responses small.</summary>
+public sealed record CaseListItemResponse(
+    Guid Id,
+    string Title,
+    CaseStatus Status,
+    Guid TenantId,
+    Guid CustomerUserId,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    DateTimeOffset? SubmittedAt,
+    DateTimeOffset? ReviewedAt,
+    Guid? ReviewedBy,
+    string? ReviewComment);
+
 /// <summary>Paginated case list for GraphQL <c>cases</c>.</summary>
 public sealed record CaseListResponse(
-    IReadOnlyList<CaseResponse> Items,
+    IReadOnlyList<CaseListItemResponse> Items,
     int TotalCount,
     int Skip,
     int Take);

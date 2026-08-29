@@ -188,7 +188,7 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 | Field | Auth | Purpose |
 |---|---|---|
 | `apiStatus` | Authenticated (any role) | Liveness; returns `"ok"` |
-| `cases` | Authenticated (any role) | List visible cases; Customer = own only; Reviewer/TenantAdmin = all tenant; optional `status`; `skip`/`take` (default take 20, max 100); returns `items`, `totalCount`, `skip`, `take` |
+| `cases` | Authenticated (any role) | List visible cases (no `formData`); Customer = own only; Reviewer/TenantAdmin = all tenant; optional `status`; `skip`/`take` (default take 20, max 100); returns `items`, `totalCount`, `skip`, `take` |
 
 ### Mutations
 
