@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Cases;
@@ -197,6 +198,47 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         var current = new HttpCurrentTenant(accessor);
 
         Assert.Equal(tenantId, current.TenantId);
+    }
+
+    [Fact]
+    public void HttpCurrentUser_reads_sub_and_role_claims()
+    {
+        var userId = Guid.NewGuid();
+        var http = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+                new ClaimsIdentity(
+                    [
+                        new Claim(HttpCurrentUser.UserIdClaimType, userId.ToString()),
+                        new Claim(HttpCurrentUser.RoleClaimType, nameof(UserRole.Reviewer))
+                    ],
+                    authenticationType: "Test"))
+        };
+
+        var accessor = new HttpContextAccessor { HttpContext = http };
+        var current = new HttpCurrentUser(accessor);
+
+        Assert.Equal(userId, current.UserId);
+        Assert.Equal(UserRole.Reviewer, current.Role);
+    }
+
+    [Fact]
+    public void HttpCurrentUser_rejects_numeric_role_claim()
+    {
+        var http = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+                new ClaimsIdentity(
+                    [
+                        new Claim(HttpCurrentUser.UserIdClaimType, Guid.NewGuid().ToString()),
+                        new Claim(HttpCurrentUser.RoleClaimType, ((int)UserRole.Reviewer).ToString())
+                    ],
+                    authenticationType: "Test"))
+        };
+
+        var current = new HttpCurrentUser(new HttpContextAccessor { HttpContext = http });
+
+        Assert.Null(current.Role);
     }
 
     private AppDbContext CreateDb()

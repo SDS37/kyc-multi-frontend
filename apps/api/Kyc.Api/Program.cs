@@ -92,7 +92,7 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
             ClockSkew = TimeSpan.FromMinutes(1),
             NameClaimType = JwtRegisteredClaimNames.Sub,
-            RoleClaimType = "role"
+            RoleClaimType = HttpCurrentUser.RoleClaimType
         };
         options.Events = new JwtBearerEvents
         {
@@ -124,6 +124,7 @@ builder.Services.AddScoped<UpdateDraftCaseService>();
 builder.Services.AddScoped<SubmitCaseService>();
 builder.Services.AddScoped<StartCaseReviewService>();
 builder.Services.AddScoped<CompleteCaseReviewService>();
+builder.Services.AddScoped<ListCasesService>();
 
 builder.Services
     .AddGraphQLServer()
