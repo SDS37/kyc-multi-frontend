@@ -25,10 +25,7 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         await db.Database.EnsureCreatedAsync();
     }
 
-    public async Task DisposeAsync()
-    {
-        await _connection.DisposeAsync();
-    }
+    public Task DisposeAsync() => _connection.DisposeAsync().AsTask();
 
     [Fact]
     public async Task Tenant_A_cannot_read_tenant_B_users()
