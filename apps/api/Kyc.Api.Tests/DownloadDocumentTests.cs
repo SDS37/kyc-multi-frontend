@@ -275,6 +275,47 @@ public sealed class DownloadDocumentTests(ApiFactory factory) : IClassFixture<Ap
     }
 
     [Fact]
+    public async Task Oversized_object_returns_STORAGE_not_VALIDATION()
+    {
+        var oversizedId = Guid.NewGuid();
+        var key = DocumentUploadValidation.BuildStorageKey(
+            _tenantId,
+            _ownerCaseId,
+            oversizedId,
+            "huge.bin");
+        var oversized = new byte[DocumentUploadValidation.MaxFileBytes + 1];
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var storage = scope.ServiceProvider.GetRequiredService<IObjectStorage>();
+            db.Documents.Add(new Document
+            {
+                Id = oversizedId,
+                TenantId = _tenantId,
+                CaseId = _ownerCaseId,
+                FileName = "huge.bin",
+                ContentType = "application/pdf",
+                SizeBytes = oversized.Length,
+                StorageKey = key,
+                UploadedByUserId = _customerId,
+                UploadedAt = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+            await using var put = new MemoryStream(oversized);
+            await storage.PutAsync(key, put, "application/pdf", oversized.Length);
+        }
+
+        Authenticate(UserRole.Customer, _customerId);
+        using var response = await _client.GetAsync(DownloadPath(_ownerCaseId, oversizedId));
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        await AssertJsonCodeAsync(response, "STORAGE");
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("VALIDATION", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Anonymous_is_rejected()
     {
         _client.DefaultRequestHeaders.Authorization = null;

@@ -78,6 +78,7 @@ sequenceDiagram
 | Empty ids | 400 | `VALIDATION` |
 | Missing JWT / unknown role | 401 | `AUTH_FAILED` / framework 401 |
 | Outside visibility / missing doc / missing blob | 404 | `NOT_FOUND` |
+| Object storage read failure / oversize object | 502 | `STORAGE` |
 
 ## What to skip
 

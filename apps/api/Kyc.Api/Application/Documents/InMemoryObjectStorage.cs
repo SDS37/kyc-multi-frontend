@@ -27,6 +27,12 @@ public sealed class InMemoryObjectStorage : IObjectStorage
             return Task.FromResult<Stream?>(null);
         }
 
+        if (bytes.LongLength > DocumentUploadValidation.MaxFileBytes)
+        {
+            throw new InvalidOperationException(
+                $"Object '{key}' exceeds maximum size of {DocumentUploadValidation.MaxFileBytes} bytes.");
+        }
+
         return Task.FromResult<Stream?>(new MemoryStream(bytes, writable: false));
     }
 

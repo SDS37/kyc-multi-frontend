@@ -139,6 +139,8 @@ GraphQL returns HTTP 200 with `errors[].extensions.code`. Use these codes only:
 | `NOT_FOUND` | Missing **or not visible** |
 | `DOMAIN` | Legal input, illegal state (submit a non-draft) |
 
+REST document download also uses `STORAGE` (HTTP 502) for MinIO/object-store failures — never map those to `VALIDATION`.
+
 Do not invent `FORBIDDEN`, `CONFLICT`, or leak emails / existence on login. Login failures stay generic (`LoginService.GenericAuthFailure`).
 
 ## Persistence

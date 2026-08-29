@@ -341,6 +341,13 @@ app.MapGet("/api/cases/{caseId:guid}/documents/{documentId:guid}", async (
             statusCode: StatusCodes.Status404NotFound);
     }
 
+    if (errorCode == "STORAGE")
+    {
+        return Results.Json(
+            new { error = errorMessage ?? "Could not read the document. Please try again.", code = "STORAGE" },
+            statusCode: StatusCodes.Status502BadGateway);
+    }
+
     if (errorCode is not null)
     {
         return Results.Json(

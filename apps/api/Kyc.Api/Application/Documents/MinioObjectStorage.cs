@@ -64,10 +64,16 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
             // Buffer within KYC-040 max size so ASP.NET can set Content-Length and dispose cleanly.
             // Presigned URLs are deferred — browser/CORS and InMemory tests favor API streaming for MVP.
             using var response = await _s3.GetObjectAsync(_bucket, key, cancellationToken);
-            var buffer = new MemoryStream();
-            await response.ResponseStream.CopyToAsync(buffer, cancellationToken);
-            buffer.Position = 0;
-            return buffer;
+            if (response.ContentLength > DocumentUploadValidation.MaxFileBytes)
+            {
+                throw new InvalidOperationException(
+                    $"Object '{key}' exceeds maximum size of {DocumentUploadValidation.MaxFileBytes} bytes.");
+            }
+
+            return await CopyBoundedAsync(
+                response.ResponseStream,
+                DocumentUploadValidation.MaxFileBytes,
+                cancellationToken);
         }
         catch (AmazonS3Exception ex) when (
             ex.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Forbidden
@@ -75,6 +81,38 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
         {
             return null;
         }
+    }
+
+    /// <summary>Copies up to <paramref name="maxBytes"/>; throws if the stream exceeds the cap.</summary>
+    private static async Task<MemoryStream> CopyBoundedAsync(
+        Stream source,
+        long maxBytes,
+        CancellationToken cancellationToken)
+    {
+        var buffer = new MemoryStream();
+        var chunk = new byte[81920];
+        long total = 0;
+        while (true)
+        {
+            var read = await source.ReadAsync(chunk.AsMemory(0, chunk.Length), cancellationToken);
+            if (read == 0)
+            {
+                break;
+            }
+
+            total += read;
+            if (total > maxBytes)
+            {
+                await buffer.DisposeAsync();
+                throw new InvalidOperationException(
+                    $"Object exceeds maximum size of {maxBytes} bytes.");
+            }
+
+            await buffer.WriteAsync(chunk.AsMemory(0, read), cancellationToken);
+        }
+
+        buffer.Position = 0;
+        return buffer;
     }
 
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)

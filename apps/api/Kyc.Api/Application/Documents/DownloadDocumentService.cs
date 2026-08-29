@@ -74,7 +74,13 @@ public sealed partial class DownloadDocumentService(
         catch (Exception ex)
         {
             LogObjectStorageReadFailed(logger, ex, documentId);
-            return (null, ["Could not read the document. Please try again."], false, null, null);
+            // Infrastructure failure — not client VALIDATION (Copilot review / KYC-042).
+            return (
+                null,
+                Array.Empty<string>(),
+                false,
+                "STORAGE",
+                "Could not read the document. Please try again.");
         }
 
         if (content is null)
