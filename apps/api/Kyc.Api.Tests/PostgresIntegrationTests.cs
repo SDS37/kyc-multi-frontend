@@ -69,7 +69,7 @@ public sealed class PostgresIntegrationTests(PostgresApiFactory factory) : IClas
     public async Task Jsonb_formData_round_trips()
     {
         AuthenticateCustomer();
-        var form = """{"fullName":"Ada","step":1}""";
+        const string form = """{"fullName":"Ada","step":1}""";
 
         using var response = await _client.PostAsync(
             "/graphql",
