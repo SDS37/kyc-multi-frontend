@@ -5,10 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <!-- Mvc.Testing forces PreserveCompilationContext=true (needed for deps/content).
-         Disable PreserveCompilationReferences so MSBuild does not copy ~300 refs/*.dll
-         into bin/.../refs (MSB3026 Access denied when fileproviderd / Cursor C# LSP
-         lock Desktop-tree outputs during concurrent builds). -->
+    <!-- Mvc.Testing / WebApplicationFactory needs deps.json (and often PreserveCompilationContext).
+         Leave context on, but disable PreserveCompilationReferences so MSBuild does not
+         copy hundreds of refs/*.dll into bin. Those files get locked by Cursor / the C#
+         LSP during concurrent builds and produce MSB3026. -->
     <PreserveCompilationReferences>false</PreserveCompilationReferences>
   </PropertyGroup>
 
