@@ -7,7 +7,6 @@ using Kyc.Api.Application.Identity;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Cases;
 using Kyc.Api.Domain.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Kyc.Api.Tests;

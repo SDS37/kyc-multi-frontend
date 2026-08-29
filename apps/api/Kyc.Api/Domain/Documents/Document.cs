@@ -1,4 +1,3 @@
-using Kyc.Api.Domain;
 using Kyc.Api.Domain.Cases;
 using Kyc.Api.Domain.Identity;
 

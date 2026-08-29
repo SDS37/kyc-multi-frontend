@@ -1,4 +1,3 @@
-using HotChocolate;
 using HotChocolate.Authorization;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Documents;

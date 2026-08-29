@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using HotChocolate.AspNetCore;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Documents;
 using Kyc.Api.Application.Identity;
