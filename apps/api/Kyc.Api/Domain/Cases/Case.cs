@@ -29,4 +29,7 @@ public class Case : ITenantScoped
 
     public Guid? ReviewedBy { get; set; }
     public User? Reviewer { get; set; }
+
+    /// <summary>Optional on approve; required on reject (KYC-035).</summary>
+    public string? ReviewComment { get; set; }
 }

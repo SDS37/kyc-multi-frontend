@@ -123,6 +123,7 @@ builder.Services.AddScoped<CreateDraftCaseService>();
 builder.Services.AddScoped<UpdateDraftCaseService>();
 builder.Services.AddScoped<SubmitCaseService>();
 builder.Services.AddScoped<StartCaseReviewService>();
+builder.Services.AddScoped<CompleteCaseReviewService>();
 
 builder.Services
     .AddGraphQLServer()

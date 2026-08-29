@@ -45,6 +45,9 @@ public class CaseConfiguration : IEntityTypeConfiguration<Case>
             .HasForeignKey(c => c.ReviewedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(c => c.ReviewComment)
+            .HasMaxLength(2000);
+
         builder.HasIndex(c => new { c.TenantId, c.CustomerUserId });
         builder.HasIndex(c => new { c.TenantId, c.Status });
     }

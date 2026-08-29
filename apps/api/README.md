@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run, test).
 
-`Tenant`, `User`, and `Case` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Customers create/update/submit with `createDraftCase` / `updateDraftCase` / `submitCase` (KYC-031–033); Reviewer/TenantAdmin start review with `startCaseReview` (KYC-034). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014). `Case` is tenant-scoped (KYC-030); approve/reject and list GraphQL arrive in later stories.
+`Tenant`, `User`, and `Case` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Customers create/update/submit with `createDraftCase` / `updateDraftCase` / `submitCase` (KYC-031–033); Reviewer/TenantAdmin start review with `startCaseReview` (KYC-034) and finish with `approveCase` / `rejectCase` (KYC-035). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014). `Case` is tenant-scoped (KYC-030); list GraphQL arrives in later stories.
 
 Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
 
@@ -199,6 +199,8 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 | `updateDraftCase` | Customer | Update own draft (`title` required; `formData` optional, max 64 KiB / depth 8); missing / not owner → `NOT_FOUND`; owner non-draft → `DOMAIN` |
 | `submitCase` | Customer | Submit own draft by `id`; missing / not owner → `NOT_FOUND`; FormData max 64 KiB / depth 8 with `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`; owner non-draft → `DOMAIN`; sets `SUBMITTED` + `submittedAt` |
 | `startCaseReview` | Reviewer or TenantAdmin | Move submitted case to `IN_REVIEW`; sets `ReviewedBy` from JWT; same-tenant only |
+| `approveCase` | Reviewer or TenantAdmin | `IN_REVIEW` → `APPROVED`; optional `comment`; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
+| `rejectCase` | Reviewer or TenantAdmin | `IN_REVIEW` → `REJECTED`; required `comment`; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 
 Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED`, `NOT_FOUND`, `DOMAIN`. Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations.
 
@@ -231,6 +233,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-032 | Customer `updateDraftCase`; missing/not owner → `NOT_FOUND`; Draft-only; title/FormData; owner other statuses → `DOMAIN` |
 | KYC-033 | Customer `submitCase`; missing/not owner → `NOT_FOUND`; Draft→Submitted; FormData requires fullName/dateOfBirth/nationality/address; `SubmittedAt` set |
 | KYC-034 | Reviewer/TenantAdmin `startCaseReview`; Submitted→InReview; same tenant; sets `ReviewedBy` |
+| KYC-035 | Reviewer/TenantAdmin `approveCase` / `rejectCase`; InReview only; reject requires comment; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 | KYC-103 | `GET /health` stays a process check; `GET /ready` fails when Postgres is unreachable; EF `EnableRetryOnFailure`; Npgsql command timeout 30s; ASP.NET request timeout 60s |
 | KYC-104 | JSON stdout logs with `RequestId`; auth and `/ready` failures logged without secrets; README documents local logs + `/ready`-based signals |
