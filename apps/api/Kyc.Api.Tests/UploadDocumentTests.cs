@@ -271,7 +271,7 @@ public sealed class UploadDocumentTests(ApiFactory factory) : IClassFixture<ApiF
         Assert.Equal("a.pdf", DocumentUploadValidation.SanitizeFileName("../a.pdf"));
         Assert.Null(DocumentUploadValidation.NormalizeContentType("application/zip"));
         Assert.Equal("image/jpeg", DocumentUploadValidation.NormalizeContentType("image/jpg"));
-        Assert.True(DocumentUploadValidation.MatchesMagicBytes("image/jpeg", new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 }));
+        Assert.True(DocumentUploadValidation.MatchesMagicBytes("image/jpeg", [0xFF, 0xD8, 0xFF, 0xE0]));
     }
 
     private async Task<HttpResponseMessage> PostFileAsync(Guid caseId, string fileName, string contentType, byte[] bytes)

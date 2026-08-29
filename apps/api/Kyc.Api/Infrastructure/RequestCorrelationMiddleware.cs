@@ -8,15 +8,12 @@ namespace Kyc.Api.Infrastructure;
 /// <see cref="HttpContext.TraceIdentifier"/>. Always echoes the id on the response
 /// and puts it in the logger scope (KYC-104).
 /// </summary>
-public sealed class RequestCorrelationMiddleware(RequestDelegate next)
+public sealed partial class RequestCorrelationMiddleware(RequestDelegate next)
 {
     public const string HeaderName = "X-Request-Id";
     public const string LogScopeKey = "RequestId";
 
     private const int MaxIncomingLength = 128;
-    private static readonly Regex SafeRequestId = new(
-        @"^[A-Za-z0-9._\-]{1,128}$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public async Task InvokeAsync(HttpContext context, ILogger<RequestCorrelationMiddleware> logger)
     {
@@ -57,7 +54,7 @@ public sealed class RequestCorrelationMiddleware(RequestDelegate next)
         if (context.Request.Headers.TryGetValue(HeaderName, out var values))
         {
             var incoming = values.ToString().Trim();
-            if (incoming.Length is > 0 and <= MaxIncomingLength && SafeRequestId.IsMatch(incoming))
+            if (incoming.Length is > 0 and <= MaxIncomingLength && SafeRequestId().IsMatch(incoming))
             {
                 return incoming;
             }
@@ -65,4 +62,7 @@ public sealed class RequestCorrelationMiddleware(RequestDelegate next)
 
         return context.TraceIdentifier;
     }
+
+    [GeneratedRegex(@"^[A-Za-z0-9._\-]{1,128}$", RegexOptions.CultureInvariant)]
+    private static partial Regex SafeRequestId();
 }

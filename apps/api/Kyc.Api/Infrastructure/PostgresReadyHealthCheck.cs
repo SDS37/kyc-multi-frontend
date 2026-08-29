@@ -8,7 +8,7 @@ namespace Kyc.Api.Infrastructure;
 /// Connection/command timeouts are short so orchestrators are not blocked on the EF command timeout.
 /// Failures are logged without the connection string or exception text (KYC-104).
 /// </summary>
-public sealed class PostgresReadyHealthCheck(
+public sealed partial class PostgresReadyHealthCheck(
     string connectionString,
     ILogger<PostgresReadyHealthCheck> logger) : IHealthCheck
 {
@@ -38,8 +38,11 @@ public sealed class PostgresReadyHealthCheck(
         }
         catch (Exception ex)
         {
-            logger.LogWarning("{Message} ({ExceptionType})", UnreachableLog, ex.GetType().Name);
+            LogUnreachable(logger, UnreachableLog, ex.GetType().Name);
             return HealthCheckResult.Unhealthy("Postgres is unreachable.");
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "{Message} ({ExceptionType})")]
+    private static partial void LogUnreachable(ILogger logger, string message, string exceptionType);
 }

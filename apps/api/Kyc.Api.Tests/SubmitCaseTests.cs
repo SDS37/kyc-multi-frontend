@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kyc.Api.Tests;
 
-public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
+public sealed class SubmitCaseTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
     private const string CompleteFormData = """
         {
@@ -24,7 +24,6 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
         }
         """;
 
-    private readonly ApiFactory _factory;
     private HttpClient _client = null!;
     private Guid _tenantId;
     private Guid _ownerId;
@@ -33,14 +32,9 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
     private Guid _incompleteDraftId;
     private Guid _submittedCaseId;
 
-    public SubmitCaseTests(ApiFactory factory)
-    {
-        _factory = factory;
-    }
-
     public async Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
 
         _tenantId = Guid.NewGuid();
         _ownerId = Guid.NewGuid();
@@ -50,7 +44,7 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
         _submittedCaseId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Tenants.Add(new Tenant
         {
@@ -129,7 +123,7 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
         // Fresh draft per test — do not mutate shared class seed (order-independent).
         var draftId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Cases.Add(new Case
@@ -161,7 +155,7 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
         Assert.Equal("SUBMITTED", submitted.GetProperty("status").GetString());
         Assert.NotEqual(JsonValueKind.Null, submitted.GetProperty("submittedAt").ValueKind);
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == draftId);
@@ -246,7 +240,7 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
     {
         var submittedId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Cases.Add(new Case
@@ -290,7 +284,7 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
         var draftId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
         var oversized = $$"""{"pad":"{{new string('x', CreateDraftCaseService.MaxFormDataUtf8Bytes)}}"}""";
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Cases.Add(new Case
@@ -331,7 +325,7 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
     {
         var draftId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Cases.Add(new Case
@@ -372,7 +366,7 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
             nested = $$"""{"a":{{nested}}}""";
         }
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Cases.Add(new Case
@@ -457,7 +451,7 @@ public sealed class SubmitCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
 
     private void AuthenticateRole(UserRole role, Guid userId)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var jwt = scope.ServiceProvider.GetRequiredService<JwtTokenService>();
         var user = new User
         {

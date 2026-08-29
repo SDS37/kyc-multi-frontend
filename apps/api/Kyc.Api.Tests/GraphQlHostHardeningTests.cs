@@ -18,23 +18,14 @@ public sealed class ProductionApiFactory : ApiFactory
     }
 }
 
-public sealed class GraphQlHostHardeningTests : IClassFixture<ApiFactory>, IClassFixture<ProductionApiFactory>
+public sealed class GraphQlHostHardeningTests(ApiFactory development, ProductionApiFactory production) : IClassFixture<ApiFactory>, IClassFixture<ProductionApiFactory>
 {
     private const string IntrospectionQuery = """{ "query": "query { __schema { queryType { name } } }" }""";
-
-    private readonly ApiFactory _development;
-    private readonly ProductionApiFactory _production;
-
-    public GraphQlHostHardeningTests(ApiFactory development, ProductionApiFactory production)
-    {
-        _development = development;
-        _production = production;
-    }
 
     [Fact]
     public async Task Development_allows_authenticated_introspection()
     {
-        using var client = _development.CreateClient();
+        using var client = development.CreateClient();
         var token = await RegisterAndLoginAsync(client, "dev-intro");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -46,7 +37,7 @@ public sealed class GraphQlHostHardeningTests : IClassFixture<ApiFactory>, IClas
     [Fact]
     public async Task Production_rejects_authenticated_introspection()
     {
-        using var client = _production.CreateClient();
+        using var client = production.CreateClient();
         var token = await RegisterAndLoginAsync(client, "prod-intro");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -71,7 +62,7 @@ public sealed class GraphQlHostHardeningTests : IClassFixture<ApiFactory>, IClas
     [Fact]
     public async Task Development_serves_schema_sdl()
     {
-        using var client = _development.CreateClient();
+        using var client = development.CreateClient();
         using var response = await client.GetAsync("/graphql?sdl");
         var body = await response.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -81,7 +72,7 @@ public sealed class GraphQlHostHardeningTests : IClassFixture<ApiFactory>, IClas
     [Fact]
     public async Task Production_does_not_serve_schema_sdl()
     {
-        using var client = _production.CreateClient();
+        using var client = production.CreateClient();
         using var response = await client.GetAsync("/graphql?sdl");
         var body = await response.Content.ReadAsStringAsync();
         Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
@@ -91,7 +82,7 @@ public sealed class GraphQlHostHardeningTests : IClassFixture<ApiFactory>, IClas
     [Fact]
     public async Task Development_apiStatus_still_works_under_depth_limit()
     {
-        using var client = _development.CreateClient();
+        using var client = development.CreateClient();
         var token = await RegisterAndLoginAsync(client, "dev-depth");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 

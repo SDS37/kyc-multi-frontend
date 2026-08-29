@@ -12,9 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kyc.Api.Tests;
 
-public sealed class ListCasesTests : IClassFixture<ApiFactory>, IAsyncLifetime
+public sealed class ListCasesTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
-    private readonly ApiFactory _factory;
     private HttpClient _client = null!;
     private Guid _tenantId;
     private Guid _otherTenantId;
@@ -28,14 +27,9 @@ public sealed class ListCasesTests : IClassFixture<ApiFactory>, IAsyncLifetime
     private Guid _customerBDraftId;
     private Guid _otherTenantCaseId;
 
-    public ListCasesTests(ApiFactory factory)
-    {
-        _factory = factory;
-    }
-
     public async Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
 
         _tenantId = Guid.NewGuid();
         _otherTenantId = Guid.NewGuid();
@@ -50,7 +44,7 @@ public sealed class ListCasesTests : IClassFixture<ApiFactory>, IAsyncLifetime
         _otherTenantCaseId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Tenants.AddRange(
             new Tenant
@@ -355,7 +349,7 @@ public sealed class ListCasesTests : IClassFixture<ApiFactory>, IAsyncLifetime
 
     private void Authenticate(UserRole role, Guid userId)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var jwt = scope.ServiceProvider.GetRequiredService<JwtTokenService>();
         var user = new User
         {

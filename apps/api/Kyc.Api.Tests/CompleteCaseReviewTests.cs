@@ -12,9 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kyc.Api.Tests;
 
-public sealed class CompleteCaseReviewTests : IClassFixture<ApiFactory>, IAsyncLifetime
+public sealed class CompleteCaseReviewTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
-    private readonly ApiFactory _factory;
     private HttpClient _client = null!;
     private Guid _tenantId;
     private Guid _otherTenantId;
@@ -26,14 +25,9 @@ public sealed class CompleteCaseReviewTests : IClassFixture<ApiFactory>, IAsyncL
     private Guid _submittedCaseId;
     private Guid _otherTenantInReviewId;
 
-    public CompleteCaseReviewTests(ApiFactory factory)
-    {
-        _factory = factory;
-    }
-
     public async Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
 
         _tenantId = Guid.NewGuid();
         _otherTenantId = Guid.NewGuid();
@@ -46,7 +40,7 @@ public sealed class CompleteCaseReviewTests : IClassFixture<ApiFactory>, IAsyncL
         _otherTenantInReviewId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Tenants.AddRange(
             new Tenant
@@ -170,7 +164,7 @@ public sealed class CompleteCaseReviewTests : IClassFixture<ApiFactory>, IAsyncL
         Assert.Equal(_reviewerId.ToString(), approved.GetProperty("reviewedBy").GetString());
         Assert.Equal(JsonValueKind.Null, approved.GetProperty("reviewComment").ValueKind);
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == caseId);
         Assert.Equal(CaseStatus.Approved, row.Status);
@@ -405,7 +399,7 @@ public sealed class CompleteCaseReviewTests : IClassFixture<ApiFactory>, IAsyncL
     {
         var caseId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Cases.Add(new Case
         {
@@ -426,7 +420,7 @@ public sealed class CompleteCaseReviewTests : IClassFixture<ApiFactory>, IAsyncL
 
     private void Authenticate(UserRole role, Guid userId)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var jwt = scope.ServiceProvider.GetRequiredService<JwtTokenService>();
         var user = new User
         {

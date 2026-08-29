@@ -42,47 +42,40 @@ public sealed class LoginTimingApiFactory : ApiFactory
     }
 }
 
-public sealed class LoginTimingTests : IClassFixture<LoginTimingApiFactory>
+public sealed class LoginTimingTests(LoginTimingApiFactory factory) : IClassFixture<LoginTimingApiFactory>
 {
-    private readonly LoginTimingApiFactory _factory;
-
-    public LoginTimingTests(LoginTimingApiFactory factory)
-    {
-        _factory = factory;
-    }
-
     [Fact]
     public async Task Unknown_user_still_verifies_a_password_hash()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var slug = await RegisterAsync(client, "miss-user");
-        var before = _factory.Hasher.VerifyCount;
+        var before = factory.Hasher.VerifyCount;
 
         var payload = await PostGraphqlAsync(client, LoginBody(slug, "nobody@miss.example", "ChangeMe1"));
         Assert.Contains("AUTH_FAILED", payload.GetProperty("errors").ToString(), StringComparison.Ordinal);
-        Assert.True(_factory.Hasher.VerifyCount > before, "missing user must still call VerifyHashedPassword");
+        Assert.True(factory.Hasher.VerifyCount > before, "missing user must still call VerifyHashedPassword");
     }
 
     [Fact]
     public async Task Unknown_tenant_still_verifies_a_password_hash()
     {
-        using var client = _factory.CreateClient();
-        var before = _factory.Hasher.VerifyCount;
+        using var client = factory.CreateClient();
+        var before = factory.Hasher.VerifyCount;
 
         var payload = await PostGraphqlAsync(
             client,
             LoginBody("no-such-tenant", "a@example.com", "ChangeMe1"));
         Assert.Contains("AUTH_FAILED", payload.GetProperty("errors").ToString(), StringComparison.Ordinal);
-        Assert.True(_factory.Hasher.VerifyCount > before, "missing tenant must still call VerifyHashedPassword");
+        Assert.True(factory.Hasher.VerifyCount > before, "missing tenant must still call VerifyHashedPassword");
     }
 
     [Fact]
     public async Task Inactive_tenant_still_verifies_a_password_hash()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var slug = await RegisterAsync(client, "inactive");
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var tenant = await db.Tenants.SingleAsync(t => t.Slug == slug);
@@ -90,17 +83,17 @@ public sealed class LoginTimingTests : IClassFixture<LoginTimingApiFactory>
             await db.SaveChangesAsync();
         }
 
-        var before = _factory.Hasher.VerifyCount;
+        var before = factory.Hasher.VerifyCount;
         var payload = await PostGraphqlAsync(client, LoginBody(slug, $"a@{slug}.example", "ChangeMe1"));
         Assert.Contains("AUTH_FAILED", payload.GetProperty("errors").ToString(), StringComparison.Ordinal);
-        Assert.True(_factory.Hasher.VerifyCount > before, "inactive tenant must still call VerifyHashedPassword");
+        Assert.True(factory.Hasher.VerifyCount > before, "inactive tenant must still call VerifyHashedPassword");
     }
 
     [Fact]
     public async Task Oversized_password_returns_VALIDATION_without_verify()
     {
-        using var client = _factory.CreateClient();
-        var before = _factory.Hasher.VerifyCount;
+        using var client = factory.CreateClient();
+        var before = factory.Hasher.VerifyCount;
         var oversized = new string('x', LoginService.MaxPasswordLength + 1);
 
         var payload = await PostGraphqlAsync(
@@ -110,7 +103,7 @@ public sealed class LoginTimingTests : IClassFixture<LoginTimingApiFactory>
         Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
         Assert.DoesNotContain("AUTH_FAILED", errors, StringComparison.Ordinal);
         Assert.Contains($"{LoginService.MaxPasswordLength}", errors, StringComparison.Ordinal);
-        Assert.Equal(before, _factory.Hasher.VerifyCount);
+        Assert.Equal(before, factory.Hasher.VerifyCount);
     }
 
     private static async Task<string> RegisterAsync(HttpClient client, string prefix)

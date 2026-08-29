@@ -58,5 +58,6 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         }
 
         await base.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 }

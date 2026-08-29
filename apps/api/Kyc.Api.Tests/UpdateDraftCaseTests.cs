@@ -12,9 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kyc.Api.Tests;
 
-public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
+public sealed class UpdateDraftCaseTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
-    private readonly ApiFactory _factory;
     private HttpClient _client = null!;
     private Guid _tenantId;
     private Guid _ownerId;
@@ -23,14 +22,9 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
     private Guid _omitFormDataCaseId;
     private Guid _submittedCaseId;
 
-    public UpdateDraftCaseTests(ApiFactory factory)
-    {
-        _factory = factory;
-    }
-
     public async Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
 
         _tenantId = Guid.NewGuid();
         _ownerId = Guid.NewGuid();
@@ -40,7 +34,7 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         _submittedCaseId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Tenants.Add(new Tenant
         {
@@ -138,7 +132,7 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         Assert.Equal("DRAFT", updated.GetProperty("status").GetString());
         Assert.Equal("""{"step":3}""", updated.GetProperty("formData").GetString());
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == _draftCaseId);
         Assert.Equal("Updated title", row.Title);
@@ -277,7 +271,7 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         Assert.Equal("Title only", updated.GetProperty("title").GetString());
         Assert.Equal("""{"keep":true}""", updated.GetProperty("formData").GetString());
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == _omitFormDataCaseId);
         Assert.Equal("""{"keep":true}""", row.FormData);
@@ -404,7 +398,7 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
 
     private void AuthenticateRole(UserRole role, Guid userId)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var jwt = scope.ServiceProvider.GetRequiredService<JwtTokenService>();
         var user = new User
         {

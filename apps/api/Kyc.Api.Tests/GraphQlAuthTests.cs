@@ -5,19 +5,13 @@ using System.Text.Json;
 
 namespace Kyc.Api.Tests;
 
-public sealed class GraphQlAuthTests : IClassFixture<ApiFactory>, IAsyncLifetime
+public sealed class GraphQlAuthTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
-    private readonly ApiFactory _factory;
     private HttpClient _client = null!;
-
-    public GraphQlAuthTests(ApiFactory factory)
-    {
-        _factory = factory;
-    }
 
     public Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
         return Task.CompletedTask;
     }
 

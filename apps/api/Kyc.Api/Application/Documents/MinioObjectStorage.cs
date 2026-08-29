@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace Kyc.Api.Application.Documents;
 
-public sealed class MinioObjectStorage : IObjectStorage, IAsyncDisposable
+public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposable
 {
     private readonly IAmazonS3 _s3;
     private readonly string _bucket;
@@ -58,7 +58,7 @@ public sealed class MinioObjectStorage : IObjectStorage, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to delete object {StorageKey}", key);
+            LogDeleteFailed(_logger, ex, key);
         }
     }
 
@@ -97,4 +97,7 @@ public sealed class MinioObjectStorage : IObjectStorage, IAsyncDisposable
         _bucketGate.Dispose();
         return ValueTask.CompletedTask;
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to delete object {StorageKey}")]
+    private static partial void LogDeleteFailed(ILogger logger, Exception ex, string storageKey);
 }

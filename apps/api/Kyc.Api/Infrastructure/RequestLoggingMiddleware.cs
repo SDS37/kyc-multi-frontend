@@ -7,7 +7,7 @@ namespace Kyc.Api.Infrastructure;
 /// Does not log bodies, query strings, or headers (passwords / JWTs / FormData stay out).
 /// Skips <c>/health</c> so liveness probes do not flood stdout.
 /// </summary>
-public sealed class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
+public sealed partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -24,8 +24,8 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next, ILogger<Reque
             if (!skip)
             {
                 var elapsedMs = (int)Stopwatch.GetElapsedTime(start).TotalMilliseconds;
-                logger.LogInformation(
-                    "HTTP {RequestMethod} {RequestPath} {StatusCode} {ElapsedMs}ms",
+                LogRequestComplete(
+                    logger,
                     context.Request.Method,
                     context.Request.Path.Value,
                     context.Response.StatusCode,
@@ -33,4 +33,14 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next, ILogger<Reque
             }
         }
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "HTTP {RequestMethod} {RequestPath} {StatusCode} {ElapsedMs}ms")]
+    private static partial void LogRequestComplete(
+        ILogger logger,
+        string requestMethod,
+        string? requestPath,
+        int statusCode,
+        int elapsedMs);
 }

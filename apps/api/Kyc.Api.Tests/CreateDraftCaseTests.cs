@@ -12,27 +12,21 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kyc.Api.Tests;
 
-public sealed class CreateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLifetime
+public sealed class CreateDraftCaseTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
-    private readonly ApiFactory _factory;
     private HttpClient _client = null!;
     private Guid _tenantId;
     private Guid _customerId;
 
-    public CreateDraftCaseTests(ApiFactory factory)
-    {
-        _factory = factory;
-    }
-
     public async Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
 
         _tenantId = Guid.NewGuid();
         _customerId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Tenants.Add(new Tenant
         {
@@ -81,7 +75,7 @@ public sealed class CreateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
         Assert.Equal(_tenantId, created.GetProperty("tenantId").GetGuid());
         Assert.Equal(_customerId, created.GetProperty("customerUserId").GetGuid());
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var id = created.GetProperty("id").GetGuid();
         // No HTTP JWT on this scope — bypass filter to assert persistence.
@@ -250,7 +244,7 @@ public sealed class CreateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
 
     private void Authenticate(UserRole role, Guid tenantId, Guid userId)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var jwt = scope.ServiceProvider.GetRequiredService<JwtTokenService>();
         var user = new User
         {

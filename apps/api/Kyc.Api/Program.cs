@@ -136,7 +136,7 @@ builder.Services
                 var log = context.HttpContext.RequestServices
                     .GetRequiredService<ILoggerFactory>()
                     .CreateLogger("Kyc.Api.Auth");
-                log.LogWarning("JWT authentication failed {FailureType}", context.Exception.GetType().Name);
+                Program.LogJwtAuthFailed(log, context.Exception.GetType().Name);
                 return Task.CompletedTask;
             }
         };
@@ -319,4 +319,7 @@ public partial class Program
     private static readonly string[] ReadyHealthTags = ["ready"];
     private static readonly string[] MultipartFormRequiredErrors =
         ["multipart/form-data with a file field is required."];
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "JWT authentication failed {FailureType}")]
+    internal static partial void LogJwtAuthFailed(ILogger logger, string failureType);
 }

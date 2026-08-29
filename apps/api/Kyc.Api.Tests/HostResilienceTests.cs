@@ -27,19 +27,13 @@ public sealed class NpgsqlHostFactory : WebApplicationFactory<Program>
     }
 }
 
-public sealed class HostResilienceTests : IClassFixture<NpgsqlHostFactory>, IAsyncLifetime
+public sealed class HostResilienceTests(NpgsqlHostFactory factory) : IClassFixture<NpgsqlHostFactory>, IAsyncLifetime
 {
-    private readonly NpgsqlHostFactory _factory;
     private HttpClient _client = null!;
-
-    public HostResilienceTests(NpgsqlHostFactory factory)
-    {
-        _factory = factory;
-    }
 
     public Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
         return Task.CompletedTask;
     }
 
@@ -76,7 +70,7 @@ public sealed class HostResilienceTests : IClassFixture<NpgsqlHostFactory>, IAsy
     [Fact]
     public void Ef_npgsql_retries_transient_failures()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         Assert.True(db.Database.CreateExecutionStrategy().RetriesOnFailure);
     }

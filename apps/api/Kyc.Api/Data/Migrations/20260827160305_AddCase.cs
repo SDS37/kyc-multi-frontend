@@ -8,6 +8,9 @@ namespace Kyc.Api.Data.Migrations
     /// <inheritdoc />
     public partial class AddCase : Migration
     {
+        private static readonly string[] CasesTenantIdCustomerUserIdColumns = ["TenantId", "CustomerUserId"];
+        private static readonly string[] CasesTenantIdStatusColumns = ["TenantId", "Status"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -63,12 +66,12 @@ namespace Kyc.Api.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_cases_TenantId_CustomerUserId",
                 table: "cases",
-                columns: new[] { "TenantId", "CustomerUserId" });
+                columns: CasesTenantIdCustomerUserIdColumns);
 
             migrationBuilder.CreateIndex(
                 name: "IX_cases_TenantId_Status",
                 table: "cases",
-                columns: new[] { "TenantId", "Status" });
+                columns: CasesTenantIdStatusColumns);
         }
 
         /// <inheritdoc />

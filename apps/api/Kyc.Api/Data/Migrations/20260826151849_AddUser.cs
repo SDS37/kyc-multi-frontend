@@ -8,6 +8,8 @@ namespace Kyc.Api.Data.Migrations
     /// <inheritdoc />
     public partial class AddUser : Migration
     {
+        private static readonly string[] UsersTenantIdEmailColumns = ["TenantId", "Email"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -36,7 +38,7 @@ namespace Kyc.Api.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_users_TenantId_Email",
                 table: "users",
-                columns: new[] { "TenantId", "Email" },
+                columns: UsersTenantIdEmailColumns,
                 unique: true);
         }
 

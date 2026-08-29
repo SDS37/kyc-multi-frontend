@@ -8,6 +8,8 @@ namespace Kyc.Api.Data.Migrations
     /// <inheritdoc />
     public partial class AddDocument : Migration
     {
+        private static readonly string[] DocumentsTenantIdCaseIdColumns = ["TenantId", "CaseId"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -62,7 +64,7 @@ namespace Kyc.Api.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_documents_TenantId_CaseId",
                 table: "documents",
-                columns: new[] { "TenantId", "CaseId" });
+                columns: DocumentsTenantIdCaseIdColumns);
 
             migrationBuilder.CreateIndex(
                 name: "IX_documents_UploadedByUserId",

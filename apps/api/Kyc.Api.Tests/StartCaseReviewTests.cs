@@ -12,9 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kyc.Api.Tests;
 
-public sealed class StartCaseReviewTests : IClassFixture<ApiFactory>, IAsyncLifetime
+public sealed class StartCaseReviewTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
-    private readonly ApiFactory _factory;
     private HttpClient _client = null!;
     private Guid _tenantId;
     private Guid _otherTenantId;
@@ -26,14 +25,9 @@ public sealed class StartCaseReviewTests : IClassFixture<ApiFactory>, IAsyncLife
     private Guid _draftCaseId;
     private Guid _otherTenantSubmittedId;
 
-    public StartCaseReviewTests(ApiFactory factory)
-    {
-        _factory = factory;
-    }
-
     public async Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
 
         _tenantId = Guid.NewGuid();
         _otherTenantId = Guid.NewGuid();
@@ -46,7 +40,7 @@ public sealed class StartCaseReviewTests : IClassFixture<ApiFactory>, IAsyncLife
         _otherTenantSubmittedId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Tenants.AddRange(
             new Tenant
@@ -165,7 +159,7 @@ public sealed class StartCaseReviewTests : IClassFixture<ApiFactory>, IAsyncLife
         Assert.False(payload.TryGetProperty("errors", out _), payload.ToString());
         Assert.Equal("IN_REVIEW", payload.GetProperty("data").GetProperty("startCaseReview").GetProperty("status").GetString());
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == caseId);
         Assert.Equal(CaseStatus.InReview, row.Status);
@@ -286,7 +280,7 @@ public sealed class StartCaseReviewTests : IClassFixture<ApiFactory>, IAsyncLife
     {
         var caseId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Cases.Add(new Case
         {
@@ -306,7 +300,7 @@ public sealed class StartCaseReviewTests : IClassFixture<ApiFactory>, IAsyncLife
 
     private void Authenticate(UserRole role, Guid userId)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var jwt = scope.ServiceProvider.GetRequiredService<JwtTokenService>();
         var user = new User
         {

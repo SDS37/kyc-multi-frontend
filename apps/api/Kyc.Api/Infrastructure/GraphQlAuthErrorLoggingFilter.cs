@@ -7,7 +7,7 @@ namespace Kyc.Api.Infrastructure;
 /// Logs GraphQL auth failures by error code only — never the query, variables, or token.
 /// Logger comes from the current HTTP request (schema DI does not include host <see cref="ILogger{T}"/>).
 /// </summary>
-public sealed class GraphQlAuthErrorLoggingFilter : IErrorFilter
+public sealed partial class GraphQlAuthErrorLoggingFilter : IErrorFilter
 {
     public IError OnError(IError error)
     {
@@ -16,12 +16,19 @@ public sealed class GraphQlAuthErrorLoggingFilter : IErrorFilter
             case "AUTH_NOT_AUTHENTICATED":
             case "AUTH_NOT_AUTHORIZED":
             case "AUTH_FAILED":
-                RequestLogContext.LoggerFactory?
-                    .CreateLogger<GraphQlAuthErrorLoggingFilter>()
-                    .LogWarning("GraphQL auth failure {ErrorCode}", error.Code);
+                var logger = RequestLogContext.LoggerFactory?
+                    .CreateLogger<GraphQlAuthErrorLoggingFilter>();
+                if (logger is not null)
+                {
+                    LogAuthFailure(logger, error.Code);
+                }
+
                 break;
         }
 
         return error;
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "GraphQL auth failure {ErrorCode}")]
+    private static partial void LogAuthFailure(ILogger logger, string? errorCode);
 }

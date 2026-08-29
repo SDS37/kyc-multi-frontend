@@ -25,21 +25,14 @@ public sealed class ObservabilityApiFactory : ApiFactory
     }
 }
 
-public sealed class ObservabilityTests : IClassFixture<ObservabilityApiFactory>
+public sealed class ObservabilityTests(ObservabilityApiFactory factory) : IClassFixture<ObservabilityApiFactory>
 {
     private const string SecretPassword = "SuperSecret-DoNotLog";
-
-    private readonly ObservabilityApiFactory _factory;
-
-    public ObservabilityTests(ObservabilityApiFactory factory)
-    {
-        _factory = factory;
-    }
 
     [Fact]
     public async Task Health_echoes_generated_request_id()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         using var response = await client.GetAsync("/health");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(response.Headers.TryGetValues(RequestCorrelationMiddleware.HeaderName, out var values));
@@ -50,7 +43,7 @@ public sealed class ObservabilityTests : IClassFixture<ObservabilityApiFactory>
     [Fact]
     public async Task Health_echoes_safe_incoming_request_id()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         client.DefaultRequestHeaders.TryAddWithoutValidation(
             RequestCorrelationMiddleware.HeaderName,
             "local-debug-1");
@@ -63,7 +56,7 @@ public sealed class ObservabilityTests : IClassFixture<ObservabilityApiFactory>
     [Fact]
     public async Task Health_rejects_unsafe_incoming_request_id()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         client.DefaultRequestHeaders.TryAddWithoutValidation(
             RequestCorrelationMiddleware.HeaderName,
             "not a valid id!!");
@@ -77,21 +70,21 @@ public sealed class ObservabilityTests : IClassFixture<ObservabilityApiFactory>
     [Fact]
     public async Task Health_probe_is_not_logged_at_information()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         await client.GetAsync("/health");
         Assert.DoesNotContain(
-            _factory.Logs.Entries,
+            factory.Logs.Entries,
             e => e.Message.Contains("HTTP GET /health", StringComparison.Ordinal));
     }
 
     [Fact]
     public async Task Http_request_log_includes_request_id_scope()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         using var response = await client.GetAsync("/ready");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
 
-        var httpLog = _factory.Logs.Entries.FirstOrDefault(e =>
+        var httpLog = factory.Logs.Entries.FirstOrDefault(e =>
             e.Message.Contains("HTTP GET /ready", StringComparison.Ordinal));
         Assert.NotNull(httpLog);
         Assert.True(HasRequestIdScope(httpLog.Scopes), "RequestId should be in the log scope.");
@@ -100,7 +93,7 @@ public sealed class ObservabilityTests : IClassFixture<ObservabilityApiFactory>
     [Fact]
     public async Task Ready_failure_is_logged_without_connection_secrets()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         await client.GetAsync("/ready");
 
         var joined = JoinLogs();
@@ -113,7 +106,7 @@ public sealed class ObservabilityTests : IClassFixture<ObservabilityApiFactory>
     [Fact]
     public async Task Login_failure_is_logged_without_password()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         using var content = new StringContent(
             $$"""{"tenantSlug":"nope","email":"a@b.example","password":"{{SecretPassword}}"}""",
             Encoding.UTF8,
@@ -131,7 +124,7 @@ public sealed class ObservabilityTests : IClassFixture<ObservabilityApiFactory>
     public async Task GraphQl_auth_failure_logs_code_without_token()
     {
         const string leakedToken = "eyJhbGciOi-not-a-real-token";
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", leakedToken);
 
         using var content = new StringContent(
@@ -157,7 +150,7 @@ public sealed class ObservabilityTests : IClassFixture<ObservabilityApiFactory>
     }
 
     private string JoinLogs() =>
-        string.Join('\n', _factory.Logs.Entries.Select(e => $"{e.Category} {e.Message}"));
+        string.Join('\n', factory.Logs.Entries.Select(e => $"{e.Category} {e.Message}"));
 
     private static bool HasRequestIdScope(object[] scopes)
     {

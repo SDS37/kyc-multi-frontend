@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kyc.Api.Application.Identity;
 
-public sealed class LoginService(
+public sealed partial class LoginService(
     AppDbContext db,
     IPasswordHasher<User> passwordHasher,
     JwtTokenService jwtTokenService,
@@ -55,7 +55,7 @@ public sealed class LoginService(
         var verify = passwordHasher.VerifyHashedPassword(user ?? new User(), hash, request.Password);
         if (user is null || verify == PasswordVerificationResult.Failed)
         {
-            logger.LogWarning(RejectedLog);
+            LogRejected(logger);
             return (null, Array.Empty<string>(), true);
         }
 
@@ -95,6 +95,9 @@ public sealed class LoginService(
     private void RejectUnverified(string password)
     {
         passwordHasher.VerifyHashedPassword(new User(), DummyPasswordHash, password);
-        logger.LogWarning(RejectedLog);
+        LogRejected(logger);
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = RejectedLog)]
+    private static partial void LogRejected(ILogger logger);
 }

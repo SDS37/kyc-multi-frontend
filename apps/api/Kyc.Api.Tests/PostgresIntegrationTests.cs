@@ -11,21 +11,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kyc.Api.Tests;
 
-public sealed class PostgresIntegrationTests : IClassFixture<PostgresApiFactory>, IAsyncLifetime
+public sealed class PostgresIntegrationTests(PostgresApiFactory factory) : IClassFixture<PostgresApiFactory>, IAsyncLifetime
 {
-    private readonly PostgresApiFactory _factory;
     private HttpClient _client = null!;
     private Guid _tenantId;
     private Guid _customerId;
 
-    public PostgresIntegrationTests(PostgresApiFactory factory)
-    {
-        _factory = factory;
-    }
-
     public async Task InitializeAsync()
     {
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
         if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("KYC_TEST_POSTGRES")))
         {
             return;
@@ -35,7 +29,7 @@ public sealed class PostgresIntegrationTests : IClassFixture<PostgresApiFactory>
         _customerId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Tenants.Add(new Tenant
         {
@@ -100,7 +94,7 @@ public sealed class PostgresIntegrationTests : IClassFixture<PostgresApiFactory>
         Assert.Equal("Ada", fromApi.RootElement.GetProperty("fullName").GetString());
         Assert.Equal(1, fromApi.RootElement.GetProperty("step").GetInt32());
 
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var row = await db.Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == id);
         using var fromDb = JsonDocument.Parse(row.FormData);
@@ -149,7 +143,7 @@ public sealed class PostgresIntegrationTests : IClassFixture<PostgresApiFactory>
 
     private void AuthenticateCustomer()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = factory.Services.CreateScope();
         var jwt = scope.ServiceProvider.GetRequiredService<JwtTokenService>();
         var user = new User
         {
