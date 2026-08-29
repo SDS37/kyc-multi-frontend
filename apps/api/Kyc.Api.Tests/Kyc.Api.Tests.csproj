@@ -5,6 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- Mvc.Testing forces PreserveCompilationContext=true (needed for deps/content).
+         Disable PreserveCompilationReferences so MSBuild does not copy ~300 refs/*.dll
+         into bin/.../refs (MSB3026 Access denied when fileproviderd / Cursor C# LSP
+         lock Desktop-tree outputs during concurrent builds). -->
+    <PreserveCompilationReferences>false</PreserveCompilationReferences>
   </PropertyGroup>
 
   <ItemGroup>

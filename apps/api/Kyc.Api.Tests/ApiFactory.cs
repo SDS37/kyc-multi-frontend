@@ -37,6 +37,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Jwt:Issuer", "kyc-test");
         builder.UseSetting("Jwt:Audience", "kyc-test");
         builder.UseSetting("Jwt:ExpiresMinutes", "60");
+        builder.UseSetting("ObjectStorage:Provider", "InMemory");
+        builder.UseSetting("ObjectStorage:BucketName", "kyc-documents");
 
         builder.ConfigureTestServices(services =>
         {

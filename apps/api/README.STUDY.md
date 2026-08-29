@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. The official runbook is [README.md](README.md).
 
-**Aligned with:** `main` after KYC-037.
+**Aligned with:** `main` after KYC-040.
 
 ## Purpose
 
@@ -44,7 +44,7 @@ apps/api/
 └── Kyc.Api.Tests/            ← [open that README.STUDY.md]
 ```
 
-Start at [Kyc.Api/README.STUDY.md](Kyc.Api/README.STUDY.md) (`Program.cs` is the composition root). Then follow a mutation: GraphQL → Application → Domain → Data.
+Start at [Kyc.Api/README.STUDY.md](Kyc.Api/README.STUDY.md) (`Program.cs` is the composition root). Then follow a mutation: GraphQL → Application → Domain → Data. For uploads, follow REST → [Documents](Kyc.Api/Application/Documents/README.STUDY.md) → MinIO + `documents` table.
 
 ## How a request enters this folder
 

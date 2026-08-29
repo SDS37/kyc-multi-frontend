@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-037.
+**Aligned with:** `main` after KYC-040.
 
 ## Purpose
 
@@ -12,11 +12,11 @@ Keep this layer **thin**: authorize, call an Application service, map tuple erro
 
 ## Why only two files (no `Cases/` resolvers yet)
 
-The schema is still small enough for one Query and one Mutation class. That is a **temporary** shape. When Documents land, expect either more types (`extend type Mutation`) or nested folders. Today, do not split for fashion.
+The schema is still small enough for one Query and one Mutation class. Document **upload** is REST (not a GraphQL field). Detail `case.documents` is metadata only.
 
 | File | Role |
 |---|---|
-| `Query.cs` | `[Authorize]` on the type. `apiStatus`, `cases`, `case`. |
+| `Query.cs` | `[Authorize]` on the type. `apiStatus`, `cases`, `case` (includes documents metadata). |
 | `Mutation.cs` | `[Authorize]` on the type; `[AllowAnonymous]` only on `registerTenant` and `login`. Role attributes on each case field. |
 
 ## Angular analog
@@ -26,7 +26,7 @@ The schema is still small enough for one Query and one Mutation class. That is a
 | Apollo `Query` / `Mutation` documents | Field names: `cases`, `createDraftCase`, … |
 | Route `canActivate: [authGuard]` | Type-level `[Authorize]` |
 | `canActivate: [roleGuard('Customer')]` | `[Authorize(Roles = new[] { AuthRoles.Customer })]` |
-| REST `HttpClient` + OpenAPI | Temporary `/api/login` still exists; **prefer GraphQL** for new UI work |
+| REST `HttpClient` + OpenAPI | Temporary `/api/login` still exists; **document upload is REST** `POST /api/cases/{id}/documents`. Prefer GraphQL for case CRUD/list. |
 | GraphQL Code Generator | Not in this repo yet. Schema is the contract; introspection **Development only** (KYC-105). |
 
 Java analog: a GraphQL `Resolver` class, or a Spring `@Controller` if this were REST. Hot Chocolate uses **method injection**: `CreateDraftCaseService service` is a parameter; the framework resolves it from DI like NestJS resolver params.

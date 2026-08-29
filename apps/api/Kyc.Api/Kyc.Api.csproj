@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.501" />
     <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.1" />
     <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.6.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />

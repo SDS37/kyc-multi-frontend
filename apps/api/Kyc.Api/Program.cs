@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using HotChocolate.AspNetCore;
 using Kyc.Api.Application.Cases;
+using Kyc.Api.Application.Documents;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
@@ -11,6 +12,7 @@ using Kyc.Api.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -41,11 +43,11 @@ builder.Services.AddSingleton(sp =>
         sp.GetRequiredService<ILogger<PostgresReadyHealthCheck>>()));
 
 builder.Services.AddHealthChecks()
-    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: LiveHealthTags)
     .AddCheck<PostgresReadyHealthCheck>(
         "postgres",
         failureStatus: HealthStatus.Unhealthy,
-        tags: ["ready"]);
+        tags: ReadyHealthTags);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(postgresConnection, npgsql =>
@@ -58,12 +60,45 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     }));
 
 builder.Services.AddRequestTimeouts(options =>
-{
     options.DefaultPolicy = new RequestTimeoutPolicy
     {
         Timeout = TimeSpan.FromSeconds(resilience.RequestTimeoutSeconds)
-    };
-});
+    });
+
+// Allow a little headroom so application validation can return VALIDATION (not a raw 413/500).
+builder.Services.Configure<FormOptions>(options =>
+    options.MultipartBodyLengthLimit = DocumentUploadValidation.MaxFileBytes + (1024 * 1024));
+builder.WebHost.ConfigureKestrel(options =>
+    options.Limits.MaxRequestBodySize = DocumentUploadValidation.MaxFileBytes + (1024 * 1024));
+
+var objectStorageSection = builder.Configuration.GetSection(ObjectStorageOptions.SectionName);
+builder.Services.Configure<ObjectStorageOptions>(objectStorageSection);
+var objectStorageOptions = objectStorageSection.Get<ObjectStorageOptions>() ?? new ObjectStorageOptions();
+if (string.IsNullOrWhiteSpace(objectStorageOptions.Provider) ||
+    string.Equals(objectStorageOptions.Provider, "InMemory", StringComparison.OrdinalIgnoreCase))
+{
+    // Tests, design-time (`dotnet ef`), and hosts that have not configured MinIO yet.
+    builder.Services.AddSingleton<IObjectStorage, InMemoryObjectStorage>();
+}
+else if (string.Equals(objectStorageOptions.Provider, "Minio", StringComparison.OrdinalIgnoreCase))
+{
+    if (string.IsNullOrWhiteSpace(objectStorageOptions.AccessKey) ||
+        string.IsNullOrWhiteSpace(objectStorageOptions.SecretKey) ||
+        string.IsNullOrWhiteSpace(objectStorageOptions.Endpoint) ||
+        string.IsNullOrWhiteSpace(objectStorageOptions.BucketName))
+    {
+        throw new InvalidOperationException(
+            "ObjectStorage MinIO settings require Endpoint, AccessKey, SecretKey, and BucketName. " +
+            "Copy appsettings.Development.json.example or set ObjectStorage__*.");
+    }
+
+    builder.Services.AddSingleton<IObjectStorage, MinioObjectStorage>();
+}
+else
+{
+    throw new InvalidOperationException(
+        $"Unknown ObjectStorage:Provider '{objectStorageOptions.Provider}'. Use Minio or InMemory.");
+}
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 builder.Services.Configure<JwtOptions>(jwtSection);
@@ -108,12 +143,10 @@ builder.Services
     });
 
 // Deny by default for ASP.NET endpoints (KYC-021). Opt in with AllowAnonymous.
-builder.Services.AddAuthorization(options =>
-{
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+builder.Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
-        .Build();
-});
+        .Build());
 
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<JwtTokenService>();
@@ -126,6 +159,7 @@ builder.Services.AddScoped<StartCaseReviewService>();
 builder.Services.AddScoped<CompleteCaseReviewService>();
 builder.Services.AddScoped<ListCasesService>();
 builder.Services.AddScoped<GetCaseDetailService>();
+builder.Services.AddScoped<UploadDocumentService>();
 
 builder.Services
     .AddGraphQLServer()
@@ -218,6 +252,71 @@ app.MapPost("/api/login", async (
 .AllowAnonymous()
 .DisableAntiforgery();
 
+// Document upload (KYC-040) — multipart bytes on REST; metadata via GraphQL case detail.
+app.MapPost("/api/cases/{caseId:guid}/documents", async (
+    Guid caseId,
+    HttpRequest request,
+    UploadDocumentService service,
+    CancellationToken cancellationToken) =>
+{
+    if (!request.HasFormContentType)
+    {
+        return Results.BadRequest(new { errors = MultipartFormRequiredErrors, code = "VALIDATION" });
+    }
+
+    var form = await request.ReadFormAsync(cancellationToken);
+    var file = form.Files.GetFile("file");
+
+    var (result, validationErrors, unauthorized, forbidden, errorCode, errorMessage) =
+        await service.UploadAsync(caseId, file, cancellationToken);
+
+    if (validationErrors.Count > 0)
+    {
+        return Results.BadRequest(new { errors = validationErrors, code = "VALIDATION" });
+    }
+
+    if (unauthorized)
+    {
+        return Results.Json(
+            new { error = CreateDraftCaseService.GenericAuthFailure, code = "AUTH_FAILED" },
+            statusCode: StatusCodes.Status401Unauthorized);
+    }
+
+    if (forbidden)
+    {
+        return Results.Json(
+            new { error = UploadDocumentService.ForbiddenMessage, code = "AUTH_NOT_AUTHORIZED" },
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    if (errorCode == "NOT_FOUND")
+    {
+        return Results.Json(
+            new { error = errorMessage ?? UploadDocumentService.NotFoundMessage, code = "NOT_FOUND" },
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    if (errorCode is not null)
+    {
+        return Results.Json(
+            new { error = errorMessage ?? "Request failed.", code = errorCode },
+            statusCode: StatusCodes.Status422UnprocessableEntity);
+    }
+
+    return Results.Json(result, statusCode: StatusCodes.Status201Created);
+})
+.WithName("UploadDocument")
+.RequireAuthorization(new AuthorizeAttribute { Roles = AuthRoles.Customer })
+.DisableAntiforgery()
+.WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(
+    DocumentUploadValidation.MaxFileBytes + (1024 * 1024)));
+
 app.Run();
 
-public partial class Program;
+public partial class Program
+{
+    private static readonly string[] LiveHealthTags = ["live"];
+    private static readonly string[] ReadyHealthTags = ["ready"];
+    private static readonly string[] MultipartFormRequiredErrors =
+        ["multipart/form-data with a file field is required."];
+}

@@ -29,5 +29,13 @@
     "EfMaxRetryCount": 5,
     "EfMaxRetryDelaySeconds": 10,
     "RequestTimeoutSeconds": 60
+  },
+  "ObjectStorage": {
+    "Provider": "Minio",
+    "Endpoint": "http://127.0.0.1:9000",
+    "AccessKey": "minio",
+    "SecretKey": "changeme1",
+    "BucketName": "kyc-documents",
+    "ForcePathStyle": true
   }
 }

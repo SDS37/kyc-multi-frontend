@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-037.
+**Aligned with:** `main` after KYC-040.
 
 ## Purpose
 
@@ -14,7 +14,8 @@ This is the folder to study if you want to argue behavior: validation, status tr
 
 | Folder | Why it is separate |
 |---|---|
-| [Cases/](Cases/README.STUDY.md) | Week 2 product: create/update/submit/review/list/detail. Highest density. |
+| [Cases/](Cases/README.STUDY.md) | Week 2 product: create/update/submit/review/list/detail. Detail now loads real documents. |
+| [Documents/](Documents/README.STUDY.md) | Week 3 KYC-040: upload validation, `IObjectStorage`, metadata persistence. |
 | `Identity/` | Register tenant, login, JWT issuance, password policy, `ICurrentUser`. |
 | `Tenancy/` | `ICurrentTenant` + HTTP implementation. Tiny on purpose: **one place** that reads `tenant_id`. |
 
@@ -90,7 +91,7 @@ Services return tuples `(result, validationErrors, unauthorized, errorCode, …)
 ## Today vs target
 
 - Services + `DbContext` = transaction script / modest application layer. Fine.
-- Next module (Documents) should **copy this pattern**, not introduce MediatR unless the team explicitly starts CQRS. ADR-008: mirror existing patterns.
+- Documents **copied this pattern** (service + port/adapter for MinIO). Download (KYC-042) and audit (KYC-050) should keep mirroring — not introduce MediatR unless CQRS is an explicit decision.
 
 ## What to skip until you need it
 
@@ -100,6 +101,7 @@ Services return tuples `(result, validationErrors, unauthorized, errorCode, …)
 ## Links
 
 - [Cases use-cases](Cases/README.STUDY.md)
+- [Documents upload](Documents/README.STUDY.md)
 - [GraphQL adapters](../GraphQL/README.STUDY.md)
 - [Domain](../Domain/README.STUDY.md)
 - [JWT RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519)

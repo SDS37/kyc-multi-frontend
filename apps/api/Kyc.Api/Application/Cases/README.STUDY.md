@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Parent layer: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `main` after KYC-037. This folder **is** Week 2.
+**Aligned with:** `main` after KYC-040. Cases are Week 2; document **metadata** on detail is Week 3.
 
 ## Purpose
 
@@ -20,7 +20,7 @@ One class per action keeps PRs and tests aligned with stories (KYC-031, 032, …
 | `StartCaseReviewService` | KYC-034 | Reviewer / TenantAdmin | Submitted → InReview. Sets `ReviewedBy`. |
 | `CompleteCaseReviewService` | KYC-035 | Reviewer / TenantAdmin | Approve (comment optional) or reject (comment required). InReview only. |
 | `ListCasesService` | KYC-036 | Any authenticated role | Paginated list **without** FormData. |
-| `GetCaseDetailService` | KYC-037 | Same visibility as list | FormData + comments + empty `documents[]`. |
+| `GetCaseDetailService` | KYC-037 / 040 | Same visibility as list | FormData + comments + **real** `documents[]` (newest `UploadedAt` first; ordered in memory for SQLite). |
 | `CaseVisibility` | KYC-036/037 | Shared | Caller resolution + role filter. |
 | `CaseDraftValidation` (in create service file) | 031–033 / 106 | Shared | Title length, JSON size/depth, submit required fields. |
 
@@ -65,7 +65,7 @@ Create/update/submit do **not** use `CaseVisibility`; they use “JWT user must 
 
 FormData is a **JSON string** on the entity, `jsonb` in Postgres, `text` in SQLite tests. Caps: 64 KiB UTF-8, depth 8. Submit requires `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`. There is no JSON Schema document in the repo — the rules are C# in `CaseDraftValidation`. When you build Angular forms, mirror those names or submit will `VALIDATION`.
 
-Detail returns `documents: []` until KYC-040. The field is a **placeholder in the contract**, not a bug.
+Detail returns document **metadata** from `documents` (KYC-040). Upload is REST (`POST /api/cases/{id}/documents`), not GraphQL multipart. `StorageKey` never leaves the Application/Data boundary.
 
 ## Atomic status updates
 
@@ -81,12 +81,13 @@ Detail returns `documents: []` until KYC-040. The field is a **placeholder in th
 
 ## Today vs target
 
-Approve/reject/list/detail are **done**. Missing: documents, audit trail, richer comments. Do not invent a second visibility mechanism in the Angular app that contradicts `CaseVisibility`.
+Approve/reject/list/detail/upload-metadata are **done**. Missing: download, audit trail, richer comments. Do not invent a second visibility mechanism in the Angular app that contradicts `CaseVisibility`.
 
 ## Links
 
 - GraphQL field table: [../../../README.md](../../../README.md)
 - [Domain Case + status](../../Domain/README.STUDY.md)
+- [Documents upload](../Documents/README.STUDY.md)
 - [architecture case lifecycle](../../../../../docs/architecture.md)
 - [EF ExecuteUpdate](https://learn.microsoft.com/ef/core/what-is-new/ef-core-7.0/whatsnew#executeupdate-and-executedelete)
 - [JSON in Postgres jsonb](https://www.postgresql.org/docs/current/datatype-json.html)

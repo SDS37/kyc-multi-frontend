@@ -2,13 +2,13 @@
 
 Study tour of this folder. Distinct from the official README. Runbook: [README.md](README.md).
 
-**Aligned with:** `main` after KYC-105 (MinIO image pin).
+**Aligned with:** `main` after KYC-040 (documents use MinIO; image still pinned KYC-105).
 
 ## Purpose
 
 This folder is **local production-shaped dependencies**, not the KYC application. Compose starts three containers. The .NET API and the future UIs run **on your machine** and connect in over localhost.
 
-If you only remember one sentence: **from the API, Postgres is `127.0.0.1:5432`, not hostname `postgres`.** `postgres` is the DNS name *inside* the Compose network. Mixing those up is the usual “connection refused” after a working Docker Desktop install.
+If you only remember one sentence: **from the API, Postgres is `127.0.0.1:5432`, not hostname `postgres`.** `postgres` is the DNS name *inside* the Compose network. Mixing those up is the usual “connection refused” after a working Docker Desktop install. Same idea for MinIO: API uses `http://127.0.0.1:9000`, not hostname `minio`.
 
 ## Why these files exist
 
@@ -20,9 +20,9 @@ If you only remember one sentence: **from the API, Postgres is `127.0.0.1:5432`,
 
 There is no `Dockerfile` for the API yet (comment in compose). Containerizing the API is a later ops step.
 
-## Why three services if the API only uses one
+## Why three services
 
-ADR-006: Postgres for relational data, MinIO for KYC files, Redis optional for cache/tokens. **Week 2 uses Postgres only.** Redis and MinIO are running so Week 3 does not start with “install MinIO.” Saying “our stack is Redis” in a W2 review oversells.
+ADR-006: Postgres for relational data, MinIO for KYC files, Redis optional for cache/tokens. **Today the API uses Postgres + MinIO** (KYC-040 uploads). Redis is still unused — do not claim “we use Redis” in a review.
 
 ```mermaid
 flowchart LR
@@ -35,9 +35,9 @@ flowchart LR
         RD[(Redis :6379)]
         MN[(MinIO :9000 / console :9001)]
     end
-    API -->|"used today"| PG
+    API -->|"cases / users / document metadata"| PG
+    API -->|"document bytes KYC-040"| MN
     API -.->|"not yet"| RD
-    API -.->|"Week 3 documents"| MN
     UI -.-> API
 ```
 
@@ -56,11 +56,17 @@ Volumes (`postgres_data`, …) survive `compose down` without `-v`. Data persist
 
 ## Today vs target
 
-Target architecture shows the API talking to all three. Today the API’s `appsettings` only has a Postgres connection string. No Redis connection multiplexer, no S3 client.
+| Dependency | Today |
+|---|---|
+| Postgres | EF Core + migrations (including `documents`) |
+| MinIO | `ObjectStorage:Provider=Minio` in Dev settings; S3-compatible put/delete |
+| Redis | Compose only — no client in the API yet |
+
+Blank / missing `ObjectStorage:Provider` → **InMemory** store (tests and hosts that have not configured MinIO). That is intentional so `dotnet ef` and CI SQLite tests do not need MinIO.
 
 ## What to skip
 
-- MinIO console clicking until you have document upload stories.
+- Treating MinIO console as the product UI — metadata is on GraphQL `case.documents`; bytes are opaque keys.
 - Installing native Postgres “to be simpler” — the project standard is Compose ([guide](../docs/guides/dotnet-api-for-frontend-engineers.md)).
 
 ## Links

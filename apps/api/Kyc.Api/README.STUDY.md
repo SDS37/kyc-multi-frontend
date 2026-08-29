@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Runbook: [../README.md](../README.md).
 
-**Aligned with:** `main` after KYC-037.
+**Aligned with:** `main` after KYC-040.
 
 ## Purpose
 
@@ -28,10 +28,10 @@ Root files that are not folders:
 | File | Job |
 |---|---|
 | `Program.cs` | Register services, build pipeline, map endpoints. |
-| `Kyc.Api.csproj` | Target `net10.0`, NuGet packages (Hot Chocolate, EF, JWT, Npgsql). |
-| `appsettings.json` | Committed **shape** of config. Connection string and JWT signing key are **empty**. |
-| `appsettings.Development.json.example` | Copy to gitignored `appsettings.Development.json`. |
-| `Kyc.Api.http` | VS Code / Rider HTTP scratch file. |
+| `Kyc.Api.csproj` | Target `net10.0`, NuGet packages (Hot Chocolate, EF, JWT, Npgsql, **AWSSDK.S3** for MinIO). |
+| `appsettings.json` | Committed **shape** of config. Postgres, JWT, and `ObjectStorage` secrets are **empty**. |
+| `appsettings.Development.json.example` | Copy to gitignored `appsettings.Development.json` (includes MinIO Compose defaults). |
+| `Kyc.Api.http` | VS Code / Rider HTTP scratch file (includes multipart upload curl). |
 
 `public partial class Program;` at the bottom of `Program.cs` exists so tests can use `WebApplicationFactory<Program>` (the compiler generates the rest of `Program`).
 
@@ -39,7 +39,7 @@ Root files that are not folders:
 
 Read `Program.cs` top to bottom as **two phases**:
 
-1. **`builder`** — register DI (Angular `providers: []`). Fail fast if Postgres or JWT signing key is missing.
+1. **`builder`** — register DI (Angular `providers: []`). Fail fast if Postgres or JWT signing key is missing. Wire `IObjectStorage` (InMemory vs MinIO). Raise multipart/Kestrel body limits for KYC-040.
 2. **`app`** — middleware order, then `Map*` endpoints (the Angular `bootstrapApplication` + interceptor order).
 
 **Middleware order is a design decision**, like interceptor order:
@@ -100,7 +100,7 @@ sequenceDiagram
 
 ## Today vs target
 
-`Program.cs` still maps **REST** login/register. ADR-002 says GraphQL is the public contract; REST is an allow-listed twin until UIs consume GraphQL login. Do not describe REST as the long-term API.
+`Program.cs` maps **REST** login/register (temporary twins of GraphQL) **and** `POST /api/cases/{caseId}/documents` (permanent dedicated upload — ADR-001). Do not describe login REST as the long-term API; do describe document upload as REST-on-purpose.
 
 Health: `/health` = process (liveness). `/ready` = Postgres reachable. Orchestrators restart on liveness failure and stop traffic on readiness failure. [Health checks](https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks)
 
@@ -112,7 +112,7 @@ Health: `/health` = process (liveness). `/ready` = Postgres reachable. Orchestra
 
 ## Links
 
-- [Domain](Domain/README.STUDY.md) · [Application](Application/README.STUDY.md) · [Data](Data/README.STUDY.md) · [GraphQL](GraphQL/README.STUDY.md) · [Infrastructure](Infrastructure/README.STUDY.md)
+- [Domain](Domain/README.STUDY.md) · [Application](Application/README.STUDY.md) · [Documents](Application/Documents/README.STUDY.md) · [Data](Data/README.STUDY.md) · [GraphQL](GraphQL/README.STUDY.md) · [Infrastructure](Infrastructure/README.STUDY.md)
 - [Minimal APIs / top-level statements](https://learn.microsoft.com/aspnet/core/fundamentals/minimal-apis)
 - [Dependency injection](https://learn.microsoft.com/aspnet/core/fundamentals/dependency-injection) (Scoped vs Singleton vs Transient)
 - [JWT Bearer](https://learn.microsoft.com/aspnet/core/security/authentication/jwt-authn)

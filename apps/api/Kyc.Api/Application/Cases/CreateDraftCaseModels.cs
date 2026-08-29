@@ -76,14 +76,15 @@ public sealed record CaseCommentResponse(
     Guid? AuthorUserId);
 
 /// <summary>
-/// Document metadata only — never file bytes (KYC-037 / KYC-040+). Empty until upload stories land.
+/// Document metadata only — never file bytes (KYC-037 / KYC-040+).
 /// </summary>
 public sealed record CaseDocumentMetadataResponse(
     Guid Id,
     string FileName,
     string ContentType,
     long SizeBytes,
-    DateTimeOffset UploadedAt);
+    DateTimeOffset UploadedAt,
+    Guid UploadedBy);
 
 /// <summary>Case detail payload: full case, comments, document metadata (KYC-037).</summary>
 public sealed record CaseDetailResponse(

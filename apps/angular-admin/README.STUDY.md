@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Official stub: [README.md](README.md).
 
-**Aligned with:** `main` after Week 2. **No Angular workspace exists yet** — only this README.
+**Aligned with:** `main` after KYC-040. **No Angular workspace exists yet** — only this README.
 
 ## Purpose
 
@@ -20,7 +20,7 @@ Same API as the other two UIs. You will not get a private BFF.
 |---|---|
 | Login | `login` mutation → JWT (`sub`, `tenant_id`, `role`, `email`) |
 | Review queue | `cases` with `status` filter; Reviewer sees **all tenant** cases |
-| Detail | `case(id)` — FormData, comments; `documents` empty until KYC-040 |
+| Detail | `case(id)` — FormData, comments, **document metadata** (bytes via Customer upload REST; Reviewer reads metadata here) |
 | Start review | `startCaseReview` |
 | Decide | `approveCase` / `rejectCase` (reject requires comment) |
 | Tenant admin extras | User/role management is **not** in the API yet — do not invent REST for it |

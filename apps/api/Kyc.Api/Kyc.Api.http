@@ -54,17 +54,22 @@ Authorization: Bearer {{accessToken}}
   }
 }
 
-### Case detail (KYC-037) — same visibility; FormData + comments; documents metadata empty until KYC-040
+### Case detail (KYC-037) — same visibility; FormData + comments; document metadata
 POST {{Kyc.Api_HostAddress}}/graphql
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "query": "query($id: UUID!) { case(id: $id) { case { id title status formData customerUserId reviewComment reviewedAt reviewedBy } comments { text createdAt authorUserId } documents { id fileName contentType sizeBytes uploadedAt } } }",
+  "query": "query($id: UUID!) { case(id: $id) { case { id title status formData customerUserId reviewComment reviewedAt reviewedBy } comments { text createdAt authorUserId } documents { id fileName contentType sizeBytes uploadedAt uploadedBy } } }",
   "variables": {
     "id": "{{caseId}}"
   }
 }
+
+### Upload document (KYC-040) — Customer; Draft/Submitted; multipart field "file"; PDF/PNG/JPG ≤10MB
+# curl -X POST "http://localhost:5295/api/cases/{{caseId}}/documents" \
+#   -H "Authorization: Bearer {{customerAccessToken}}" \
+#   -F "file=@./id.pdf;type=application/pdf"
 
 ### Start case review (KYC-034) — Reviewer or TenantAdmin; Submitted → InReview
 POST {{Kyc.Api_HostAddress}}/graphql

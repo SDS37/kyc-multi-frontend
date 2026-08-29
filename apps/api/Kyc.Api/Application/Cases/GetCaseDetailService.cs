@@ -45,9 +45,24 @@ public sealed class GetCaseDetailService(
             ? Array.Empty<CaseCommentResponse>()
             : [new CaseCommentResponse(entity.ReviewComment.Trim(), entity.ReviewedAt, entity.ReviewedBy)];
 
-        // Document metadata arrives with KYC-040/041; empty list satisfies AC without file bytes.
+        // Newest first. Order in memory: SQLite tests cannot ORDER BY DateTimeOffset (same constraint as list cases).
+        var documents = (await db.Documents
+            .AsNoTracking()
+            .Where(d => d.CaseId == entity.Id)
+            .Select(d => new CaseDocumentMetadataResponse(
+                d.Id,
+                d.FileName,
+                d.ContentType,
+                d.SizeBytes,
+                d.UploadedAt,
+                d.UploadedByUserId))
+            .ToListAsync(cancellationToken))
+            .OrderByDescending(d => d.UploadedAt)
+            .ThenByDescending(d => d.Id)
+            .ToList();
+
         return (
-            new CaseDetailResponse(caseResponse, comments, Array.Empty<CaseDocumentMetadataResponse>()),
+            new CaseDetailResponse(caseResponse, comments, documents),
             Array.Empty<string>(),
             false,
             null,
