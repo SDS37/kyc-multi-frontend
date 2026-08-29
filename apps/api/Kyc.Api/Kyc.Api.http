@@ -66,6 +66,18 @@ Authorization: Bearer {{accessToken}}
   }
 }
 
+### List documents (KYC-041) — same visibility as case; metadata only
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "query": "query($caseId: UUID!) { documents(caseId: $caseId) { id fileName contentType sizeBytes uploadedAt uploadedBy } }",
+  "variables": {
+    "caseId": "{{caseId}}"
+  }
+}
+
 ### Upload document (KYC-040) — Customer; Draft/Submitted; multipart field "file"; PDF/PNG/JPG ≤10MB
 # curl -X POST "http://localhost:5295/api/cases/{{caseId}}/documents" \
 #   -H "Authorization: Bearer {{customerAccessToken}}" \

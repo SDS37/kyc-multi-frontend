@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Parent layer: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `main` after KYC-040. Cases are Week 2; document **metadata** on detail is Week 3.
+**Aligned with:** `main` after KYC-041. Cases are Week 2; document **metadata** list/detail is Week 3.
 
 ## Purpose
 
@@ -20,8 +20,8 @@ One class per action keeps PRs and tests aligned with stories (KYC-031, 032, …
 | `StartCaseReviewService` | KYC-034 | Reviewer / TenantAdmin | Submitted → InReview. Sets `ReviewedBy`. |
 | `CompleteCaseReviewService` | KYC-035 | Reviewer / TenantAdmin | Approve (comment optional) or reject (comment required). InReview only. |
 | `ListCasesService` | KYC-036 | Any authenticated role | Paginated list **without** FormData. |
-| `GetCaseDetailService` | KYC-037 / 040 | Same visibility as list | FormData + comments + **real** `documents[]` (newest `UploadedAt` first; ordered in memory for SQLite). |
-| `CaseVisibility` | KYC-036/037 | Shared | Caller resolution + role filter. |
+| `GetCaseDetailService` | KYC-037 / 040 / 041 | Same visibility as list | FormData + comments + **real** `documents[]` via `ListDocumentsService.LoadMetadataAsync`. |
+| `CaseVisibility` | KYC-036/037/041 | Shared | Caller resolution + role filter. |
 | `CaseDraftValidation` (in create service file) | 031–033 / 106 | Shared | Title length, JSON size/depth, submit required fields. |
 
 ## Angular analog: why this is not “the API service”
@@ -65,7 +65,7 @@ Create/update/submit do **not** use `CaseVisibility`; they use “JWT user must 
 
 FormData is a **JSON string** on the entity, `jsonb` in Postgres, `text` in SQLite tests. Caps: 64 KiB UTF-8, depth 8. Submit requires `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`. There is no JSON Schema document in the repo — the rules are C# in `CaseDraftValidation`. When you build Angular forms, mirror those names or submit will `VALIDATION`.
 
-Detail returns document **metadata** from `documents` (KYC-040). Upload is REST (`POST /api/cases/{id}/documents`), not GraphQL multipart. `StorageKey` never leaves the Application/Data boundary.
+Detail returns document **metadata** from `documents` (KYC-040/041). Dedicated GraphQL `documents(caseId)` uses the same visibility + metadata shape. Upload is REST (`POST /api/cases/{id}/documents`), not GraphQL multipart. `StorageKey` never leaves the Application/Data boundary.
 
 ## Atomic status updates
 

@@ -159,6 +159,7 @@ builder.Services.AddScoped<StartCaseReviewService>();
 builder.Services.AddScoped<CompleteCaseReviewService>();
 builder.Services.AddScoped<ListCasesService>();
 builder.Services.AddScoped<GetCaseDetailService>();
+builder.Services.AddScoped<ListDocumentsService>();
 builder.Services.AddScoped<UploadDocumentService>();
 
 builder.Services

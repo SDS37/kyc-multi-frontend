@@ -4,7 +4,7 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. This file is the runbook (restore, migrate, run, test).
 
-`Tenant`, `User`, `Case`, and `Document` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Customers create/update/submit with `createDraftCase` / `updateDraftCase` / `submitCase` (KYC-031–033); Reviewer/TenantAdmin start review with `startCaseReview` (KYC-034) and finish with `approveCase` / `rejectCase` (KYC-035). Authenticated users list with `cases` (KYC-036) and open detail with `case` (KYC-037). Customers upload files with REST `POST /api/cases/{caseId}/documents` (KYC-040; MinIO via `ObjectStorage`; metadata on case detail). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
+`Tenant`, `User`, `Case`, and `Document` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Customers create/update/submit with `createDraftCase` / `updateDraftCase` / `submitCase` (KYC-031–033); Reviewer/TenantAdmin start review with `startCaseReview` (KYC-034) and finish with `approveCase` / `rejectCase` (KYC-035). Authenticated users list with `cases` (KYC-036), open detail with `case` (KYC-037), and list document metadata with `documents(caseId)` (KYC-041). Customers upload files with REST `POST /api/cases/{caseId}/documents` (KYC-040; MinIO via `ObjectStorage`; metadata on case detail and `documents`). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
 
 Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
 
@@ -190,6 +190,7 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 | `apiStatus` | Authenticated (any role) | Liveness; returns `"ok"` |
 | `cases` | Authenticated (any role) | List visible cases (no `formData`); Customer = own only; Reviewer/TenantAdmin = all tenant; optional `status`; `skip`/`take` (default take 20, max 100); returns `items`, `totalCount`, `skip`, `take` |
 | `case` | Authenticated (any role) | Detail by `id`; same visibility as `cases`; returns `case` (incl. `formData`), `comments` (from `reviewComment`), `documents` (metadata only — never file bytes) |
+| `documents` | Authenticated (any role) | Metadata list for `caseId`; same visibility as `case`; never file bytes or storage keys (KYC-041) |
 
 ### REST (temporary / dedicated)
 
@@ -247,6 +248,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-036 | Authenticated `cases` query; Customer own-only; Reviewer/TenantAdmin tenant-wide; status filter; skip/take pagination |
 | KYC-037 | Authenticated `case(id)` detail; same visibility as list; FormData + comments; document metadata (no bytes) |
 | KYC-040 | Customer `POST /api/cases/{id}/documents`; Draft/Submitted; PDF/PNG/JPG ≤10 MB; MinIO + metadata; owner only |
+| KYC-041 | Authenticated `documents(caseId)`; same visibility as `case`; metadata only (no bytes / storage keys) |
 | KYC-102 | GitHub Actions `api-ci` builds and tests `apps/api/Kyc.Api.sln`; SDK pinned in `global.json` |
 | KYC-103 | `GET /health` stays a process check; `GET /ready` fails when Postgres is unreachable; EF `EnableRetryOnFailure`; Npgsql command timeout 30s; ASP.NET request timeout 60s |
 | KYC-104 | JSON stdout logs with `RequestId`; auth and `/ready` failures logged without secrets; README documents local logs + `/ready`-based signals |

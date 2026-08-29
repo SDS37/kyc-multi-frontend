@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README. Parent layer: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** `main` after KYC-041.
 
 ## Purpose
 
-Document **upload** for KYC cases: validate bytes, put object storage, save metadata. Download is KYC-042 (not here). GraphQL does **not** carry multipart; REST does (ADR-001 / ADR-002 dedicated upload path).
+Document **upload** and **list** for KYC cases: validate bytes, put object storage, save metadata; list metadata by case. Download is KYC-042 (not here). GraphQL does **not** carry multipart; REST does upload (ADR-001 / ADR-002). List is GraphQL `documents(caseId)`.
 
 ## Why these files exist
 
@@ -18,6 +18,7 @@ Document **upload** for KYC cases: validate bytes, put object storage, save meta
 | `ObjectStorageOptions` | Config section `ObjectStorage`. Blank or `InMemory` → in-process; `Minio` needs endpoint + keys. |
 | `DocumentUploadValidation` | Filename sanitize, content-type allow-list, magic bytes, 10 MB, storage key shape. |
 | `UploadDocumentService` | Customer-only; Draft\|Submitted; owner only → `NOT_FOUND`; put then DB insert; compensate delete on DB fail. |
+| `ListDocumentsService` | KYC-041: same visibility as `case` / `cases`; metadata only; shared `LoadMetadataAsync` for detail. |
 
 ## Angular / Java analog
 

@@ -12,11 +12,11 @@ Keep this layer **thin**: authorize, call an Application service, map tuple erro
 
 ## Why only two files (no `Cases/` resolvers yet)
 
-The schema is still small enough for one Query and one Mutation class. Document **upload** is REST (not a GraphQL field). Detail `case.documents` is metadata only.
+The schema is still small enough for one Query and one Mutation class. Document **upload** is REST (not a GraphQL field). List is GraphQL `documents(caseId)` (KYC-041). Detail `case.documents` shares the same metadata loader.
 
 | File | Role |
 |---|---|
-| `Query.cs` | `[Authorize]` on the type. `apiStatus`, `cases`, `case` (includes documents metadata). |
+| `Query.cs` | `[Authorize]` on the type. `apiStatus`, `cases`, `case`, `documents(caseId)` (metadata only). |
 | `Mutation.cs` | `[Authorize]` on the type; `[AllowAnonymous]` only on `registerTenant` and `login`. Role attributes on each case field. |
 
 ## Angular analog
