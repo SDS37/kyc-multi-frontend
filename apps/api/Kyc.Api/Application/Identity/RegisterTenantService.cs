@@ -12,7 +12,7 @@ public sealed partial class RegisterTenantService(
     AppDbContext db,
     IPasswordHasher<User> passwordHasher)
 {
-    private const int MaxPasswordLength = 128;
+    private const int MaxPasswordLength = PasswordPolicy.MaxLength;
 
     [GeneratedRegex("^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)]
     private static partial Regex SlugPattern();

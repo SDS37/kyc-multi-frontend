@@ -13,7 +13,7 @@ public sealed class LoginService(
 {
     public const string GenericAuthFailure = "Invalid email, password, or tenant.";
     public const string RejectedLog = "Login rejected";
-    public const int MaxPasswordLength = 128;
+    public const int MaxPasswordLength = PasswordPolicy.MaxLength;
 
     private string? _dummyPasswordHash;
 
