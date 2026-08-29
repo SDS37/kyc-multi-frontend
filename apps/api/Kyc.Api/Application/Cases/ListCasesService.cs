@@ -2,7 +2,6 @@ using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Cases;
-using Kyc.Api.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kyc.Api.Application.Cases;
@@ -38,39 +37,19 @@ public sealed class ListCasesService(
             return (null, errors, false);
         }
 
-        var tenantId = currentTenant.TenantId;
-        var userId = currentUser.UserId;
-        var role = currentUser.Role;
-        if (tenantId is null || userId is null || role is null)
-        {
-            return (null, Array.Empty<string>(), true);
-        }
+        var (userId, role, unauthorized) = await CaseVisibility.ResolveCallerAsync(
+            db,
+            currentTenant,
+            currentUser,
+            cancellationToken);
 
-        var userExists = await db.Users
-            .AsNoTracking()
-            .AnyAsync(
-                u => u.Id == userId && u.TenantId == tenantId,
-                cancellationToken);
-
-        if (!userExists)
+        if (unauthorized)
         {
             return (null, Array.Empty<string>(), true);
         }
 
         // Tenant filter (KYC-014 / ADR-007) already scopes to JWT tenant.
-        IQueryable<Case> query = db.Cases.AsNoTracking();
-
-        switch (role.Value)
-        {
-            case UserRole.Customer:
-                query = query.Where(c => c.CustomerUserId == userId.Value);
-                break;
-            case UserRole.Reviewer:
-            case UserRole.TenantAdmin:
-                break;
-            default:
-                return (null, Array.Empty<string>(), true);
-        }
+        IQueryable<Case> query = CaseVisibility.ApplyRoleFilter(db.Cases.AsNoTracking(), role, userId);
 
         if (request.Status is { } status)
         {

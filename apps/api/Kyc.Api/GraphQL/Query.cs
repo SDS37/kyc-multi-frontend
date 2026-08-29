@@ -48,4 +48,45 @@ public class Query
 
         return result;
     }
+
+    /// <summary>
+    /// Case detail (KYC-037). Same visibility as <c>cases</c>; includes FormData, review comments, and document metadata (empty until KYC-040).
+    /// </summary>
+    public async Task<CaseDetailResponse> Case(
+        Guid id,
+        GetCaseDetailService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized, errorCode, errorMessage) =
+            await service.GetAsync(id, cancellationToken);
+
+        if (validationErrors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", validationErrors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        if (unauthorized)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(CreateDraftCaseService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        if (errorCode is not null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(errorMessage ?? "Request failed.")
+                    .SetCode(errorCode)
+                    .Build());
+        }
+
+        return result!;
+    }
 }
