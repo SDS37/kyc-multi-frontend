@@ -215,4 +215,4 @@ scripts/
 *.orig
 
 # Personal folder tours (local study notes; not project docs)
-**/STUDY.md
+**/README.STUDY.md
