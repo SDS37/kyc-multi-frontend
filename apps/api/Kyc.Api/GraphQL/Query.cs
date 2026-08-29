@@ -2,7 +2,6 @@ using HotChocolate;
 using HotChocolate.Authorization;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Documents;
-using Kyc.Api.Application.Identity;
 using Kyc.Api.Domain.Cases;
 
 namespace Kyc.Api.GraphQL;

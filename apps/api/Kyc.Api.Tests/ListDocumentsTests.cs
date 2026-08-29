@@ -225,8 +225,8 @@ public sealed class ListDocumentsTests(ApiFactory factory) : IClassFixture<ApiFa
     [Fact]
     public async Task Peer_customer_gets_NOT_FOUND_for_other_case()
     {
-        Authenticate(UserRole.Customer, _customerId);
-        var payload = await PostDocumentsQueryAsync(_peerCaseId);
+        Authenticate(UserRole.Customer, _peerCustomerId);
+        var payload = await PostDocumentsQueryAsync(_ownerCaseId);
 
         Assert.True(payload.TryGetProperty("errors", out var errors), payload.ToString());
         Assert.Contains("NOT_FOUND", errors.ToString(), StringComparison.Ordinal);
