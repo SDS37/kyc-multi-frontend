@@ -213,6 +213,3 @@ scripts/
 *.swp
 *.swo
 *.orig
-
-# Personal folder tours (local study notes; not project docs)
-**/README.STUDY.md
