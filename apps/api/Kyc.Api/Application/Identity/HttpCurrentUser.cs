@@ -14,7 +14,7 @@ public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor) : 
         get
         {
             var user = httpContextAccessor.HttpContext?.User;
-            if (user?.Identity?.IsAuthenticated != true)
+            if (user?.Identity?.IsAuthenticated is not true)
             {
                 return null;
             }
@@ -29,7 +29,7 @@ public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor) : 
         get
         {
             var user = httpContextAccessor.HttpContext?.User;
-            if (user?.Identity?.IsAuthenticated != true)
+            if (user?.Identity?.IsAuthenticated is not true)
             {
                 return null;
             }

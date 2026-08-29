@@ -6,7 +6,7 @@ namespace Kyc.Api.Application.Documents;
 
 public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposable
 {
-    private readonly IAmazonS3 _s3;
+    private readonly AmazonS3Client _s3;
     private readonly string _bucket;
     private readonly ILogger<MinioObjectStorage> _logger;
     private readonly SemaphoreSlim _bucketGate = new(1, 1);
