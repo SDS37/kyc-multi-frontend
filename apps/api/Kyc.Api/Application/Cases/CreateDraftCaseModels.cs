@@ -66,3 +66,28 @@ public sealed record CaseListResponse(
     int Skip,
     int Take);
 
+/// <summary>
+/// Review comment exposed on case detail (KYC-037). Today sourced from <c>Case.ReviewComment</c>;
+/// a comment thread can replace this later without changing the GraphQL field name.
+/// </summary>
+public sealed record CaseCommentResponse(
+    string Text,
+    DateTimeOffset? CreatedAt,
+    Guid? AuthorUserId);
+
+/// <summary>
+/// Document metadata only — never file bytes (KYC-037 / KYC-040+). Empty until upload stories land.
+/// </summary>
+public sealed record CaseDocumentMetadataResponse(
+    Guid Id,
+    string FileName,
+    string ContentType,
+    long SizeBytes,
+    DateTimeOffset UploadedAt);
+
+/// <summary>Case detail payload: full case, comments, document metadata (KYC-037).</summary>
+public sealed record CaseDetailResponse(
+    CaseResponse Case,
+    IReadOnlyList<CaseCommentResponse> Comments,
+    IReadOnlyList<CaseDocumentMetadataResponse> Documents);
+
