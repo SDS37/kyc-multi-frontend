@@ -22,12 +22,13 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Customer update draft case | Ready (KYC-032 GraphQL `updateDraftCase`) |
 | Customer submit case | Ready (KYC-033 GraphQL `submitCase`) |
 | Reviewer start case review | Ready (KYC-034 GraphQL `startCaseReview`) |
-| GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE in Development) |
-| API CI (`dotnet build` / `test`) | Ready (KYC-102) |
+| GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE / introspection / SDL in Development — KYC-105) |
+| API CI (`dotnet build` / `test`) | Ready (KYC-102; SHA pins + Postgres slice — KYC-108) |
 | Postgres readiness (`/ready`) + EF retries / timeouts | Ready (KYC-103) |
 | Structured logs + request id | Ready (KYC-104) |
-| GraphQL auth (deny by default) | Ready (KYC-021) |
+| GraphQL auth (deny by default) | Ready (KYC-021; login dummy verify — KYC-107; login password max 128 — KYC-109) |
 | GraphQL role authorization | Ready (KYC-022; Customer + Reviewer/TenantAdmin case mutations) |
+| Case mutation hardening | Ready (KYC-106; non-owner → `NOT_FOUND`; FormData 64 KiB / depth 8) |
 | Angular / React / Vue apps | Placeholders only |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).

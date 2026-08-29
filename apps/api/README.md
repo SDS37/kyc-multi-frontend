@@ -238,5 +238,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-106 | Non-owner update/submit → `NOT_FOUND`; FormData 64 KiB / depth 8; atomic submit and start-review status updates |
 | KYC-107 | Login dummy password verify on miss paths; `registerTenant` uses EF execution strategy |
 | KYC-108 | `api-ci` SHA-pinned actions, `contents: read`, vuln list (warn), thin Postgres migrate + jsonb tests |
+| KYC-109 | Login password max 128; `updateDraftCase` DOMAIN before FormData; status docs for 105–108 |
 
 Out of scope here: auth rate limits (KYC-093). CORS/headers are KYC-091. Local HTTP is for Development only.

@@ -96,6 +96,23 @@ public sealed class LoginTimingTests : IClassFixture<LoginTimingApiFactory>
         Assert.True(_factory.Hasher.VerifyCount > before, "inactive tenant must still call VerifyHashedPassword");
     }
 
+    [Fact]
+    public async Task Oversized_password_returns_VALIDATION_without_verify()
+    {
+        using var client = _factory.CreateClient();
+        var before = _factory.Hasher.VerifyCount;
+        var oversized = new string('x', LoginService.MaxPasswordLength + 1);
+
+        var payload = await PostGraphqlAsync(
+            client,
+            LoginBody("any-tenant", "a@example.com", oversized));
+        var errors = payload.GetProperty("errors").ToString();
+        Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("AUTH_FAILED", errors, StringComparison.Ordinal);
+        Assert.Contains($"{LoginService.MaxPasswordLength}", errors, StringComparison.Ordinal);
+        Assert.Equal(before, _factory.Hasher.VerifyCount);
+    }
+
     private static async Task<string> RegisterAsync(HttpClient client, string prefix)
     {
         var slug = $"{prefix}-{Guid.NewGuid():N}"[..16];

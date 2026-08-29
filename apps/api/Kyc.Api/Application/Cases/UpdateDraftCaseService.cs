@@ -18,12 +18,6 @@ public sealed class UpdateDraftCaseService(
         UpdateDraftCaseRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationErrors = CaseDraftValidation.ValidateTitleAndFormData(request.Title, request.FormData);
-        if (validationErrors.Count > 0)
-        {
-            return (null, validationErrors, false, null, null);
-        }
-
         if (request.Id == Guid.Empty)
         {
             return (null, ["Case id is required."], false, null, null);
@@ -60,6 +54,12 @@ public sealed class UpdateDraftCaseService(
         if (entity.Status != CaseStatus.Draft)
         {
             return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
+        }
+
+        var validationErrors = CaseDraftValidation.ValidateTitleAndFormData(request.Title, request.FormData);
+        if (validationErrors.Count > 0)
+        {
+            return (null, validationErrors, false, null, null);
         }
 
         entity.Title = request.Title.Trim();
