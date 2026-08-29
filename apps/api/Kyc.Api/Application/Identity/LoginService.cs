@@ -13,6 +13,7 @@ public sealed class LoginService(
 {
     public const string GenericAuthFailure = "Invalid email, password, or tenant.";
     public const string RejectedLog = "Login rejected";
+    public const int MaxPasswordLength = PasswordPolicy.MaxLength;
 
     private string? _dummyPasswordHash;
 
@@ -82,6 +83,10 @@ public sealed class LoginService(
         if (string.IsNullOrWhiteSpace(request.Password))
         {
             errors.Add("Password is required.");
+        }
+        else if (request.Password.Length > MaxPasswordLength)
+        {
+            errors.Add($"Password must be at most {MaxPasswordLength} characters.");
         }
 
         return errors;

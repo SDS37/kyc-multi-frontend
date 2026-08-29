@@ -200,6 +200,37 @@ public sealed class UpdateDraftCaseTests : IClassFixture<ApiFactory>, IAsyncLife
     }
 
     [Fact]
+    public async Task Non_draft_with_invalid_formData_still_returns_DOMAIN()
+    {
+        Authenticate(_ownerId);
+        var oversized = $$"""{"pad":"{{new string('x', CreateDraftCaseService.MaxFormDataUtf8Bytes)}}"}""";
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id } }",
+                  "variables": {
+                    "input": {
+                      "id": "{{_submittedCaseId}}",
+                      "title": "",
+                      "formData": {{JsonSerializer.Serialize(oversized)}}
+                    }
+                  }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("DOMAIN", errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("VALIDATION", errors, StringComparison.Ordinal);
+        Assert.Contains(UpdateDraftCaseService.NotDraftMessage, errors, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Reviewer_cannot_update_draft()
     {
         AuthenticateRole(UserRole.Reviewer, Guid.NewGuid());
