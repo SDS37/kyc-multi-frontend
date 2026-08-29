@@ -261,11 +261,11 @@ app.MapPost("/api/cases/{caseId:guid}/documents", async (
 {
     if (!request.HasFormContentType)
     {
-        return Results.BadRequest(new { errors = MultipartFormRequiredErrors });
+        return Results.BadRequest(new { errors = MultipartFormRequiredErrors, code = "VALIDATION" });
     }
 
     var form = await request.ReadFormAsync(cancellationToken);
-    var file = form.Files.GetFile("file") ?? (form.Files.Count > 0 ? form.Files[0] : null);
+    var file = form.Files.GetFile("file");
 
     var (result, validationErrors, unauthorized, forbidden, errorCode, errorMessage) =
         await service.UploadAsync(caseId, file, cancellationToken);
@@ -308,7 +308,8 @@ app.MapPost("/api/cases/{caseId:guid}/documents", async (
 .WithName("UploadDocument")
 .RequireAuthorization(new AuthorizeAttribute { Roles = AuthRoles.Customer })
 .DisableAntiforgery()
-.WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(DocumentUploadValidation.MaxFileBytes + (256 * 1024)));
+.WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(
+    DocumentUploadValidation.MaxFileBytes + (1024 * 1024)));
 
 app.Run();
 

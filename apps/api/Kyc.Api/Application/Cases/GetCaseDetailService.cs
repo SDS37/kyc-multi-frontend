@@ -45,10 +45,10 @@ public sealed class GetCaseDetailService(
             ? Array.Empty<CaseCommentResponse>()
             : [new CaseCommentResponse(entity.ReviewComment.Trim(), entity.ReviewedAt, entity.ReviewedBy)];
 
-        var documents = await db.Documents
+        // Newest first. Order in memory: SQLite tests cannot ORDER BY DateTimeOffset (same constraint as list cases).
+        var documents = (await db.Documents
             .AsNoTracking()
             .Where(d => d.CaseId == entity.Id)
-            .OrderByDescending(d => d.Id)
             .Select(d => new CaseDocumentMetadataResponse(
                 d.Id,
                 d.FileName,
@@ -56,7 +56,10 @@ public sealed class GetCaseDetailService(
                 d.SizeBytes,
                 d.UploadedAt,
                 d.UploadedByUserId))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken))
+            .OrderByDescending(d => d.UploadedAt)
+            .ThenByDescending(d => d.Id)
+            .ToList();
 
         return (
             new CaseDetailResponse(caseResponse, comments, documents),
