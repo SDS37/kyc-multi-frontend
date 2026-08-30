@@ -78,6 +78,18 @@ Authorization: Bearer {{accessToken}}
   }
 }
 
+### Case audit entries (KYC-051) — Reviewer / TenantAdmin only; newest first
+POST {{Kyc.Api_HostAddress}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{reviewerAccessToken}}
+
+{
+  "query": "query($caseId: UUID!) { caseAuditEntries(caseId: $caseId) { id entityType entityId action actorUserId occurredAt payload } }",
+  "variables": {
+    "caseId": "{{caseId}}"
+  }
+}
+
 ### Upload document (KYC-040) — Customer; Draft/Submitted; multipart field "file"; PDF/PNG/JPG ≤10MB
 # curl -X POST "http://localhost:5295/api/cases/{{caseId}}/documents" \
 #   -H "Authorization: Bearer {{customerAccessToken}}" \

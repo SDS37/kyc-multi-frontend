@@ -110,7 +110,7 @@ if (entity.CustomerUserId != customerUserId.Value)
 
 - Every tenant-owned entity **must** implement `ITenantScoped`. `Tenant` itself does not.
 - EF global filters fail closed: no JWT tenant → **zero** `ITenantScoped` rows.
-- `AuditEntry` is append-only (KYC-050): write via `AuditRecorder` in the same transaction as the domain change; **no** update/delete application API.
+- `AuditEntry` is append-only (KYC-050): write via `AuditRecorder` in the same transaction as the domain change; **no** update/delete application API. Read is Reviewer/TenantAdmin-only via `caseAuditEntries` (KYC-051).
 - `IgnoreQueryFilters()` is only for login (and similar pre-auth lookups). Grep it before adding another call.
 - GraphQL is deny-by-default: `[Authorize]` on `Query` / `Mutation`; `[AllowAnonymous]` only on `login` and `registerTenant`.
 - Role gates on write fields: `[Authorize(Roles = new[] { AuthRoles.Customer })]`. List/detail stay “any authenticated role”; **visibility** is Application (`CaseVisibility`).

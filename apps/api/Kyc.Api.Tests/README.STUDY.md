@@ -61,6 +61,7 @@ flowchart LR
 | `UploadDocumentTests` | Customer multipart upload; Draft/Submitted; peer `NOT_FOUND`; reviewer 403; magic/size `VALIDATION`; InMemory object store via `ObjectStorage:Provider=InMemory` on factories. |
 | `DownloadDocumentTests` | KYC-042 `GET /api/cases/{caseId}/documents/{documentId}`; owner / reviewer / admin; peer+cross-tenant `NOT_FOUND`; no redirect/presign; missing blob `NOT_FOUND`. |
 | `AuditRecordTests` | KYC-050 append-only rows for create/update/submit/start/approve/reject/upload; tenant filter fail-closed; no audit mutations in schema. |
+| `ListCaseAuditTests` | KYC-051 `caseAuditEntries`; reviewer/admin OK; customer `AUTH_NOT_AUTHORIZED`; newest first; includes document uploads; cross-tenant `NOT_FOUND`. |
 | `GraphQlHostHardeningTests` | Introspection/depth in Development vs not. |
 | `HostResilienceTests` | Timeouts / ready vs health behavior. |
 | `ObservabilityTests` | JSON logs, request id, no secret leakage. |
