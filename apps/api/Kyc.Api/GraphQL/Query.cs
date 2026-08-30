@@ -1,6 +1,8 @@
 using HotChocolate.Authorization;
+using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Documents;
+using Kyc.Api.Application.Identity;
 using Kyc.Api.Domain.Cases;
 
 namespace Kyc.Api.GraphQL;
@@ -116,6 +118,57 @@ public class Query
                 ErrorBuilder.New()
                     .SetMessage(CreateDraftCaseService.GenericAuthFailure)
                     .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        if (errorCode is not null)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(errorMessage ?? "Request failed.")
+                    .SetCode(errorCode)
+                    .Build());
+        }
+
+        return result!;
+    }
+
+    /// <summary>
+    /// Audit history for a case (KYC-051). Reviewer / TenantAdmin only; newest first; includes document-upload rows for the case.
+    /// </summary>
+    [Authorize(Roles = new[] { AuthRoles.Reviewer, AuthRoles.TenantAdmin })]
+    public async Task<IReadOnlyList<CaseAuditEntryResponse>> CaseAuditEntries(
+        Guid caseId,
+        ListCaseAuditService service,
+        CancellationToken cancellationToken)
+    {
+        var (result, validationErrors, unauthorized, forbidden, errorCode, errorMessage) =
+            await service.ListAsync(caseId, cancellationToken);
+
+        if (validationErrors.Count > 0)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(string.Join(" ", validationErrors))
+                    .SetCode("VALIDATION")
+                    .Build());
+        }
+
+        if (unauthorized)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(CreateDraftCaseService.GenericAuthFailure)
+                    .SetCode("AUTH_FAILED")
+                    .Build());
+        }
+
+        if (forbidden)
+        {
+            throw new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(ListCaseAuditService.ForbiddenMessage)
+                    .SetCode("AUTH_NOT_AUTHORIZED")
                     .Build());
         }
 

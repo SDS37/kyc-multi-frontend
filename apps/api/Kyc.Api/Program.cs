@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Documents;
 using Kyc.Api.Application.Identity;
@@ -161,6 +162,7 @@ builder.Services.AddScoped<GetCaseDetailService>();
 builder.Services.AddScoped<ListDocumentsService>();
 builder.Services.AddScoped<UploadDocumentService>();
 builder.Services.AddScoped<DownloadDocumentService>();
+builder.Services.AddScoped<ListCaseAuditService>();
 
 builder.Services
     .AddGraphQLServer()

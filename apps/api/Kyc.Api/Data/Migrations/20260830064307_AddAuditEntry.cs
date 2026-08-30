@@ -8,6 +8,9 @@ namespace Kyc.Api.Data.Migrations
     /// <inheritdoc />
     public partial class AddAuditEntry : Migration
     {
+        private static readonly string[] TenantEntityColumns = ["TenantId", "EntityType", "EntityId"];
+        private static readonly string[] TenantOccurredAtColumns = ["TenantId", "OccurredAt"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -49,12 +52,12 @@ namespace Kyc.Api.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_audit_entries_TenantId_EntityType_EntityId",
                 table: "audit_entries",
-                columns: new[] { "TenantId", "EntityType", "EntityId" });
+                columns: TenantEntityColumns);
 
             migrationBuilder.CreateIndex(
                 name: "IX_audit_entries_TenantId_OccurredAt",
                 table: "audit_entries",
-                columns: new[] { "TenantId", "OccurredAt" });
+                columns: TenantOccurredAtColumns);
         }
 
         /// <inheritdoc />

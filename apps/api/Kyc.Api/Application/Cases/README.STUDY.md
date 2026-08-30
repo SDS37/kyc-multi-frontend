@@ -81,7 +81,7 @@ Detail returns document **metadata** from `documents` (KYC-040/041). Dedicated G
 
 ## Today vs target
 
-Approve/reject/list/detail/upload/download + audit writes are **done**. Missing: audit list/query, richer comments. Do not invent a second visibility mechanism in the Angular app that contradicts `CaseVisibility`.
+Approve/reject/list/detail/upload/download + audit write/read are **done**. Missing: richer comments. Do not invent a second visibility mechanism in the Angular app that contradicts `CaseVisibility`.
 
 ## Links
 

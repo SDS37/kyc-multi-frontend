@@ -16,7 +16,7 @@ This is the folder to study if you want to argue behavior: validation, status tr
 |---|---|
 | [Cases/](Cases/README.STUDY.md) | Week 2 product: create/update/submit/review/list/detail. Detail now loads real documents. |
 | [Documents/](Documents/README.STUDY.md) | Week 3 KYC-040–042: upload, list metadata, download stream via `IObjectStorage`. |
-| [Audit/](Audit/README.STUDY.md) | Week 3 KYC-050: append-only `AuditRecorder` for key actions. |
+| [Audit/](Audit/README.STUDY.md) | Week 3 KYC-050–051: append-only writes + Reviewer/TenantAdmin case audit list. |
 | `Identity/` | Register tenant, login, JWT issuance, password policy, `ICurrentUser`. |
 | `Tenancy/` | `ICurrentTenant` + HTTP implementation. Tiny on purpose: **one place** that reads `tenant_id`. |
 
