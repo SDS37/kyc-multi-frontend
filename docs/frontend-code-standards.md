@@ -80,6 +80,46 @@ Follow the official [Angular Style Guide](https://angular.dev/style-guide) and r
 - Keep lifecycle hooks thin; implement the lifecycle interfaces (`OnInit`, etc.) when used
 - Avoid heavy logic in templates — move complexity into the class (e.g. `computed`)
 
+### Signals and client state
+
+Prefer Angular **signals** (`signal` / `computed` / `WritableSignal`) for UI and feature state that should be explicit and readable (loading flags, form-level errors, list filter, items). Keep GraphQL/HTTP in injectable services; components (or a small feature service) own the signals that the template reads.
+
+**Do not** add NgRx **SignalStore** (or classic NgRx store) for MVP by default. This app stays small through KYC-062 (case list): login + list + later review is still a handful of feature services, not a multi-domain shared state graph.
+
+Practical rule (MVP):
+
+- Use signals everywhere they clarify UI / feature state
+- Introduce SignalStore **only if** KYC-063 / KYC-064 (or later) starts sharing **non-trivial** case state across list + detail + actions **and** a plain injectable service with signals gets messy
+- Until then, SignalStore is premature architecture for this portfolio MVP
+
+#### When SignalStore is *not* needed (MVP)
+
+| Situation | Prefer |
+|---|---|
+| Login form flags (`submitting`, `formError`) | Component-local signals |
+| KYC-062 case list alone (filter + items + loading / empty) | One feature service or component signals + HTTP service |
+| “We might need a store later” with no shared state yet | Do nothing — revisit after MVP when list↔detail sharing appears |
+
+#### After MVP — when to extend with SignalStore
+
+Revisit this section when **several screens share one mutable domain model** with rules that do not belong in any single component. In `angular-admin`, that usually means list + detail + review actions owning the same case queue/detail.
+
+Signals that you have outgrown a plain service:
+
+- List filter / status must stay coherent after opening a case and approving or rejecting
+- Detail updates should refresh or patch the list row without duplicating refetch/patch logic in two places
+- Optimistic UI (e.g. approve disables row + detail, rolls back on GraphQL error)
+- Multiple consumers of the same signals (shell badge “N in review”, list, detail)
+
+**Rule of thumb:** if you can name one store (e.g. `CaseWorkspaceStore`) with clear methods (`setStatusFilter`, `loadList`, `loadDetail`, `approve`, `reject`) used by **two or more routes**, SignalStore starts earning its keep. One route → keep signals on the component or a thin feature service.
+
+Suggested post-MVP shape (sketch only — implement when the pain is real):
+
+1. Keep GraphQL HTTP in a thin `CasesApi` / `CasesService` (no UI state there)
+2. Add `@ngrx/signals` SignalStore as `CaseWorkspaceStore` (`providedIn` feature or route) holding list + selected detail + filter + pending action flags
+3. List and detail components inject the store; shell may read a small derived signal (e.g. in-review count)
+4. Do **not** migrate login or unrelated features into that store
+
 ### HTTP, auth, and config
 
 - Provide HttpClient with **functional** interceptors: `provideHttpClient(withInterceptors([authInterceptor]))` ([official recommendation](https://angular.dev/guide/http/interceptors))
@@ -105,6 +145,7 @@ Follow the official [Angular Style Guide](https://angular.dev/style-guide) and r
 - Trust client-supplied tenant id for authorization
 - Reintroduce NgModule-based feature modules “for familiarity”
 - Add Bootstrap alongside Material; hard-code a second color/spacing system instead of `@kyc/design-tokens`
+- Add NgRx SignalStore / global store “for scale” before shared list↔detail case state actually needs it (see Signals and client state above)
 
 ## React and Vue (later)
 
