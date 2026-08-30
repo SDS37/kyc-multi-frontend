@@ -68,6 +68,7 @@ This is **not** a mandate for `fp-ts` or rewriting Angular as a functional frame
 | **Services** | Compose pure functions in `map`; I/O only via HttpClient / `tap` / storage APIs | Dense callbacks that parse **and** write tokens / navigate |
 | **Components** | Signals + `computed` / pure helpers for derived UI; immutable `set` / `update` | In-place mutation; business parsing copied into the class |
 | **Templates** | Bind signals / simple calls | Heavy branching or formatting logic |
+| **Collections** | `filter` / `map` / `flatMap` / `reduce` that return new values | `for` / `forEach` that `.push` into an outer array (same job, less clear) |
 
 ```typescript
 // ✅ GOOD — pure function at the transform; side effect at the edge (any layer)
@@ -81,6 +82,30 @@ map((body) => {
   return login;
 }),
 ```
+
+Prefer **array methods over imperative loops** when transforming lists:
+
+```typescript
+// ✅ GOOD — filter + map (no mutable accumulator)
+const knownFields: CaseFormField[] = CASE_FORM_FIELD_KEYS.filter(
+  (key): boolean => key in record,
+).map(
+  (key): CaseFormField => ({
+    key,
+    label: CASE_FORM_FIELD_LABELS[key],
+    value: formatFormFieldValue(record[key]),
+  }),
+);
+
+// ❌ BAD — for / forEach + push (imperative accumulation)
+const fields: CaseFormField[] = [];
+for (const key of CASE_FORM_FIELD_KEYS) {
+  if (!(key in record)) continue;
+  fields.push({ key, label: CASE_FORM_FIELD_LABELS[key], value: … });
+}
+```
+
+`for…of` is still OK when you need early `break`, index mutation, or non-transform control flow. Prefer `filter`/`map`/`reduce` for “list in → list out.” Do **not** treat `forEach` as more functional than `for` — both are imperative when they mutate.
 
 Enforce this for the **whole** frontend surface (`angular-admin` now; React/Vue when scaffolded). Feature layout still helps: `*.models.ts` (shapes) + `*.mappers.ts` (pure functions) + `*.service.ts` (I/O) + components (wiring + signals).
 
@@ -309,6 +334,7 @@ Suggested post-MVP shape (sketch only — implement when the pain is real):
 - Add NgRx SignalStore / global store “for scale” before shared list↔detail case state actually needs it (see Signals and client state above)
 - Declare exported DTOs / form maps / domain errors inside services or components instead of `*.models.ts`
 - Bury storage / router / HTTP side effects inside pure mappers (see Functional style / purity)
+- Prefer `for` / `forEach` + `.push` for list transforms when `filter` / `map` / `reduce` would do (see Functional style / purity → Collections)
 - Put component business logic or RxJS subscriptions in `constructor()` — use `ngOnInit` / lifecycle + `inject()` fields instead
 - Import another feature’s internals (e.g. `cases` → `auth.mappers` / login form). Use `shared/` or the allowed auth infrastructure listed above
 - Put GraphQL/`HttpClient` in presentational (`-card` / pane) components

@@ -135,33 +135,33 @@ export function parseCaseFormData(formDataRaw: string): readonly CaseFormField[]
   }
 
   const record: Record<string, unknown> = parsed as Record<string, unknown>;
-  const fields: CaseFormField[] = [];
-  const seen: Set<string> = new Set<string>();
 
-  for (const key of CASE_FORM_FIELD_KEYS) {
-    if (!(key in record)) {
-      continue;
-    }
-    seen.add(key);
-    fields.push({
+  const knownFields: CaseFormField[] = CASE_FORM_FIELD_KEYS.filter(
+    (key): boolean => key in record,
+  ).map(
+    (key): CaseFormField => ({
       key,
       label: CASE_FORM_FIELD_LABELS[key],
       value: formatFormFieldValue(record[key]),
-    });
-  }
+    }),
+  );
 
-  for (const key of Object.keys(record).sort()) {
-    if (seen.has(key)) {
-      continue;
-    }
-    fields.push({
-      key,
-      label: humanizeFormKey(key),
-      value: formatFormFieldValue(record[key]),
-    });
-  }
+  const knownKeys: ReadonlySet<string> = new Set<string>(
+    knownFields.map((field: CaseFormField): string => field.key),
+  );
 
-  return fields;
+  const extraFields: CaseFormField[] = Object.keys(record)
+    .filter((key): boolean => !knownKeys.has(key))
+    .sort()
+    .map(
+      (key): CaseFormField => ({
+        key,
+        label: humanizeFormKey(key),
+        value: formatFormFieldValue(record[key]),
+      }),
+    );
+
+  return [...knownFields, ...extraFields];
 }
 
 /** Pure: map GraphQL `case(id)` body → CaseDetail. */
