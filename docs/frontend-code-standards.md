@@ -24,7 +24,7 @@ This file is not a copy of angular.dev or of the Angular Architects blog.
 | Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map each app’s UI kit to tokens; do not fork palettes per app |
 | Angular UI kit | **Angular Material** (+ CDK) themed to `@kyc/design-tokens`. **Do not** add the Bootstrap CSS framework (or a second spacing/color system) |
 | **Models files** | Feature DTOs / form maps / domain errors in `*.models.ts` (not inside services/components). Same convention in every UI app. |
-| **Functional style** | Apply FP at the **function** level: pure helpers/mappers. Not an FP rewrite of Angular. See below. |
+| **Functional style** | Prefer FP **at every app level**, expressed as pure **functions** (mappers, derived state, transforms). Side effects only at I/O edges. See below. |
 | Accessibility | WCAG 2.2 AA intent + WAI-ARIA across Angular/React/Vue (same `aria-*` platform). Labels, focus visible (`--kyc-focus-ring`), errors not by color alone — details in [ux-design-tokens.md](ux-design-tokens.md) |
 | **Hard TypeScript** | **Strict TS from the first file** in every UI app — see below. No “loose then tighten later.” |
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
@@ -58,30 +58,31 @@ New React/Vue apps must adopt the same baseline when scaffolded (KYC-070 / KYC-0
 
 ### Functional style / purity (all frontends)
 
-Functional style here means **pure functions**, not a functional rewrite of the app. Angular stays class-based for DI/components; RxJS and signals stay first-class. Purity applies to the **function layer** — small, deterministic helpers (especially in `*.mappers.ts`) that map/normalize/parse/label data. Side effects live outside those functions (services, `tap`, components, router, storage).
+Prefer a **functional style across every level of the app** — UI, feature services, HTTP clients, and shared helpers. The unit of that style is the **pure function** (same inputs → same outputs; no hidden I/O): put transforms in named functions (often `*.mappers.ts`), keep templates/`computed` thin, and push side effects to the edges.
 
-| Do | Do not |
-|---|---|
-| Pure **functions** in `*.mappers.ts` (and similar helpers): normalize, parse GraphQL → DTO, error mapping, URL/filter parsing | Treat the whole UI as an FP library stack (`fp-ts`, free monads, …) |
-| Keep mapper functions free of HTTP, router, and storage | Mix HTTP + parsing + storage writes inside one “mapper” or dense `map` callback |
-| Immutable signal updates (`set` / `update` with new values) | Mutate arrays/objects in place then hope change detection notices |
-| Side effects in services/`tap`/components at boundaries | Hide writes inside functions that look pure |
-| Unit-test pure functions without TestBed when practical | Pull in heavy FP libraries for MVP |
+This is **not** a mandate for `fp-ts` or rewriting Angular as a functional framework — DI, classes, RxJS, and signals stay first-class. It **is** a mandate to think functionally **everywhere**, not only inside mapper files.
+
+| Level | Prefer | Avoid |
+|---|---|---|
+| **Shared / `*.mappers.ts`** | Pure functions: normalize, parse GraphQL → DTO, error map, labels, URL/filter parse | HTTP, router, storage inside “helpers” |
+| **Services** | Compose pure functions in `map`; I/O only via HttpClient / `tap` / storage APIs | Dense callbacks that parse **and** write tokens / navigate |
+| **Components** | Signals + `computed` / pure helpers for derived UI; immutable `set` / `update` | In-place mutation; business parsing copied into the class |
+| **Templates** | Bind signals / simple calls | Heavy branching or formatting logic |
 
 ```typescript
-// ✅ GOOD — pure function + side effect at the edge
+// ✅ GOOD — pure function at the transform; side effect at the edge (any layer)
 map((body) => parseLoginSuccess(body)),
 tap((login) => tokens.setAccessToken(login.accessToken)),
 
-// ❌ BAD — storage write inside the parse function
+// ❌ BAD — side effect buried inside a function that should stay pure
 map((body) => {
   const login = …;
-  tokens.setAccessToken(login.accessToken); // side effect buried in a “mapper”
+  tokens.setAccessToken(login.accessToken);
   return login;
 }),
 ```
 
-Apply pure-function mappers across the **whole** frontend surface (`angular-admin` now; React/Vue when scaffolded). Feature layout: `*.models.ts` (shapes) + `*.mappers.ts` (pure functions) + `*.service.ts` (I/O).
+Enforce this for the **whole** frontend surface (`angular-admin` now; React/Vue when scaffolded). Feature layout still helps: `*.models.ts` (shapes) + `*.mappers.ts` (pure functions) + `*.service.ts` (I/O) + components (wiring + signals).
 
 ## Angular (`apps/angular-admin`)
 
@@ -104,7 +105,7 @@ Follow the official [Angular Style Guide](https://angular.dev/style-guide) and r
 - Organize by **feature area**, not by type folders (`components/`, `services/`)
 - One primary concept per file (one component / directive / service unless a small cohesive pair)
 - **`*.models.ts` everywhere (app-wide):** every feature keeps DTOs, form control maps, domain errors, and feature GraphQL wire bodies in a models file — e.g. `auth/auth.models.ts`, `cases/cases.models.ts`, `config/config.models.ts`. Cross-feature wire bits (e.g. `GraphqlError`) live under `shared/*.models.ts`. Injectable services and components **import** models; they do **not** declare exported interfaces/types inline.
-- **`*.mappers.ts` for pure functions (app-wide):** normalize inputs, parse GraphQL bodies → DTOs, map errors, parse filters/URLs — FP at the **function** level only. Services own HTTP/`tap` side effects. See [Functional style / purity](#functional-style--purity-all-frontends).
+- **`*.mappers.ts` for pure functions (app-wide):** normalize, parse GraphQL → DTO, map errors, parse filters/URLs. FP is expected at **all** app levels (see table above); mappers are the main home for shared pure functions. Services own HTTP/`tap` side effects. See [Functional style / purity](#functional-style--purity-all-frontends).
 
 ### Angular Architects practices (filtered for this app)
 
