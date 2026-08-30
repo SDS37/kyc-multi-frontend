@@ -1,6 +1,8 @@
+using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
 using Microsoft.EntityFrameworkCore;
 
@@ -70,6 +72,14 @@ public sealed class UpdateDraftCaseService(
         }
 
         entity.UpdatedAt = DateTimeOffset.UtcNow;
+        AuditRecorder.Append(
+            db,
+            tenantId.Value,
+            customerUserId.Value,
+            AuditEntityTypes.Case,
+            entity.Id,
+            AuditActions.CaseUpdated,
+            entity.UpdatedAt);
         await db.SaveChangesAsync(cancellationToken);
 
         return (CreateDraftCaseService.ToResponse(entity), Array.Empty<string>(), false, null, null);

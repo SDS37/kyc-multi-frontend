@@ -1,6 +1,8 @@
+using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
 using Microsoft.EntityFrameworkCore;
 
@@ -91,16 +93,31 @@ public sealed class CompleteCaseReviewService(
         }
 
         var now = DateTimeOffset.UtcNow;
-        var rows = await db.Cases
-            .Where(c => c.Id == entity.Id && c.Status == CaseStatus.InReview)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(c => c.Status, targetStatus)
-                    .SetProperty(c => c.ReviewedAt, now)
-                    .SetProperty(c => c.ReviewedBy, reviewerUserId.Value)
-                    .SetProperty(c => c.ReviewComment, normalizedComment)
-                    .SetProperty(c => c.UpdatedAt, now),
-                cancellationToken);
+        var action = targetStatus == CaseStatus.Approved
+            ? AuditActions.CaseApproved
+            : AuditActions.CaseRejected;
+
+        var rows = await AuditRecorder.ExecuteUpdateWithAuditAsync(
+            db,
+            ct => db.Cases
+                .Where(c => c.Id == entity.Id && c.Status == CaseStatus.InReview)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(c => c.Status, targetStatus)
+                        .SetProperty(c => c.ReviewedAt, now)
+                        .SetProperty(c => c.ReviewedBy, reviewerUserId.Value)
+                        .SetProperty(c => c.ReviewComment, normalizedComment)
+                        .SetProperty(c => c.UpdatedAt, now),
+                    ct),
+            () => AuditRecorder.Append(
+                db,
+                tenantId.Value,
+                reviewerUserId.Value,
+                AuditEntityTypes.Case,
+                entity.Id,
+                action,
+                now),
+            cancellationToken);
 
         if (rows == 0)
         {

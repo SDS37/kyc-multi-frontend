@@ -1,6 +1,8 @@
+using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,14 +54,25 @@ public sealed class StartCaseReviewService(
         }
 
         var now = DateTimeOffset.UtcNow;
-        var rows = await db.Cases
-            .Where(c => c.Id == entity.Id && c.Status == CaseStatus.Submitted)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(c => c.Status, CaseStatus.InReview)
-                    .SetProperty(c => c.ReviewedBy, reviewerUserId.Value)
-                    .SetProperty(c => c.UpdatedAt, now),
-                cancellationToken);
+        var rows = await AuditRecorder.ExecuteUpdateWithAuditAsync(
+            db,
+            ct => db.Cases
+                .Where(c => c.Id == entity.Id && c.Status == CaseStatus.Submitted)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(c => c.Status, CaseStatus.InReview)
+                        .SetProperty(c => c.ReviewedBy, reviewerUserId.Value)
+                        .SetProperty(c => c.UpdatedAt, now),
+                    ct),
+            () => AuditRecorder.Append(
+                db,
+                tenantId.Value,
+                reviewerUserId.Value,
+                AuditEntityTypes.Case,
+                entity.Id,
+                AuditActions.ReviewStarted,
+                now),
+            cancellationToken);
 
         if (rows == 0)
         {

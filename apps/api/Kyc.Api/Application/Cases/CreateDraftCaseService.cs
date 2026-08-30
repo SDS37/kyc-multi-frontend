@@ -1,9 +1,11 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
 using Microsoft.EntityFrameworkCore;
 
@@ -67,6 +69,14 @@ public sealed class CreateDraftCaseService(
         };
 
         db.Cases.Add(entity);
+        AuditRecorder.Append(
+            db,
+            tenantId.Value,
+            customerUserId.Value,
+            AuditEntityTypes.Case,
+            entity.Id,
+            AuditActions.CaseCreated,
+            now);
         await db.SaveChangesAsync(cancellationToken);
 
         return (ToResponse(entity), Array.Empty<string>(), false);

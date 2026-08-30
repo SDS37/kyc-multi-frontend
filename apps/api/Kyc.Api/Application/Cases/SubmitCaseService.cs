@@ -1,6 +1,8 @@
+using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
 using Microsoft.EntityFrameworkCore;
 
@@ -61,17 +63,28 @@ public sealed class SubmitCaseService(
         }
 
         var now = DateTimeOffset.UtcNow;
-        var rows = await db.Cases
-            .Where(c =>
-                c.Id == entity.Id &&
-                c.CustomerUserId == customerUserId.Value &&
-                c.Status == CaseStatus.Draft)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(c => c.Status, CaseStatus.Submitted)
-                    .SetProperty(c => c.SubmittedAt, now)
-                    .SetProperty(c => c.UpdatedAt, now),
-                cancellationToken);
+        var rows = await AuditRecorder.ExecuteUpdateWithAuditAsync(
+            db,
+            ct => db.Cases
+                .Where(c =>
+                    c.Id == entity.Id &&
+                    c.CustomerUserId == customerUserId.Value &&
+                    c.Status == CaseStatus.Draft)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(c => c.Status, CaseStatus.Submitted)
+                        .SetProperty(c => c.SubmittedAt, now)
+                        .SetProperty(c => c.UpdatedAt, now),
+                    ct),
+            () => AuditRecorder.Append(
+                db,
+                tenantId.Value,
+                customerUserId.Value,
+                AuditEntityTypes.Case,
+                entity.Id,
+                AuditActions.CaseSubmitted,
+                now),
+            cancellationToken);
 
         if (rows == 0)
         {

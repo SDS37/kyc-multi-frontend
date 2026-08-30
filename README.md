@@ -28,6 +28,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Document upload | Ready (KYC-040 REST multipart → MinIO; metadata on `case` / `documents`) |
 | Document list | Ready (KYC-041 GraphQL `documents(caseId)`; metadata only) |
 | Document download | Ready (KYC-042 REST stream; same visibility as list; private bucket) |
+| Audit trail (write) | Ready (KYC-050 append-only `audit_entries`; key case/document actions) |
 | GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE / introspection / SDL in Development — KYC-105) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102; SHA pins + Postgres slice — KYC-108) |
 | Postgres readiness (`/ready`) + EF retries / timeouts | Ready (KYC-103) |

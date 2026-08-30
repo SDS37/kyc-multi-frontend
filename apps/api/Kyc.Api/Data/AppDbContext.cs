@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Domain;
+using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
 using Kyc.Api.Domain.Documents;
 using Kyc.Api.Domain.Identity;
@@ -22,6 +23,7 @@ public class AppDbContext(
     public DbSet<User> Users => Set<User>();
     public DbSet<Case> Cases => Set<Case>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,6 +34,10 @@ public class AppDbContext(
         {
             modelBuilder.Entity<Case>()
                 .Property(c => c.FormData)
+                .HasColumnType("jsonb");
+
+            modelBuilder.Entity<AuditEntry>()
+                .Property(e => e.Payload)
                 .HasColumnType("jsonb");
         }
 
