@@ -47,6 +47,8 @@ public static class AuditRecorder
         var strategy = db.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(async () =>
         {
+            // Retries must not reuse tracked entities from a failed attempt (same as RegisterTenantService).
+            db.ChangeTracker.Clear();
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
             var rows = await executeUpdate(cancellationToken);
             if (rows > 0)
