@@ -102,7 +102,7 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 - Bootstrap CSS next to Material
 - Apollo until a story chooses a GraphQL client (HttpClient POST to `/graphql` is enough)
 - NgRx SignalStore during MVP — prefer plain signals / feature services. **After MVP**, use the checklist under [Signals and client state → After MVP](../../docs/frontend-code-standards.md#after-mvp--when-to-extend-with-signalstore) before adding `@ngrx/signals`
-- Mixing side effects into “pure” paths — keep [functional style at every app level](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends) (pure functions for transforms; `filter`/`map` over `for`+push; I/O at edges)
+- Mixing side effects into “pure” paths — keep [functional style at every app level](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends) (pure functions; `filter`/`map`; **no** `.push` / in-place mutation; I/O at edges)
 - Component `constructor()` logic / subscriptions — wire in `ngOnInit` (see [Dependency injection](../../docs/frontend-code-standards.md#dependency-injection))
 
 ## Links

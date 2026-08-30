@@ -150,9 +150,9 @@ export function parseCaseFormData(formDataRaw: string): readonly CaseFormField[]
     knownFields.map((field: CaseFormField): string => field.key),
   );
 
-  const extraFields: CaseFormField[] = Object.keys(record)
-    .filter((key): boolean => !knownKeys.has(key))
+  const extraFields: CaseFormField[] = [...Object.keys(record)]
     .sort()
+    .filter((key): boolean => !knownKeys.has(key))
     .map(
       (key): CaseFormField => ({
         key,

@@ -69,6 +69,7 @@ This is **not** a mandate for `fp-ts` or rewriting Angular as a functional frame
 | **Components** | Signals + `computed` / pure helpers for derived UI; immutable `set` / `update` | In-place mutation; business parsing copied into the class |
 | **Templates** | Bind signals / simple calls | Heavy branching or formatting logic |
 | **Collections** | `filter` / `map` / `flatMap` / `reduce` that return new values | `for` / `forEach` that `.push` into an outer array (same job, less clear) |
+| **Immutability** | New arrays/objects (`[...xs]`, `{ ...o }`, `toSorted` / copy-then-sort); signal `set`/`update` with new values | `.push` / `.splice` / in-place `.sort()` / mutating fields on shared objects |
 
 ```typescript
 // ✅ GOOD — pure function at the transform; side effect at the edge (any layer)
@@ -105,7 +106,16 @@ for (const key of CASE_FORM_FIELD_KEYS) {
 }
 ```
 
-`for…of` is still OK when you need early `break`, index mutation, or non-transform control flow. Prefer `filter`/`map`/`reduce` for “list in → list out.” Do **not** treat `forEach` as more functional than `for` — both are imperative when they mutate.
+**Immutability (whole app):** treat data as replaceable, not editable in place.
+
+| Prefer | Avoid |
+|---|---|
+| `[...items, next]` / `items.filter(…)` / `items.map(…)` | `items.push(next)` / `items.splice(…)` |
+| `[...keys].sort(…)` or `keys.toSorted(…)` | `keys.sort(…)` on an array you still share |
+| `{ ...detail, status: next }` | `detail.status = next` |
+| `signal.set(next)` / `signal.update(prev => …new…)` | Mutate the object/array already held by a signal |
+
+`for…of` is still OK when you need early `break` or non-transform control flow. Prefer `filter`/`map`/`reduce` for “list in → list out.” Do **not** treat `forEach` as more functional than `for` — both are imperative when they mutate. Avoid `.push` as the default way to build lists.
 
 Enforce this for the **whole** frontend surface (`angular-admin` now; React/Vue when scaffolded). Feature layout still helps: `*.models.ts` (shapes) + `*.mappers.ts` (pure functions) + `*.service.ts` (I/O) + components (wiring + signals).
 
@@ -335,6 +345,7 @@ Suggested post-MVP shape (sketch only — implement when the pain is real):
 - Declare exported DTOs / form maps / domain errors inside services or components instead of `*.models.ts`
 - Bury storage / router / HTTP side effects inside pure mappers (see Functional style / purity)
 - Prefer `for` / `forEach` + `.push` for list transforms when `filter` / `map` / `reduce` would do (see Functional style / purity → Collections)
+- Mutate arrays/objects in place (`.push`, `.splice`, in-place `.sort`, assigning fields on shared DTOs) — prefer immutable copies (see Functional style / purity → Immutability)
 - Put component business logic or RxJS subscriptions in `constructor()` — use `ngOnInit` / lifecycle + `inject()` fields instead
 - Import another feature’s internals (e.g. `cases` → `auth.mappers` / login form). Use `shared/` or the allowed auth infrastructure listed above
 - Put GraphQL/`HttpClient` in presentational (`-card` / pane) components
