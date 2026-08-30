@@ -143,4 +143,21 @@ describe('CasesService', () => {
 
     expect(error).toBeInstanceOf(CasesLoadError);
   });
+
+  it('maps transport failures to CasesLoadError NETWORK', (): void => {
+    tokens.setAccessToken('jwt-token');
+    let error: unknown;
+
+    service.list().subscribe({
+      error: (err: unknown): void => {
+        error = err;
+      },
+    });
+
+    httpTesting.expectOne(graphqlUrl).error(new ProgressEvent('error'));
+
+    expect(error).toBeInstanceOf(CasesLoadError);
+    expect((error as CasesLoadError).code).toBe('NETWORK');
+    expect((error as CasesLoadError).message).toContain('Unable to reach the cases service');
+  });
 });

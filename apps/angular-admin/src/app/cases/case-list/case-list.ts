@@ -7,18 +7,21 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
+import { EMPTY, Observable, Subject, catchError, switchMap, tap } from 'rxjs';
 import { TokenStorage } from '../../auth/token-storage';
 import { parseStatusFilterValue, toCasesLoadError } from '../cases.mappers';
 import {
   CASE_STATUSES,
   CASE_STATUS_LABELS,
   CaseListItem,
+  CaseListPage,
   CaseStatus,
   caseStatusLabel,
 } from '../cases.models';
@@ -27,6 +30,7 @@ import { CasesService } from '../cases.service';
 /**
  * Reviewer / TenantAdmin case list with status filter (KYC-062).
  * UI state via signals — no SignalStore (see frontend-code-standards).
+ * Overlapping reloads cancel via `switchMap` so only the latest response updates UI.
  */
 @Component({
   selector: 'app-case-list',
@@ -45,6 +49,8 @@ export class CaseList implements OnInit {
   private readonly casesService: CasesService = inject(CasesService);
   private readonly tokens: TokenStorage = inject(TokenStorage);
   private readonly router: Router = inject(Router);
+
+  private readonly reloadRequests: Subject<void> = new Subject<void>();
 
   protected readonly pageTitle: string = 'Cases';
   protected readonly statusOptions: readonly CaseStatus[] = CASE_STATUSES;
@@ -65,6 +71,34 @@ export class CaseList implements OnInit {
   protected readonly isEmpty = computed(
     (): boolean => !this.loading() && this.loadError() === null && this.items().length === 0,
   );
+
+  constructor() {
+    this.reloadRequests
+      .pipe(
+        tap((): void => {
+          this.loading.set(true);
+          this.loadError.set(null);
+        }),
+        switchMap(
+          (): Observable<CaseListPage> =>
+            this.casesService.list({ status: this.statusFilter() }).pipe(
+              catchError((err: unknown): Observable<never> => {
+                this.loading.set(false);
+                this.items.set([]);
+                this.totalCount.set(0);
+                this.loadError.set(toCasesLoadError(err).message);
+                return EMPTY;
+              }),
+            ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((page: CaseListPage): void => {
+        this.items.set(page.items);
+        this.totalCount.set(page.totalCount);
+        this.loading.set(false);
+      });
+  }
 
   ngOnInit(): void {
     this.reload();
@@ -88,22 +122,7 @@ export class CaseList implements OnInit {
   }
 
   protected reload(): void {
-    this.loading.set(true);
-    this.loadError.set(null);
-
-    this.casesService.list({ status: this.statusFilter() }).subscribe({
-      next: (page): void => {
-        this.items.set(page.items);
-        this.totalCount.set(page.totalCount);
-        this.loading.set(false);
-      },
-      error: (err: unknown): void => {
-        this.loading.set(false);
-        this.items.set([]);
-        this.totalCount.set(0);
-        this.loadError.set(toCasesLoadError(err).message);
-      },
-    });
+    this.reloadRequests.next();
   }
 
   protected signOut(): void {

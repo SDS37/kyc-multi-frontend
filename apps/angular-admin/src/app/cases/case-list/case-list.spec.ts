@@ -117,4 +117,35 @@ describe('CaseList', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No cases yet for this tenant');
   });
+
+  it('ignores stale responses when reloads overlap', (): void => {
+    const firstReq = httpTesting.expectOne(graphqlUrl);
+
+    fixture.componentInstance['filterStatus']('IN_REVIEW');
+    const secondReq = httpTesting.expectOne(graphqlUrl);
+    expect(secondReq.request.body.variables.status).toBe('IN_REVIEW');
+
+    secondReq.flush({
+      data: {
+        cases: {
+          totalCount: 1,
+          skip: 0,
+          take: 20,
+          items: [
+            {
+              id: '22222222-2222-2222-2222-222222222222',
+              title: 'In review only',
+              status: 'IN_REVIEW',
+              customerEmail: 'review@acme.example',
+              updatedAt: '2026-08-30T13:00:00.000Z',
+            },
+          ],
+        },
+      },
+    });
+    fixture.detectChanges();
+
+    expect(firstReq.cancelled).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('In review only');
+  });
 });
