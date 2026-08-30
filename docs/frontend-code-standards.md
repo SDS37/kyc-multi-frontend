@@ -14,6 +14,8 @@ Conventions for UI apps under `apps/` (Angular admin, React customer, Vue report
 | API contract | GraphQL for domain reads/writes; document **download** is REST with the same JWT; do not invent extra BFF routes |
 | Auth | Store the access token after login; send `Authorization: Bearer <token>` on authenticated API calls; never put `tenant_id` / role in client-supplied request bodies for authorized ops (ADR-007) |
 | Config | GraphQL (and REST API) base URLs come from environment / build config — not hard-coded production hosts |
+| Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map Material/other UI kits to tokens; do not fork palettes per app |
+| Accessibility | WCAG 2.2 AA intent + WAI-ARIA across Angular/React/Vue (same `aria-*` platform). Labels, focus visible (`--kyc-focus-ring`), errors not by color alone — details in [ux-design-tokens.md](ux-design-tokens.md) |
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
 | Commits | [Conventional Commits](commits.md) with scopes like `angular`, `react`, `vue`, `docs` |
 | CI | Angular admin: GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`) when `apps/angular-admin/**` changes |
@@ -77,15 +79,18 @@ Follow the official [Angular Style Guide](https://angular.dev/style-guide) and r
 - Call MinIO or Postgres directly — only the .NET API
 - Trust client-supplied tenant id for authorization
 - Reintroduce NgModule-based feature modules “for familiarity”
+- Add Bootstrap alongside Material; hard-code a second color/spacing system instead of `@kyc/design-tokens`
 
 ## React and Vue (later)
 
-Apply the **Shared** section. Framework-specific subsections will be added with KYC-070 / KYC-080 foundations, still pointing at each framework’s official docs as the authority.
+Apply the **Shared** section (including design tokens and a11y). Framework-specific subsections will be added with KYC-070 / KYC-080 foundations, still pointing at each framework’s official docs as the authority. Import `@kyc/design-tokens/tokens.css` at app bootstrap the same way Angular does.
 
 ## Links
 
+- [UX design tokens & accessibility](ux-design-tokens.md)
 - [Angular Style Guide](https://angular.dev/style-guide)
 - [HttpClient interceptors](https://angular.dev/guide/http/interceptors)
 - [Standalone](https://angular.dev/guide/components) / routing docs on [angular.dev](https://angular.dev)
 - [ADR-004](architecture-decision-records.md) (Angular admin), [ADR-005](architecture-decision-records.md) (separate apps), [ADR-007](architecture-decision-records.md) (tenant in JWT)
 - App slot: [apps/angular-admin/README.md](../apps/angular-admin/README.md)
+- Tokens package: [packages/design-tokens](../packages/design-tokens/)

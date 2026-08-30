@@ -1,0 +1,76 @@
+/**
+ * KYC shared design tokens — framework-agnostic CSS custom properties.
+ * Import once per app (Angular styles.css, Vite main entry, etc.).
+ * Safe to load in a Module Federation host or each remote (same variable names).
+ *
+ * Spec: docs/ux-design-tokens.md
+ */
+
+:root {
+  /* —— Color (slate + teal; avoid purple / cream-terracotta defaults) —— */
+  --kyc-color-brand: #0f6e56;
+  --kyc-color-brand-hover: #0b5a46;
+  --kyc-color-on-brand: #ffffff;
+
+  --kyc-color-surface: #f4f6f8;
+  --kyc-color-surface-raised: #ffffff;
+  --kyc-color-border: #d8dee6;
+  --kyc-color-text: #1a2332;
+  --kyc-color-text-muted: #5a6570;
+
+  --kyc-color-danger: #b42318;
+  --kyc-color-danger-bg: #fef3f2;
+  --kyc-color-success: #067647;
+  --kyc-color-success-bg: #ecfdf3;
+  --kyc-color-warning: #b54708;
+  --kyc-color-warning-bg: #fffaeb;
+
+  --kyc-color-focus: #0f6e56;
+
+  /* —— Spacing (4px base) —— */
+  --kyc-space-1: 0.25rem; /* 4px */
+  --kyc-space-2: 0.5rem; /* 8px */
+  --kyc-space-3: 0.75rem; /* 12px */
+  --kyc-space-4: 1rem; /* 16px */
+  --kyc-space-5: 1.5rem; /* 24px */
+  --kyc-space-6: 2rem; /* 32px */
+  --kyc-space-7: 2.5rem; /* 40px */
+  --kyc-space-8: 3rem; /* 48px */
+
+  /* —— Radius —— */
+  --kyc-radius-sm: 0.25rem;
+  --kyc-radius-md: 0.5rem;
+  --kyc-radius-lg: 0.75rem;
+
+  /* —— Typography —— */
+  --kyc-font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --kyc-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --kyc-text-xs: 0.75rem;
+  --kyc-text-sm: 0.875rem;
+  --kyc-text-md: 1rem;
+  --kyc-text-lg: 1.25rem;
+  --kyc-text-xl: 1.75rem;
+  --kyc-leading-normal: 1.45;
+  --kyc-leading-tight: 1.25;
+
+  /* —— Elevation / focus (a11y) —— */
+  --kyc-shadow-sm: 0 1px 2px rgb(26 35 50 / 6%);
+  /* Fallback without color-mix (older browsers); enhanced below when supported. */
+  --kyc-focus-ring: 0 0 0 3px rgb(15 110 86 / 35%);
+
+  /* —— Layout —— */
+  --kyc-content-max: 40rem;
+  --kyc-page-gutter: var(--kyc-space-5);
+}
+
+@supports (color: color-mix(in srgb, #000 35%, transparent)) {
+  :root {
+    --kyc-focus-ring: 0 0 0 3px color-mix(in srgb, var(--kyc-color-focus) 35%, transparent);
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --kyc-page-gutter: var(--kyc-space-4);
+  }
+}

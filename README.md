@@ -40,6 +40,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Case mutation hardening | Ready (KYC-106; non-owner → `NOT_FOUND`; FormData 64 KiB / depth 8) |
 | CORS (local UIs) | Ready (KYC-091 W4 slice: `localhost:4200`, `localhost:5173`) |
 | Angular Admin foundation | Ready (KYC-060: Angular 22+, routing, GraphQL env, auth interceptor) |
+| Shared UX design tokens | Ready (`packages/design-tokens`; used by Angular; React/Vue later) |
 | React / Vue apps | Placeholders only |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
@@ -65,6 +66,8 @@ kyc-multi-frontend/
 │   ├── react-customer/    # React customer portal (not scaffolded yet)
 │   ├── vue-reports/       # Vue reports portal (not scaffolded yet)
 │   └── api/               # .NET API + tests (GraphQL + document REST)
+├── packages/
+│   └── design-tokens/     # Shared CSS UX tokens (Angular / React / Vue)
 ├── docs/
 │   └── guides/            # Conceptual guides (e.g. .NET for frontend engineers)
 ├── infrastructure/
@@ -174,6 +177,7 @@ flowchart TB
 - [Commit Convention](docs/commits.md)
 - [.NET code standards](docs/dotnet-code-standards.md)
 - [Frontend code standards](docs/frontend-code-standards.md) (Angular section follows [angular.dev](https://angular.dev/style-guide))
+- [UX design tokens & accessibility](docs/ux-design-tokens.md) (`packages/design-tokens`)
 - [API runbook](apps/api/README.md)
 - [.NET API for frontend engineers](docs/guides/dotnet-api-for-frontend-engineers.md)
 

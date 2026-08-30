@@ -1,1 +1,25 @@
-/* You can add global styles to this file, and also import other style files */
+@import '@kyc/design-tokens/tokens.css';
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--kyc-font-sans);
+  color: var(--kyc-color-text);
+  background: var(--kyc-color-surface);
+}
+
+/* Keep outline as fallback — box-shadow alone fails in forced-colors / high contrast. */
+:focus-visible {
+  outline: 2px solid var(--kyc-color-focus);
+  outline-offset: 2px;
+  box-shadow: var(--kyc-focus-ring);
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}

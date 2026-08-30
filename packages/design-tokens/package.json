@@ -1,0 +1,16 @@
+{
+  "name": "@kyc/design-tokens",
+  "version": "0.1.0",
+  "description": "Shared KYC UX design tokens (CSS custom properties) for Angular, React, and Vue apps.",
+  "license": "MIT",
+  "private": true,
+  "files": [
+    "tokens.css",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./tokens.css",
+    "./tokens.css": "./tokens.css"
+  },
+  "style": "tokens.css"
+}
