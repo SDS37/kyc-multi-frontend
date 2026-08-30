@@ -21,6 +21,8 @@ Tenant Admin / Reviewer product (ADR-004). KYC-062 adds the **case list** (statu
 
 Feature folders, not `components/` / `services/` type buckets ([frontend code standards](../../docs/frontend-code-standards.md) / [angular.dev](https://angular.dev/style-guide) / [Angular Architects slice we use](../../docs/frontend-code-standards.md#angular-architects-practices-filtered-for-this-app)).
 
+**Change detection:** Angular 22 defaults to **OnPush**. See the [component tree diagram](../../docs/frontend-code-standards.md#onpush-and-the-component-tree) — signal updates on `CaseList` do not imply checking `Login` / the whole app.
+
 ## Case list (KYC-062)
 
 ```mermaid

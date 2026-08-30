@@ -121,8 +121,53 @@ Their useful thesis for us: **structure the app so illegal dependencies cannot b
 | No store-to-store; orchestrate instead | If two stores appear later, a feature service / coordinator composes them with `computed`. Stores must not inject each other. |
 | Resource API is the signal-era load path ([Angular 22](https://www.angulararchitects.io/en/blog/angular-22-the-most-important-new-features-at-a-glance/)) | For **new** signal-driven reads, prefer `rxResource` (or `resource`) that calls the existing typed `*.service.ts`. We speak **GraphQL**, so do **not** use `httpResource` for `/graphql` (it is REST-shaped). Existing `switchMap` + signals on the case list is fine until that screen is touched. |
 | Signal Forms are stable in Angular 22 | **New** forms (review reject reason, later customer drafts) use `@angular/forms/signals` (`form` + schema). Keep login on Reactive Forms until a story rewrites it — do not churn KYC-061 for fashion. Split large forms into subform components; put reusable schemas next to `*.models.ts`. |
-| `OnPush` is the Angular 22 default | Do not set `ChangeDetectionStrategy.Eager` on new components. Rely on signals / inputs. |
+| `OnPush` is the Angular 22 default | Do not set `ChangeDetectionStrategy.Eager` on new components. Rely on signals / inputs. See [OnPush and the component tree](#onpush-and-the-component-tree). |
 | Deterministic client code owns structure | Same as [Functional style](#functional-style--purity-all-frontends): parse/order/label in mappers; the UI does not invent GraphQL codes or status order. |
+
+#### OnPush and the component tree
+
+Angular 22 components default to **OnPush**. That means a component is checked when something it cares about changes (signal read, `input()` / bound `@Input`, template event, explicit mark) — **not** whenever any ancestor runs change detection. Pair that with **immutable signal updates** so OnPush actually sees the change.
+
+Current `angular-admin` tree (lazy routes under the root outlet):
+
+```mermaid
+flowchart TB
+  subgraph root["Change-detection root"]
+    App["App<br/><code>app-root</code><br/>OnPush"]
+  end
+
+  App --> Outlet["RouterOutlet"]
+
+  Outlet --> Login["Login<br/><code>app-login</code><br/>OnPush<br/>signals: submitting, formError"]
+  Outlet --> CaseList["CaseList<br/><code>app-case-list</code><br/>OnPush<br/>signals: items, filter, loading, …"]
+
+  CaseList -.->|"later KYC-063+"| Presentational["Presentational children<br/><code>input()</code> / <code>output()</code> only"]
+
+  classDef dirty fill:#dbeafe,stroke:#2563eb,color:#0f172a
+  classDef idle fill:#f1f5f9,stroke:#64748b,color:#0f172a
+  class CaseList dirty
+  class App,Login,Outlet idle
+```
+
+**Isolation example:** `CaseList` does `items.set(page.items)` after a GraphQL load.
+
+| Component | Checked? | Why |
+|---|---|---|
+| `CaseList` | Yes | It read/wrote signals the template binds to |
+| Presentational child (later) | Only if its `input()` values changed | OnPush + new input references |
+| `App` | No need to re-check the whole app for list data | Outlet host is not dirtied by the list’s signal write |
+| `Login` | Not in the tree on `/cases` | Lazy route — not mounted |
+
+```text
+Eager (old default mental model): any event → walk large parts of the tree
+OnPush + signals (this app):       signal/input dirtiness → check that subtree only
+```
+
+Rules that keep isolation real:
+
+- Update signals with **new** values (`set` / `update`); do not mutate arrays/objects in place
+- Presentational pieces take `input()` / `output()` — parents pass new object/array references when data changes
+- Do **not** switch a screen to `ChangeDetectionStrategy.Eager` to “make CD work”; fix the signal/input update instead
 
 #### Building-block access (lightweight, no Sheriff)
 
