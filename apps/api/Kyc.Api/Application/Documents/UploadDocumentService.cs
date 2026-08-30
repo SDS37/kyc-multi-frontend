@@ -1,7 +1,9 @@
+using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
+using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
 using Kyc.Api.Domain.Documents;
 using Kyc.Api.Domain.Identity;
@@ -176,6 +178,21 @@ public sealed partial class UploadDocumentService(
         {
             db.Documents.Add(document);
             caseEntity.UpdatedAt = uploadedAt;
+            AuditRecorder.Append(
+                db,
+                tenantId,
+                userId,
+                AuditEntityTypes.Document,
+                document.Id,
+                AuditActions.DocumentUploaded,
+                uploadedAt,
+                payload: System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    caseId = caseEntity.Id,
+                    fileName = document.FileName,
+                    contentType = document.ContentType,
+                    sizeBytes = document.SizeBytes
+                }));
             await db.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)

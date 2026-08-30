@@ -79,7 +79,7 @@ Invariant that is easy to miss: **ownership is data**, not a GraphQL argument. `
 ## Today vs target
 
 - **Today:** anemic-ish entities (public setters, services hold the rules). Fine for MVP; do not oversell “rich domain model.”
-- **Target:** Audit entries; possibly more comment history. CQRS does not require Domain to split into two models yet.
+- **Target:** Possibly more comment history; audit **list** API (write is KYC-050). CQRS does not require Domain to split into two models yet.
 
 ## What to skip
 

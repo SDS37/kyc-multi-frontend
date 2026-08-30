@@ -61,7 +61,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 | GraphQL as the only public API | Cases are GraphQL; **upload is dedicated REST**; login/register still have temporary REST twins |
 | MinIO for KYC files | Compose + API `IObjectStorage` / MinIO (InMemory in tests) |
 
-**What you can say with confidence:** “Week 2 delivered the case lifecycle on Hot Chocolate with fail-closed JWT tenant isolation. Week 3 KYC-040–042 added Customer document upload to MinIO, metadata list, and authenticated download streams. Audit is still ahead.”
+**What you can say with confidence:** “Week 2 delivered the case lifecycle on Hot Chocolate with fail-closed JWT tenant isolation. Week 3 KYC-040–042 added document upload/list/download; KYC-050 appends audit rows for key actions. Audit list UI/API and frontends are still ahead.”
 
 ## Suggested reading order
 
