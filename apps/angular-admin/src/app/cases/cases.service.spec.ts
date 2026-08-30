@@ -160,4 +160,74 @@ describe('CasesService', () => {
     expect((error as CasesLoadError).code).toBe('NETWORK');
     expect((error as CasesLoadError).message).toContain('Unable to reach the cases service');
   });
+
+  it('loads case detail by id', (): void => {
+    tokens.setAccessToken('jwt-token');
+    const caseId: string = '11111111-1111-1111-1111-111111111111';
+    let detailId: string | undefined;
+
+    service.getById(caseId).subscribe({
+      next: (detail): void => {
+        detailId = detail.id;
+      },
+    });
+
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
+    expect(req.request.body.variables).toEqual({ id: caseId });
+    req.flush({
+      data: {
+        case: {
+          case: {
+            id: caseId,
+            title: 'Onboarding',
+            status: 'IN_REVIEW',
+            formData: '{}',
+            customerUserId: '22222222-2222-2222-2222-222222222222',
+            customerEmail: 'a@b.c',
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-01-02T00:00:00Z',
+            submittedAt: null,
+            reviewedAt: null,
+            reviewedBy: null,
+            reviewComment: null,
+          },
+          comments: [],
+          documents: [],
+        },
+      },
+    });
+
+    expect(detailId).toBe(caseId);
+  });
+
+  it('starts review and downloads documents with Bearer token', (): void => {
+    tokens.setAccessToken('jwt-token');
+    const caseId: string = '11111111-1111-1111-1111-111111111111';
+    const docId: string = '33333333-3333-3333-3333-333333333333';
+    let status: string | undefined;
+    let blobSize: number | undefined;
+
+    service.startReview(caseId).subscribe({
+      next: (nextStatus): void => {
+        status = nextStatus;
+      },
+    });
+    const startReq: TestRequest = httpTesting.expectOne(graphqlUrl);
+    startReq.flush({
+      data: { startCaseReview: { id: caseId, status: 'IN_REVIEW', updatedAt: '2026-01-03T00:00:00Z' } },
+    });
+    expect(status).toBe('IN_REVIEW');
+
+    service.downloadDocument(caseId, docId).subscribe({
+      next: (blob: Blob): void => {
+        blobSize = blob.size;
+      },
+    });
+    const downloadReq: TestRequest = httpTesting.expectOne(
+      `${apiBaseUrl}/api/cases/${caseId}/documents/${docId}`,
+    );
+    expect(downloadReq.request.headers.get('Authorization')).toBe('Bearer jwt-token');
+    downloadReq.flush(new Blob(['pdf']));
+    expect(blobSize).toBe(3);
+  });
 });

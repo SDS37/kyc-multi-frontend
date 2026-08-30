@@ -1,4 +1,11 @@
-import { Component, WritableSignal, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  WritableSignal,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -30,6 +37,7 @@ export class Login {
   private readonly loginService: LoginService = inject(LoginService);
   private readonly router: Router = inject(Router);
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
+  private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
   protected readonly submitting: WritableSignal<boolean> = signal(false);
   protected readonly formError: WritableSignal<string | null> = signal(null);
@@ -51,17 +59,20 @@ export class Login {
     const { tenantSlug, email, password }: { tenantSlug: string; email: string; password: string } =
       this.form.getRawValue();
 
-    this.loginService.login({ tenantSlug, email, password }).subscribe({
-      next: (): void => {
-        // Reset before navigate so a delayed/failed redirect does not leave the CTA disabled.
-        this.submitting.set(false);
-        const returnUrl: string | null = this.route.snapshot.queryParamMap.get('returnUrl');
-        void this.router.navigateByUrl(resolvePostLoginUrl(returnUrl));
-      },
-      error: (err: unknown): void => {
-        this.submitting.set(false);
-        this.formError.set(toLoginFailedError(err).message);
-      },
-    });
+    this.loginService
+      .login({ tenantSlug, email, password })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (): void => {
+          // Reset before navigate so a delayed/failed redirect does not leave the CTA disabled.
+          this.submitting.set(false);
+          const returnUrl: string | null = this.route.snapshot.queryParamMap.get('returnUrl');
+          void this.router.navigateByUrl(resolvePostLoginUrl(returnUrl));
+        },
+        error: (err: unknown): void => {
+          this.submitting.set(false);
+          this.formError.set(toLoginFailedError(err).message);
+        },
+      });
   }
 }

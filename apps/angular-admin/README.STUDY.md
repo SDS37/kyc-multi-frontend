@@ -2,18 +2,18 @@
 
 Study tour of this folder. Distinct from the official README. Official runbook: [README.md](README.md).
 
-**Aligned with:** `feat/kyc-062-angular-case-list` / KYC-062 (+ KYC-061 login, design tokens).
+**Aligned with:** `feat/kyc-063-angular-case-review` / KYC-063 (+ KYC-062 list, KYC-061 login).
 
 ## Purpose
 
-Tenant Admin / Reviewer product (ADR-004). KYC-062 adds the **case list** (status filter, loading/empty) on top of login + Material themed to tokens.
+Tenant Admin / Reviewer product (ADR-004). KYC-063 adds **case review** (form data, documents + download, start / approve / reject) on top of the case list.
 
 ## Why these folders exist
 
 | Path | Role |
 |---|---|
 | `src/app/auth/` | `auth.models`, `auth.mappers` (pure), `TokenStorage`, interceptor, `LoginService`, guards, login page |
-| `src/app/cases/` | `cases.models`, `cases.mappers` (pure), `CasesService`, case list UI |
+| `src/app/cases/` | `cases.models`, `cases.mappers` (pure), `CasesService`, case list + case review UI |
 | `src/app/config/` | `config.models` (`AppConfig`), `APP_CONFIG` token |
 | `src/app/shared/` | Cross-feature models (e.g. `graphql.models`) |
 | `src/environments/` | Dev/prod API + GraphQL URLs (file replacement) |
@@ -36,7 +36,21 @@ flowchart LR
 - Filter: GraphQL `cases(status:)` (`DRAFT` … `REJECTED`); “All” sends `null`
 - States: loading spinner, empty copy, error + retry (`role="alert"`)
 - UI state: component **signals** (not SignalStore — see [standards](../../docs/frontend-code-standards.md#signals-and-client-state))
-- Row click / detail route: KYC-063
+- Row click / title link → `/cases/:caseId` (KYC-063)
+
+## Case review (KYC-063)
+
+```mermaid
+flowchart LR
+  Detail["/cases/:id"] -->|"query case"| GQL["POST /graphql"]
+  Detail -->|"start / approve / reject"| Mut["mutations"]
+  Detail -->|"GET document"| REST["REST download + JWT"]
+```
+
+- Form fields from `formData` JSON (`fullName`, `dateOfBirth`, `nationality`, `address`, …)
+- Documents: metadata + download via `GET /api/cases/{caseId}/documents/{documentId}`
+- Actions: Start (`SUBMITTED`), Approve / Reject (`IN_REVIEW`); reject comment required
+- Status rules: pure `resolveReviewActions` in `cases.mappers`
 
 ## Auth flow (KYC-061)
 
@@ -77,7 +91,7 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 | Material + `@kyc/design-tokens` theme | Yes |
 | Login + guards | Yes |
 | Case list + status filter | Yes |
-| Case review / shell chrome | Later (063–064) |
+| Case review / shell chrome | Review done (063); shell later (064) |
 | Angular shell composing remotes | Not required for MVP |
 
 ## What to skip
@@ -88,7 +102,7 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 - Bootstrap CSS next to Material
 - Apollo until a story chooses a GraphQL client (HttpClient POST to `/graphql` is enough)
 - NgRx SignalStore during MVP — prefer plain signals / feature services. **After MVP**, use the checklist under [Signals and client state → After MVP](../../docs/frontend-code-standards.md#after-mvp--when-to-extend-with-signalstore) before adding `@ngrx/signals`
-- Mixing side effects into “pure” paths — keep [functional style at every app level](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends) (pure functions for transforms; I/O at edges)
+- Mixing side effects into “pure” paths — keep [functional style at every app level](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends) (pure functions; `filter`/`map`; **no** `.push` / in-place mutation; I/O at edges)
 - Component `constructor()` logic / subscriptions — wire in `ngOnInit` (see [Dependency injection](../../docs/frontend-code-standards.md#dependency-injection))
 
 ## Links

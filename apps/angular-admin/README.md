@@ -29,6 +29,15 @@ npm run build
 
 PRs that touch `apps/angular-admin` (or `.github/workflows/angular-ci.yml`) run GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`).
 
+## What KYC-063 delivers
+
+| Piece | Location |
+|---|---|
+| Case review route | `/cases/:caseId` → `src/app/cases/case-review/` |
+| Form data + documents with download | GraphQL `case(id)` + REST document download |
+| Start / Approve / Reject | Mutations; reject requires comment; status rules in mappers |
+| List → detail | Row click / title link from case list |
+
 ## What KYC-062 delivers
 
 | Piece | Location |
@@ -44,7 +53,7 @@ Still from KYC-061 / 060: login, guards, Material + tokens theme, `TokenStorage`
 - Shell chrome for the reviewer / Tenant Admin experience (KYC-064)
 - Login (tenant slug + email + password) against GraphQL `login` (**KYC-061** — done)
 - Case list: title, **customer email**, status, updated date, status filter (**KYC-062** — done)
-- Case review: form data, documents **with download**, start / approve / reject (KYC-063)
+- Case review: form data, documents **with download**, start / approve / reject (**KYC-063** — done)
 
 Tenant user and role management is **not** in the API and **not** in KYC-060–064. Do not invent it in this app.
 
