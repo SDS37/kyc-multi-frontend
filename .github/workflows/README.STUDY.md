@@ -53,6 +53,16 @@ Concurrency: `cancel-in-progress: true` — a new push to the same PR cancels th
 
 Local `dotnet test` without Compose still proves SQLite isolation tests. CI adds jsonb + `MigrateAsync`.
 
+**“Stop containers” looks red but is not a failed job.** GitHub always dumps service logs on teardown. Typical lines:
+
+| Log | Meaning |
+|---|---|
+| `sh: locale: not found` / no usable locales | Alpine `postgres:18` image; cosmetic |
+| `relation "__EFMigrationsHistory" does not exist` | First `MigrateAsync` on a fresh DB — EF then creates the table |
+| `FATAL: password authentication failed for user "x"` | Was `ApiFactory` `/ready` using dummy `Username=x` on default port 5432 (same port as the service). Dummy now uses `Port=1` so it does not hit CI Postgres |
+
+The job result is the **Test** step, not this dump.
+
 ## Today vs target
 
 When Angular exists, expect more workflows or jobs (lint, Chromatic, etc.). Keep API isolation tests in `api-ci` — do not move tenant proof to e2e only.

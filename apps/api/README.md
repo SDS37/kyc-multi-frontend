@@ -4,9 +4,9 @@
 
 New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for-frontend-engineers.md) first. Writing or reviewing C#? Use [the .NET code standards](../../docs/dotnet-code-standards.md). This file is the runbook (restore, migrate, run, test).
 
-`Tenant`, `User`, `Case`, `Document`, and `AuditEntry` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Customers create/update/submit with `createDraftCase` / `updateDraftCase` / `submitCase` (KYC-031–033); Reviewer/TenantAdmin start review with `startCaseReview` (KYC-034) and finish with `approveCase` / `rejectCase` (KYC-035). Authenticated users list with `cases` (KYC-036), open detail with `case` (KYC-037), and list document metadata with `documents(caseId)` (KYC-041). Customers upload files with REST `POST /api/cases/{caseId}/documents` (KYC-040); authorized callers download with `GET /api/cases/{caseId}/documents/{documentId}` (KYC-042; private MinIO via `ObjectStorage`; metadata on case detail and `documents`). Key case/document writes append `audit_entries` (KYC-050; no update/delete API). Reviewer/TenantAdmin read case history with GraphQL `caseAuditEntries(caseId)` (KYC-051; newest first). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
+`Tenant`, `User`, `Case`, `Document`, and `AuditEntry` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Customers create/update/submit with `createDraftCase` / `updateDraftCase` / `submitCase` (KYC-031–033); Reviewer/TenantAdmin start review with `startCaseReview` (KYC-034) and finish with `approveCase` / `rejectCase` (KYC-035). Authenticated users list with `cases` (KYC-036; items include `customerEmail` for the KYC-062 column), open detail with `case` (KYC-037; same `customerEmail`), and list document metadata with `documents(caseId)` (KYC-041). Customers upload files with REST `POST /api/cases/{caseId}/documents` (KYC-040); authorized callers download with `GET /api/cases/{caseId}/documents/{documentId}` (KYC-042; private MinIO via `ObjectStorage`; metadata on case detail and `documents`). Key case/document writes append `audit_entries` (KYC-050; no update/delete API). Reviewer/TenantAdmin read case history with GraphQL `caseAuditEntries(caseId)` (KYC-051; newest first). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
 
-Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets.
+Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets. Browser apps on `http://localhost:4200` (Angular) and `http://localhost:5173` (Vite) are on the CORS allow-list (`Cors:AllowedOrigins`). Security headers / HSTS are still W6.
 
 ## Prerequisites
 
@@ -188,9 +188,10 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 | Field | Auth | Purpose |
 |---|---|---|
 | `apiStatus` | Authenticated (any role) | Liveness; returns `"ok"` |
-| `cases` | Authenticated (any role) | List visible cases (no `formData`); Customer = own only; Reviewer/TenantAdmin = all tenant; optional `status`; `skip`/`take` (default take 20, max 100); returns `items`, `totalCount`, `skip`, `take` |
-| `case` | Authenticated (any role) | Detail by `id`; same visibility as `cases`; returns `case` (incl. `formData`), `comments` (from `reviewComment`), `documents` (metadata only — never file bytes) |
+| `cases` | Authenticated (any role) | List visible cases (no `formData`); Customer = own only; Reviewer/TenantAdmin = all tenant; optional `status`; `skip`/`take` (default take 20, max 100); returns `items` (incl. `customerEmail`), `totalCount`, `skip`, `take` |
+| `case` | Authenticated (any role) | Detail by `id`; same visibility as `cases`; returns `case` (incl. `formData`, `customerEmail`), `comments` (from `reviewComment`), `documents` (metadata only — never file bytes) |
 | `documents` | Authenticated (any role) | Metadata list for `caseId`; same visibility as `case`; never file bytes or storage keys (KYC-041) |
+| `caseAuditEntries` | Reviewer or TenantAdmin | Newest-first audit for `caseId`; same tenant visibility; customers → `AUTH_NOT_AUTHORIZED` (KYC-051) |
 
 ### REST (temporary / dedicated)
 
@@ -198,7 +199,8 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 |---|---|---|
 | `POST /api/register-tenant` | Anonymous | Same as GraphQL `registerTenant` |
 | `POST /api/login` | Anonymous | Same as GraphQL `login` |
-| `POST /api/cases/{caseId}/documents` | Customer | Multipart upload (`file`); Draft/Submitted + owner only; PDF/PNG/JPG; max 10 MB; stores in MinIO; returns metadata |
+| `POST /api/cases/{caseId}/documents` | Customer | Multipart upload (`file`); Draft/Submitted + owner only; PDF/PNG/JPG; max 10 MB; stores in MinIO; returns metadata; object-store failure → `STORAGE` 502 |
+| `GET /api/cases/{caseId}/documents/{documentId}` | Customer, Reviewer, or TenantAdmin | Stream file bytes; same visibility as `documents`; missing blob → `NOT_FOUND`; object-store failure → `STORAGE` 502 |
 
 ### Mutations
 
@@ -213,7 +215,7 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 | `approveCase` | Reviewer or TenantAdmin | `IN_REVIEW` → `APPROVED`; optional `comment`; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 | `rejectCase` | Reviewer or TenantAdmin | `IN_REVIEW` → `REJECTED`; required `comment`; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 
-Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED`, `NOT_FOUND`, `DOMAIN`. Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations. Document upload uses dedicated REST (see table above).
+Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED`, `NOT_FOUND`, `DOMAIN`. Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations. Document upload/download use dedicated REST (see table above); object-store failures use `STORAGE` (HTTP 502), never `VALIDATION`.
 
 ## 5. Build and test
 
@@ -245,9 +247,9 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-033 | Customer `submitCase`; missing/not owner → `NOT_FOUND`; Draft→Submitted; FormData requires fullName/dateOfBirth/nationality/address; `SubmittedAt` set |
 | KYC-034 | Reviewer/TenantAdmin `startCaseReview`; Submitted→InReview; same tenant; sets `ReviewedBy` |
 | KYC-035 | Reviewer/TenantAdmin `approveCase` / `rejectCase`; InReview only; reject requires comment; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
-| KYC-036 | Authenticated `cases` query; Customer own-only; Reviewer/TenantAdmin tenant-wide; status filter; skip/take pagination |
-| KYC-037 | Authenticated `case(id)` detail; same visibility as list; FormData + comments; document metadata (no bytes) |
-| KYC-040 | Customer `POST /api/cases/{id}/documents`; Draft/Submitted; PDF/PNG/JPG ≤10 MB; MinIO + metadata; owner only |
+| KYC-036 | Authenticated `cases` query; Customer own-only; Reviewer/TenantAdmin tenant-wide; status filter; skip/take pagination; `customerEmail` on list items |
+| KYC-037 | Authenticated `case(id)` detail; same visibility as list; FormData + comments; `customerEmail`; document metadata (no bytes) |
+| KYC-040 | Customer `POST /api/cases/{id}/documents`; Draft/Submitted; PDF/PNG/JPG ≤10 MB; MinIO + metadata; owner only; MinIO put failure → `STORAGE` 502 |
 | KYC-041 | Authenticated `documents(caseId)`; same visibility as `case`; metadata only (no bytes / storage keys) |
 | KYC-042 | Authenticated `GET /api/cases/{id}/documents/{documentId}` stream; same visibility as list; private bucket |
 | KYC-050 | Append-only `audit_entries` for CaseCreated/Updated/Submitted, ReviewStarted, CaseApproved/Rejected, DocumentUploaded; no update/delete API |
@@ -260,5 +262,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-107 | Login dummy password verify on miss paths; `registerTenant` uses EF execution strategy |
 | KYC-108 | `api-ci` SHA-pinned actions, `contents: read`, vuln list (warn), thin Postgres migrate + jsonb tests |
 | KYC-109 | Login password max 128; `updateDraftCase` DOMAIN before FormData; status docs for 105–108 |
+| KYC-091 | CORS allow-list `http://localhost:4200` and `http://localhost:5173` (`Cors:AllowedOrigins`); preflight on GraphQL and document REST |
 
-Out of scope here: auth rate limits (KYC-093). CORS/headers are KYC-091. Local HTTP is for Development only.
+Out of scope here: auth rate limits (KYC-093). Security headers / HSTS remain W6 (KYC-091 remainder). Local HTTP is for Development only.

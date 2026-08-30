@@ -104,6 +104,10 @@ public sealed class SubmitCaseService(
         entity.Status = CaseStatus.Submitted;
         entity.SubmittedAt = now;
         entity.UpdatedAt = now;
-        return (CreateDraftCaseService.ToResponse(entity), Array.Empty<string>(), false, null, null);
+        var customerEmail = await CreateDraftCaseService.GetCustomerEmailAsync(
+            db,
+            customerUserId.Value,
+            cancellationToken);
+        return (CreateDraftCaseService.ToResponse(entity, customerEmail), Array.Empty<string>(), false, null, null);
     }
 }

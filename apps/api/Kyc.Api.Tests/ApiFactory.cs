@@ -32,7 +32,11 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
-        builder.UseSetting("ConnectionStrings:Postgres", "Host=127.0.0.1;Database=unused;Username=x;Password=x");
+        // Port 1: Program.cs still builds PostgresReadyHealthCheck from this string.
+        // Default 5432 would hit CI's postgres service and log FATAL for role "x".
+        builder.UseSetting(
+            "ConnectionStrings:Postgres",
+            "Host=127.0.0.1;Port=1;Database=unused;Username=x;Password=x");
         builder.UseSetting("Jwt:SigningKey", "test-signing-key-at-least-32-chars!!");
         builder.UseSetting("Jwt:Issuer", "kyc-test");
         builder.UseSetting("Jwt:Audience", "kyc-test");

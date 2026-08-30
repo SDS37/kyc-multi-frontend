@@ -82,6 +82,10 @@ public sealed class UpdateDraftCaseService(
             entity.UpdatedAt);
         await db.SaveChangesAsync(cancellationToken);
 
-        return (CreateDraftCaseService.ToResponse(entity), Array.Empty<string>(), false, null, null);
+        var customerEmail = await CreateDraftCaseService.GetCustomerEmailAsync(
+            db,
+            customerUserId.Value,
+            cancellationToken);
+        return (CreateDraftCaseService.ToResponse(entity, customerEmail), Array.Empty<string>(), false, null, null);
     }
 }

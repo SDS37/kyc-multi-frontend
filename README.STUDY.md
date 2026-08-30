@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `feat/kyc-042-download-document` (case lifecycle + document upload/list/download). The three UIs are still placeholders.
+**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`). The three UIs are still placeholders.
 
 Tracked in git so they render on GitHub. They are a tour, not a contract — ADRs and official READMEs win if anything disagrees. Update these files when the code or architecture moves; they can be deleted from the repo later.
 

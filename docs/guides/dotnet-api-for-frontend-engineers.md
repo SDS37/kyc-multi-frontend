@@ -8,11 +8,12 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
-| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | Remaining case lifecycle, documents, audit, three UI apps |
-| GraphQL role gates: Customer create/update/submit; Reviewer/TenantAdmin review lifecycle; authenticated `cases` / `case`; Customer document upload (REST); document download stream (REST); Reviewer/TenantAdmin case audit list | Remaining domain queries |
+| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | Three UI apps (W4 Angular, W5 React, W6 Vue) |
+| GraphQL case lifecycle, `cases` / `case` (incl. `customerEmail`), document metadata, `caseAuditEntries`; REST upload + download | Optional user-management APIs; seed data (KYC-101) |
 | Temporary register/login (JWT) + fail-closed tenant filters | Auth rate limits when leaving localhost (KYC-093) |
-| Hot Chocolate `/graphql` + `/health` (KYC-020); `/ready` + EF retries / timeouts (KYC-103); JSON logs + request id (KYC-104); deny-by-default JWT (KYC-021); introspection/SDL Development-only + depth 10 (KYC-105) | Domain GraphQL fields (cases, etc.) |
-| `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` (KYC-102); SDK in `global.json` | |
+| CORS allow-list for local UIs (`localhost:4200`, `:5173`) — KYC-091 W4 slice | Security headers / HSTS (rest of KYC-091, W6) |
+| Hot Chocolate `/graphql` + `/health` + `/ready`; JSON logs; deny-by-default JWT; introspection/SDL Development-only | GraphQL cost analyzer when list volume grows |
+| `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci`; SDK in `global.json` | |
 
 The **target** remains one GraphQL API, CQRS modular monolith, JWT tenant context, and three frontends — see [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md).
 

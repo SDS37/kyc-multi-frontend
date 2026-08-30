@@ -23,8 +23,8 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Customer submit case | Ready (KYC-033 GraphQL `submitCase`) |
 | Reviewer start case review | Ready (KYC-034 GraphQL `startCaseReview`) |
 | Reviewer approve / reject case | Ready (KYC-035 GraphQL `approveCase` / `rejectCase`) |
-| List cases | Ready (KYC-036 GraphQL `cases`) |
-| Case detail | Ready (KYC-037 GraphQL `case`) |
+| List cases | Ready (KYC-036 GraphQL `cases`; `customerEmail` for W4 list) |
+| Case detail | Ready (KYC-037 GraphQL `case`; `customerEmail`) |
 | Document upload | Ready (KYC-040 REST multipart → MinIO; metadata on `case` / `documents`) |
 | Document list | Ready (KYC-041 GraphQL `documents(caseId)`; metadata only) |
 | Document download | Ready (KYC-042 REST stream; same visibility as list; private bucket) |
@@ -37,6 +37,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | GraphQL auth (deny by default) | Ready (KYC-021; login dummy verify — KYC-107; login password max 128 — KYC-109) |
 | GraphQL role authorization | Ready (KYC-022; Customer + Reviewer/TenantAdmin case mutations) |
 | Case mutation hardening | Ready (KYC-106; non-owner → `NOT_FOUND`; FormData 64 KiB / depth 8) |
+| CORS (local UIs) | Ready (KYC-091 W4 slice: `localhost:4200`, `localhost:5173`) |
 | Angular / React / Vue apps | Placeholders only |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
@@ -61,7 +62,7 @@ kyc-multi-frontend/
 │   ├── angular-admin/     # Angular shell + admin/reviewer (not scaffolded yet)
 │   ├── react-customer/    # React customer portal (not scaffolded yet)
 │   ├── vue-reports/       # Vue reports portal (not scaffolded yet)
-│   └── api/               # .NET API + tests (EF Core + identity; GraphQL in KYC-020)
+│   └── api/               # .NET API + tests (GraphQL + document REST)
 ├── docs/
 │   └── guides/            # Conceptual guides (e.g. .NET for frontend engineers)
 ├── infrastructure/

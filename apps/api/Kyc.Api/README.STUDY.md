@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Runbook: [../README.md](../README.md).
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`).
 
 ## Purpose
 
@@ -49,12 +49,13 @@ flowchart TB
     subgraph pipeline ["Kestrel pipeline"]
         C[RequestCorrelationMiddleware]
         L[RequestLoggingMiddleware]
+        O[UseCors when origins configured]
         A[UseAuthentication JWT]
         Z[UseAuthorization]
         T[UseRequestTimeouts]
         E[Mapped endpoints]
     end
-    C --> L --> A --> Z --> T --> E
+    C --> L --> O --> A --> Z --> T --> E
 ```
 
 Correlation must run first so every log line can carry `RequestId`. Auth must run before authorization. Timeouts wrap the endpoint work.

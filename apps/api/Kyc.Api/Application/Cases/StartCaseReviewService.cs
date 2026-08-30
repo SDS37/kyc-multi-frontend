@@ -93,6 +93,10 @@ public sealed class StartCaseReviewService(
         entity.ReviewedBy = reviewerUserId.Value;
         entity.UpdatedAt = now;
         // ReviewedAt is set on approve/reject, not when review starts.
-        return (CreateDraftCaseService.ToResponse(entity), Array.Empty<string>(), false, null, null);
+        var customerEmail = await CreateDraftCaseService.GetCustomerEmailAsync(
+            db,
+            entity.CustomerUserId,
+            cancellationToken);
+        return (CreateDraftCaseService.ToResponse(entity, customerEmail), Array.Empty<string>(), false, null, null);
     }
 }

@@ -70,6 +70,7 @@ sequenceDiagram
 | Non-Customer role | 403 | `AUTH_NOT_AUTHORIZED` |
 | Not owner / missing case | 404 | `NOT_FOUND` |
 | Wrong status (e.g. Approved) | 422 | `DOMAIN` |
+| Object storage put failure | 502 | `STORAGE` |
 
 ### Download
 
