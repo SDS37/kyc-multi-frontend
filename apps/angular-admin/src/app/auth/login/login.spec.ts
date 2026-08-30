@@ -98,6 +98,11 @@ describe('Login', () => {
 
     expect(tokens.getAccessToken()).toBe('jwt-from-api');
     expect(navigateSpy).toHaveBeenCalledWith('/cases');
+    fixture.detectChanges();
+    const submitButton: HTMLButtonElement | null = fixture.nativeElement.querySelector(
+      'button[type="submit"]',
+    );
+    expect(submitButton?.disabled).toBe(false);
   });
 
   it('surfaces a polite form error on AUTH_FAILED', (): void => {

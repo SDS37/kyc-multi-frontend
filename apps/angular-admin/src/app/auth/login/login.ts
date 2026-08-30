@@ -63,6 +63,8 @@ export class Login {
 
     this.loginService.login({ tenantSlug, email, password }).subscribe({
       next: (): void => {
+        // Reset before navigate so a delayed/failed redirect does not leave the CTA disabled.
+        this.submitting.set(false);
         const returnUrl: string | null = this.route.snapshot.queryParamMap.get('returnUrl');
         const target: string =
           returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')
