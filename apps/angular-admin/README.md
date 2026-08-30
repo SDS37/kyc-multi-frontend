@@ -1,6 +1,6 @@
 # Angular Admin
 
-Angular **22+** admin / reviewer portal (`apps/angular-admin`). Foundation: KYC-060. Login: KYC-061. Case UI: KYC-062–064.
+Angular **22+** admin / reviewer portal (`apps/angular-admin`). Foundation: KYC-060. Login: KYC-061. Case list: KYC-062. Case review: KYC-063–064.
 
 **How to write this app:** [Frontend code standards](../../docs/frontend-code-standards.md) (Angular section follows official [angular.dev](https://angular.dev/style-guide) docs). Shared colors/spacing: [UX design tokens](../../docs/ux-design-tokens.md) / `@kyc/design-tokens`. Material theme maps to those tokens (`src/material-theme.scss`) — do not add Bootstrap. Client state: prefer signals in MVP; [SignalStore only after MVP when list↔detail share state](../../docs/frontend-code-standards.md#after-mvp--when-to-extend-with-signalstore).
 
@@ -29,23 +29,21 @@ npm run build
 
 PRs that touch `apps/angular-admin` (or `.github/workflows/angular-ci.yml`) run GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`).
 
-## What KYC-061 delivers
+## What KYC-062 delivers
 
 | Piece | Location |
 |---|---|
-| Angular Material + token-mapped theme | `@angular/material`, `src/material-theme.scss` |
-| Login (tenant slug, email, password) | `src/app/auth/login/` → GraphQL `login` |
-| Login service + `SKIP_AUTH` | `src/app/auth/login.service.ts` |
-| Auth / guest guards | `src/app/auth/auth.guard.ts` |
-| Post-login stub | `src/app/cases/case-list/` (full list = KYC-062) |
+| Case list (title, customer email, status, updated) | `src/app/cases/case-list/` |
+| Status filter + loading / empty / error | signals on `CaseList` + Material table / select |
+| GraphQL `cases` client | `src/app/cases/cases.service.ts` |
 
-Still from KYC-060: `TokenStorage`, functional `authInterceptor`, `APP_CONFIG` / environments.
+Still from KYC-061 / 060: login, guards, Material + tokens theme, `TokenStorage`, auth interceptor, `APP_CONFIG`.
 
 ## Intended responsibilities (W4)
 
 - Shell chrome for the reviewer / Tenant Admin experience (KYC-064)
 - Login (tenant slug + email + password) against GraphQL `login` (**KYC-061** — done)
-- Case list: title, **customer email**, status, updated date, status filter (KYC-062)
+- Case list: title, **customer email**, status, updated date, status filter (**KYC-062** — done)
 - Case review: form data, documents **with download**, start / approve / reject (KYC-063)
 
 Tenant user and role management is **not** in the API and **not** in KYC-060–064. Do not invent it in this app.

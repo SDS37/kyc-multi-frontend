@@ -1,23 +1,12 @@
 import { Component, WritableSignal, inject, signal } from '@angular/core';
-import {
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoginFailedError, LoginService } from '../login.service';
-
-interface LoginFormControls {
-  tenantSlug: FormControl<string>;
-  email: FormControl<string>;
-  password: FormControl<string>;
-}
+import { LoginFailedError, LoginFormControls } from '../auth.models';
+import { LoginService } from '../login.service';
 
 /**
  * Admin / reviewer sign-in (KYC-061).

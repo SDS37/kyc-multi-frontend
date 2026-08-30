@@ -2,23 +2,39 @@
 
 Study tour of this folder. Distinct from the official README. Official runbook: [README.md](README.md).
 
-**Aligned with:** `feat/kyc-061-angular-login` / KYC-061 (+ KYC-060 foundation, shared `@kyc/design-tokens`).
+**Aligned with:** `feat/kyc-062-angular-case-list` / KYC-062 (+ KYC-061 login, design tokens).
 
 ## Purpose
 
-Tenant Admin / Reviewer product (ADR-004). KYC-061 adds **login + Material themed to design tokens + route guards**. Case list/detail remain later stories.
+Tenant Admin / Reviewer product (ADR-004). KYC-062 adds the **case list** (status filter, loading/empty) on top of login + Material themed to tokens.
 
 ## Why these folders exist
 
 | Path | Role |
 |---|---|
-| `src/app/auth/` | `TokenStorage`, interceptor, `SKIP_AUTH`, `LoginService`, guards, login page |
-| `src/app/cases/case-list/` | Post-login stub (KYC-062 fills the list) |
-| `src/app/config/` | `APP_CONFIG` injection token |
+| `src/app/auth/` | `auth.models`, `TokenStorage`, interceptor, `SKIP_AUTH`, `LoginService`, guards, login page |
+| `src/app/cases/` | `cases.models` (status + list DTOs), `CasesService`, case list UI |
+| `src/app/config/` | `config.models` (`AppConfig`), `APP_CONFIG` token |
+| `src/app/shared/` | Cross-feature models (e.g. `graphql.models`) |
 | `src/environments/` | Dev/prod API + GraphQL URLs (file replacement) |
 | `src/material-theme.scss` | Material M3 `mat.theme` + `$overrides` → `--kyc-*` |
 
 Feature folders, not `components/` / `services/` type buckets ([frontend code standards](../../docs/frontend-code-standards.md) / [angular.dev style guide](https://angular.dev/style-guide)).
+
+## Case list (KYC-062)
+
+```mermaid
+flowchart LR
+  Cases["/cases"] -->|"query cases + JWT"| GQL["POST /graphql"]
+  Filter["status filter signal"] --> Cases
+  GQL --> Table["title / customerEmail / status / updatedAt"]
+```
+
+- Columns: title, **customer email**, status, updated date
+- Filter: GraphQL `cases(status:)` (`DRAFT` … `REJECTED`); “All” sends `null`
+- States: loading spinner, empty copy, error + retry (`role="alert"`)
+- UI state: component **signals** (not SignalStore — see [standards](../../docs/frontend-code-standards.md#signals-and-client-state))
+- Row click / detail route: KYC-063
 
 ## Auth flow (KYC-061)
 
@@ -26,21 +42,18 @@ Feature folders, not `components/` / `services/` type buckets ([frontend code st
 flowchart LR
   Login["/login"] -->|"mutation login SKIP_AUTH"| GQL["POST /graphql"]
   GQL -->|"accessToken"| Store["TokenStorage"]
-  Store --> Cases["/cases stub"]
+  Store --> Cases["/cases"]
   Guard["authGuard"] -->|"no token"| Login
 ```
 
-- Fields: tenant slug, email, password (same as API `LoginRequest`)
-- Errors: field `mat-error` + form `role="alert"` / `aria-live="polite"` for AUTH_FAILED / network
-- Guards are **UX only**; JWT on the API is the real gate
-- Do not invent tenant user management
+Guards are **UX only**; JWT on the API is the real gate. Do not invent tenant user management.
 
 ## What it consumes
 
 | Need | GraphQL / auth |
 |---|---|
-| Login | `login` mutation → JWT (`sub`, `tenant_id`, `role`, `email`) — **KYC-061** |
-| Review queue | `cases` with `status` filter; `customerEmail`; Reviewer sees **all tenant** cases |
+| Login | `login` mutation → JWT — **KYC-061** |
+| Review queue | `cases` with `status` filter; `customerEmail` — **KYC-062** |
 | Detail | `case(id)` — FormData, comments, `customerEmail`, document metadata |
 | Download | REST `GET /api/cases/{caseId}/documents/{documentId}` (same JWT) |
 | Start / decide | `startCaseReview`, `approveCase` / `rejectCase` |
@@ -55,13 +68,14 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 
 ## Today vs target
 
-| Target | Today (KYC-061) |
+| Target | Today (KYC-062) |
 |---|---|
 | Runnable Angular 22+ app | Yes |
 | Env GraphQL + auth interceptor | Yes |
 | Material + `@kyc/design-tokens` theme | Yes |
-| Login + guards + redirect to cases | Yes |
-| Case list / review | Later (062–063) |
+| Login + guards | Yes |
+| Case list + status filter | Yes |
+| Case review / shell chrome | Later (063–064) |
 | Angular shell composing remotes | Not required for MVP |
 
 ## What to skip

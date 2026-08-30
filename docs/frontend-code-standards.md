@@ -15,6 +15,7 @@ Conventions for UI apps under `apps/` (Angular admin, React customer, Vue report
 | Auth | Store the access token after login; send `Authorization: Bearer <token>` on authenticated API calls; never put `tenant_id` / role in client-supplied request bodies for authorized ops (ADR-007) |
 | Config | GraphQL (and REST API) base URLs come from environment / build config — not hard-coded production hosts |
 | Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map Material/other UI kits to tokens; do not fork palettes per app |
+| **Models files** | Feature DTOs / form maps / domain errors in `*.models.ts` (not inside services/components). Same convention in every UI app. |
 | Accessibility | WCAG 2.2 AA intent + WAI-ARIA across Angular/React/Vue (same `aria-*` platform). Labels, focus visible (`--kyc-focus-ring`), errors not by color alone — details in [ux-design-tokens.md](ux-design-tokens.md) |
 | **Hard TypeScript** | **Strict TS from the first file** in every UI app — see below. No “loose then tighten later.” |
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
@@ -65,6 +66,7 @@ Follow the official [Angular Style Guide](https://angular.dev/style-guide) and r
 - Co-locate component `.ts` / `.html` / styles; tests as `*.spec.ts` beside the code
 - Organize by **feature area**, not by type folders (`components/`, `services/`)
 - One primary concept per file (one component / directive / service unless a small cohesive pair)
+- **`*.models.ts` everywhere (app-wide):** every feature keeps DTOs, form control maps, domain errors, and feature GraphQL wire bodies in a models file — e.g. `auth/auth.models.ts`, `cases/cases.models.ts`, `config/config.models.ts`. Cross-feature wire bits (e.g. `GraphqlError`) live under `shared/*.models.ts`. Injectable services and components **import** models; they do **not** declare exported interfaces/types inline. Apply this to the whole `angular-admin` app (and the same rule when React/Vue are scaffolded).
 
 ### Dependency injection
 
@@ -146,6 +148,7 @@ Suggested post-MVP shape (sketch only — implement when the pain is real):
 - Reintroduce NgModule-based feature modules “for familiarity”
 - Add Bootstrap alongside Material; hard-code a second color/spacing system instead of `@kyc/design-tokens`
 - Add NgRx SignalStore / global store “for scale” before shared list↔detail case state actually needs it (see Signals and client state above)
+- Declare exported DTOs / form maps / domain errors inside services or components instead of `*.models.ts`
 
 ## React and Vue (later)
 

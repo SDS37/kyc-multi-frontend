@@ -2,6 +2,13 @@ import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { APP_CONFIG, AppConfig } from '../config/app-config';
+import { GraphqlError } from '../shared/graphql.models';
+import {
+  GraphqlLoginBody,
+  LoginCredentials,
+  LoginFailedError,
+  LoginSuccess,
+} from './auth.models';
 import { SKIP_AUTH } from './skip-auth';
 import { TokenStorage } from './token-storage';
 
@@ -14,39 +21,6 @@ const LOGIN_MUTATION: string = `
     }
   }
 `;
-
-export interface LoginCredentials {
-  tenantSlug: string;
-  email: string;
-  password: string;
-}
-
-export interface LoginSuccess {
-  accessToken: string;
-  tokenType: string;
-  expiresInSeconds: number;
-}
-
-/** User-facing login failure (validation, AUTH_FAILED, or transport). */
-export class LoginFailedError extends Error {
-  constructor(
-    message: string,
-    readonly code?: string,
-  ) {
-    super(message);
-    this.name = 'LoginFailedError';
-  }
-}
-
-interface GraphqlError {
-  message?: string;
-  extensions?: { code?: string };
-}
-
-interface GraphqlLoginBody {
-  data?: { login?: LoginSuccess | null };
-  errors?: GraphqlError[];
-}
 
 /**
  * Anonymous GraphQL `login` against the shared API (KYC-061).

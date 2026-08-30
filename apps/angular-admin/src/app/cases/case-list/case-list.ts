@@ -1,22 +1,117 @@
-import { Component, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import {
+  Component,
+  OnInit,
+  WritableSignal,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
 import { TokenStorage } from '../../auth/token-storage';
+import {
+  CASE_STATUSES,
+  CASE_STATUS_LABELS,
+  CaseListItem,
+  CaseStatus,
+  CasesLoadError,
+  caseStatusLabel,
+  isCaseStatus,
+} from '../cases.models';
+import { CasesService } from '../cases.service';
 
 /**
- * Stub case list landing after login (KYC-061). Full list UI is KYC-062.
+ * Reviewer / TenantAdmin case list with status filter (KYC-062).
+ * UI state via signals — no SignalStore (see frontend-code-standards).
  */
 @Component({
   selector: 'app-case-list',
-  imports: [MatButtonModule],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatProgressSpinnerModule,
+    MatSelectModule,
+    MatTableModule,
+  ],
   templateUrl: './case-list.html',
   styleUrl: './case-list.css',
 })
-export class CaseList {
+export class CaseList implements OnInit {
+  private readonly casesService: CasesService = inject(CasesService);
   private readonly tokens: TokenStorage = inject(TokenStorage);
   private readonly router: Router = inject(Router);
 
-  protected readonly title: string = 'Cases';
+  protected readonly pageTitle: string = 'Cases';
+  protected readonly statusOptions: readonly CaseStatus[] = CASE_STATUSES;
+  protected readonly statusLabels: Readonly<Record<CaseStatus, string>> = CASE_STATUS_LABELS;
+  protected readonly displayedColumns: readonly string[] = [
+    'title',
+    'customerEmail',
+    'status',
+    'updatedAt',
+  ];
+
+  protected readonly statusFilter: WritableSignal<CaseStatus | null> = signal(null);
+  protected readonly items: WritableSignal<CaseListItem[]> = signal([]);
+  protected readonly totalCount: WritableSignal<number> = signal(0);
+  protected readonly loading: WritableSignal<boolean> = signal(false);
+  protected readonly loadError: WritableSignal<string | null> = signal(null);
+
+  protected readonly isEmpty = computed(
+    (): boolean => !this.loading() && this.loadError() === null && this.items().length === 0,
+  );
+
+  ngOnInit(): void {
+    this.reload();
+  }
+
+  protected statusLabel(status: CaseStatus): string {
+    return caseStatusLabel(status);
+  }
+
+  protected filterStatus(status: CaseStatus | null): void {
+    this.statusFilter.set(status);
+    this.reload();
+  }
+
+  protected onStatusFilterChange(value: unknown): void {
+    if (value === null) {
+      this.filterStatus(null);
+      return;
+    }
+    if (typeof value === 'string' && isCaseStatus(value)) {
+      this.filterStatus(value);
+    }
+  }
+
+  protected reload(): void {
+    this.loading.set(true);
+    this.loadError.set(null);
+
+    this.casesService.list({ status: this.statusFilter() }).subscribe({
+      next: (page): void => {
+        this.items.set(page.items);
+        this.totalCount.set(page.totalCount);
+        this.loading.set(false);
+      },
+      error: (err: unknown): void => {
+        this.loading.set(false);
+        this.items.set([]);
+        this.totalCount.set(0);
+        const message: string =
+          err instanceof CasesLoadError
+            ? err.message
+            : 'Unable to load cases. Try again.';
+        this.loadError.set(message);
+      },
+    });
+  }
 
   protected signOut(): void {
     this.tokens.clearAccessToken();
