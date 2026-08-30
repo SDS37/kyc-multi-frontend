@@ -13,10 +13,10 @@ import { TokenStorage } from '../../auth/token-storage';
   styleUrl: './case-list.css',
 })
 export class CaseList {
-  private readonly tokens = inject(TokenStorage);
-  private readonly router = inject(Router);
+  private readonly tokens: TokenStorage = inject(TokenStorage);
+  private readonly router: Router = inject(Router);
 
-  protected readonly title = 'Cases';
+  protected readonly title: string = 'Cases';
 
   protected signOut(): void {
     this.tokens.clearAccessToken();

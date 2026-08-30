@@ -2,12 +2,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { vi } from 'vitest';
+import { MockInstance, vi } from 'vitest';
 import { APP_CONFIG } from '../../config/app-config';
 import { TokenStorage } from '../token-storage';
 import { Login } from './login';
 
-const graphqlUrl = 'http://localhost:5295/graphql';
+const graphqlUrl: string = 'http://localhost:5295/graphql';
 
 describe('Login', () => {
   let fixture: ComponentFixture<Login>;
@@ -15,7 +15,7 @@ describe('Login', () => {
   let router: Router;
   let tokens: TokenStorage;
 
-  beforeEach(async () => {
+  beforeEach(async (): Promise<void> => {
     await TestBed.configureTestingModule({
       imports: [Login],
       providers: [
@@ -40,12 +40,12 @@ describe('Login', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => {
+  afterEach((): void => {
     httpTesting.verify();
     tokens.clearAccessToken();
   });
 
-  it('shows field errors when submitted empty', () => {
+  it('shows field errors when submitted empty', (): void => {
     submitForm(fixture);
     fixture.detectChanges();
 
@@ -55,8 +55,10 @@ describe('Login', () => {
     httpTesting.expectNone(graphqlUrl);
   });
 
-  it('stores the token and navigates to /cases on success', () => {
-    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+  it('stores the token and navigates to /cases on success', (): void => {
+    const navigateSpy: MockInstance = vi
+      .spyOn(router, 'navigateByUrl')
+      .mockResolvedValue(true);
 
     setFormValues(fixture, {
       tenantSlug: 'acme',
@@ -79,7 +81,7 @@ describe('Login', () => {
     expect(navigateSpy).toHaveBeenCalledWith('/cases');
   });
 
-  it('surfaces a polite form error on AUTH_FAILED', () => {
+  it('surfaces a polite form error on AUTH_FAILED', (): void => {
     setFormValues(fixture, {
       tenantSlug: 'acme',
       email: 'reviewer@acme.test',
@@ -94,7 +96,8 @@ describe('Login', () => {
     });
     fixture.detectChanges();
 
-    const alert = fixture.nativeElement.querySelector('[role="alert"]') as HTMLElement;
+    const alert: Element | null = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(alert).toBeInstanceOf(HTMLElement);
     expect(alert?.textContent).toContain('Invalid email, password, or tenant.');
     expect(tokens.getAccessToken()).toBeNull();
   });
@@ -104,22 +107,34 @@ function setFormValues(
   fixture: ComponentFixture<Login>,
   values: { tenantSlug: string; email: string; password: string },
 ): void {
-  const root = fixture.nativeElement as HTMLElement;
-  const [tenant, email, password] = Array.from(root.querySelectorAll('input'));
+  const root: HTMLElement = fixture.nativeElement as HTMLElement;
+  const inputs: Element[] = Array.from(root.querySelectorAll('input'));
+  const tenant: Element | undefined = inputs[0];
+  const email: Element | undefined = inputs[1];
+  const password: Element | undefined = inputs[2];
+  if (
+    !(tenant instanceof HTMLInputElement) ||
+    !(email instanceof HTMLInputElement) ||
+    !(password instanceof HTMLInputElement)
+  ) {
+    throw new Error('Expected three login inputs');
+  }
   setInputValue(tenant, values.tenantSlug);
   setInputValue(email, values.email);
   setInputValue(password, values.password);
   fixture.detectChanges();
 }
 
-function setInputValue(input: Element | undefined, value: string): void {
-  const el = input as HTMLInputElement;
-  el.value = value;
-  el.dispatchEvent(new Event('input'));
+function setInputValue(input: HTMLInputElement, value: string): void {
+  input.value = value;
+  input.dispatchEvent(new Event('input'));
 }
 
 function submitForm(fixture: ComponentFixture<Login>): void {
-  const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+  const form: Element | null = fixture.nativeElement.querySelector('form');
+  if (!(form instanceof HTMLFormElement)) {
+    throw new Error('Expected login form');
+  }
   form.dispatchEvent(new Event('submit'));
   fixture.detectChanges();
 }

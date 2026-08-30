@@ -1,11 +1,11 @@
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import { APP_CONFIG } from '../config/app-config';
+import { APP_CONFIG, AppConfig } from '../config/app-config';
 import { SKIP_AUTH } from './skip-auth';
 import { TokenStorage } from './token-storage';
 
-const LOGIN_MUTATION = `
+const LOGIN_MUTATION: string = `
   mutation Login($input: LoginRequestInput!) {
     login(input: $input) {
       accessToken
@@ -54,9 +54,9 @@ interface GraphqlLoginBody {
  */
 @Injectable({ providedIn: 'root' })
 export class LoginService {
-  private readonly http = inject(HttpClient);
-  private readonly config = inject(APP_CONFIG);
-  private readonly tokens = inject(TokenStorage);
+  private readonly http: HttpClient = inject(HttpClient);
+  private readonly config: AppConfig = inject(APP_CONFIG);
+  private readonly tokens: TokenStorage = inject(TokenStorage);
 
   login(credentials: LoginCredentials): Observable<LoginSuccess> {
     return this.http
@@ -75,8 +75,8 @@ export class LoginService {
         { context: new HttpContext().set(SKIP_AUTH, true) },
       )
       .pipe(
-        map((body) => {
-          const gqlError = body.errors?.[0];
+        map((body: GraphqlLoginBody): LoginSuccess => {
+          const gqlError: GraphqlError | undefined = body.errors?.[0];
           if (gqlError) {
             throw new LoginFailedError(
               gqlError.message?.trim() || 'Sign-in failed. Check your details and try again.',
@@ -84,7 +84,7 @@ export class LoginService {
             );
           }
 
-          const login = body.data?.login;
+          const login: LoginSuccess | null | undefined = body.data?.login;
           if (!login?.accessToken) {
             throw new LoginFailedError('Sign-in failed. Check your details and try again.');
           }
@@ -92,13 +92,13 @@ export class LoginService {
           this.tokens.setAccessToken(login.accessToken);
           return login;
         }),
-        catchError((err: unknown) => {
+        catchError((err: unknown): Observable<never> => {
           if (err instanceof LoginFailedError) {
-            return throwError(() => err);
+            return throwError((): LoginFailedError => err);
           }
           if (err instanceof HttpErrorResponse) {
             return throwError(
-              () =>
+              (): LoginFailedError =>
                 new LoginFailedError(
                   'Unable to reach the sign-in service. Try again in a moment.',
                   'NETWORK',
@@ -106,7 +106,8 @@ export class LoginService {
             );
           }
           return throwError(
-            () => new LoginFailedError('Sign-in failed. Check your details and try again.'),
+            (): LoginFailedError =>
+              new LoginFailedError('Sign-in failed. Check your details and try again.'),
           );
         }),
       );

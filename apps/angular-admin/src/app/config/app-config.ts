@@ -6,4 +6,4 @@ export interface AppConfig {
   readonly graphqlUrl: string;
 }
 
-export const APP_CONFIG = new InjectionToken<AppConfig>('APP_CONFIG');
+export const APP_CONFIG: InjectionToken<AppConfig> = new InjectionToken<AppConfig>('APP_CONFIG');

@@ -1,6 +1,11 @@
-import { HttpHandlerFn, HttpRequest } from '@angular/common/http';
+import {
+  HttpEvent,
+  HttpHandlerFn,
+  HttpRequest,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
-import { APP_CONFIG } from '../config/app-config';
+import { Observable } from 'rxjs';
+import { APP_CONFIG, AppConfig } from '../config/app-config';
 import { SKIP_AUTH } from './skip-auth';
 import { TokenStorage } from './token-storage';
 
@@ -9,17 +14,20 @@ import { TokenStorage } from './token-storage';
  * Does not send tenant id headers (ADR-007). Skip with `SKIP_AUTH` for anonymous calls.
  * @see https://angular.dev/guide/http/interceptors
  */
-export function authInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn) {
+export function authInterceptor(
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+): Observable<HttpEvent<unknown>> {
   if (req.context.get(SKIP_AUTH)) {
     return next(req);
   }
 
-  const { apiBaseUrl } = inject(APP_CONFIG);
+  const { apiBaseUrl }: AppConfig = inject(APP_CONFIG);
   if (!isConfiguredApiRequest(req.url, apiBaseUrl)) {
     return next(req);
   }
 
-  const token = inject(TokenStorage).getAccessToken();
+  const token: string | null = inject(TokenStorage).getAccessToken();
   if (!token) {
     return next(req);
   }
@@ -33,9 +41,11 @@ export function authInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn) 
 
 /** True when the request targets the configured .NET API (GraphQL or REST under apiBaseUrl). */
 export function isConfiguredApiRequest(requestUrl: string, apiBaseUrl: string): boolean {
-  const base = apiBaseUrl.replace(/\/$/, '');
+  const base: string = apiBaseUrl.replace(/\/$/, '');
   try {
-    const absolute = new URL(requestUrl, typeof window !== 'undefined' ? window.location.origin : base);
+    const origin: string =
+      typeof window !== 'undefined' ? window.location.origin : base;
+    const absolute: URL = new URL(requestUrl, origin);
     return absolute.href === base || absolute.href.startsWith(`${base}/`);
   } catch {
     return false;

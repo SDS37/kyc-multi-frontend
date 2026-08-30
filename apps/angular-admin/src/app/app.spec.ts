@@ -1,10 +1,10 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { APP_CONFIG } from './config/app-config';
 
 describe('App', () => {
-  beforeEach(async () => {
+  beforeEach(async (): Promise<void> => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
@@ -20,8 +20,8 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
+  it('should create the app', (): void => {
+    const fixture: ComponentFixture<App> = TestBed.createComponent(App);
     expect(fixture.componentInstance).toBeTruthy();
   });
 });

@@ -1,20 +1,24 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { APP_CONFIG } from '../config/app-config';
 import { authInterceptor } from './auth.interceptor';
-import { LoginFailedError, LoginService } from './login.service';
+import { LoginFailedError, LoginService, LoginSuccess } from './login.service';
 import { TokenStorage } from './token-storage';
 
-const apiBaseUrl = 'http://localhost:5295';
-const graphqlUrl = `${apiBaseUrl}/graphql`;
+const apiBaseUrl: string = 'http://localhost:5295';
+const graphqlUrl: string = `${apiBaseUrl}/graphql`;
 
 describe('LoginService', () => {
   let service: LoginService;
   let httpTesting: HttpTestingController;
   let tokens: TokenStorage;
 
-  beforeEach(() => {
+  beforeEach((): void => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
@@ -31,13 +35,13 @@ describe('LoginService', () => {
     tokens.clearAccessToken();
   });
 
-  afterEach(() => {
+  afterEach((): void => {
     httpTesting.verify();
     tokens.clearAccessToken();
   });
 
-  it('posts GraphQL login without Authorization and stores the access token', () => {
-    let succeeded = false;
+  it('posts GraphQL login without Authorization and stores the access token', (): void => {
+    let succeeded: boolean = false;
     service
       .login({
         tenantSlug: ' Acme ',
@@ -45,13 +49,13 @@ describe('LoginService', () => {
         password: 'secret',
       })
       .subscribe({
-        next: (result) => {
+        next: (result: LoginSuccess): void => {
           expect(result.accessToken).toBe('jwt-token');
           succeeded = true;
         },
       });
 
-    const req = httpTesting.expectOne(graphqlUrl);
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.has('Authorization')).toBe(false);
     expect(req.request.body.variables.input).toEqual({
@@ -74,18 +78,20 @@ describe('LoginService', () => {
     expect(tokens.getAccessToken()).toBe('jwt-token');
   });
 
-  it('maps GraphQL AUTH_FAILED to LoginFailedError without storing a token', () => {
+  it('maps GraphQL AUTH_FAILED to LoginFailedError without storing a token', (): void => {
     let error: unknown;
     service
       .login({ tenantSlug: 'acme', email: 'a@b.c', password: 'bad' })
       .subscribe({
-        error: (err) => {
+        error: (err: unknown): void => {
           error = err;
         },
       });
 
     httpTesting.expectOne(graphqlUrl).flush({
-      errors: [{ message: 'Invalid email, password, or tenant.', extensions: { code: 'AUTH_FAILED' } }],
+      errors: [
+        { message: 'Invalid email, password, or tenant.', extensions: { code: 'AUTH_FAILED' } },
+      ],
     });
 
     expect(error).toBeInstanceOf(LoginFailedError);
@@ -93,12 +99,12 @@ describe('LoginService', () => {
     expect(tokens.getAccessToken()).toBeNull();
   });
 
-  it('maps HTTP failures to a network LoginFailedError', () => {
+  it('maps HTTP failures to a network LoginFailedError', (): void => {
     let error: unknown;
     service
       .login({ tenantSlug: 'acme', email: 'a@b.c', password: 'x' })
       .subscribe({
-        error: (err) => {
+        error: (err: unknown): void => {
           error = err;
         },
       });
