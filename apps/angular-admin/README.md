@@ -22,10 +22,12 @@ App: `http://localhost:4200`
 GraphQL (dev env): `http://localhost:5295/graphql`
 
 ```bash
-npm test    # unit tests (Vitest via Angular CLI)
+npm test       # unit tests (Vitest via Angular CLI)
+npm run test:ci
 npm run build
 ```
 
+PRs that touch `apps/angular-admin` (or `.github/workflows/angular-ci.yml`) run GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`).
 ## What KYC-060 delivers
 
 | Piece | Location |

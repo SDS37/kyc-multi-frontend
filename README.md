@@ -32,6 +32,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Case audit history | Ready (KYC-051 GraphQL `caseAuditEntries`; Reviewer/TenantAdmin; newest first) |
 | GraphQL host (`/graphql`) + `/health` | Ready (KYC-020; IDE / introspection / SDL in Development — KYC-105) |
 | API CI (`dotnet build` / `test`) | Ready (KYC-102; SHA pins + Postgres slice — KYC-108) |
+| Angular CI (`npm` build / test) | Ready (`angular-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 | Postgres readiness (`/ready`) + EF retries / timeouts | Ready (KYC-103) |
 | Structured logs + request id | Ready (KYC-104) |
 | GraphQL auth (deny by default) | Ready (KYC-021; login dummy verify — KYC-107; login password max 128 — KYC-109) |
@@ -130,7 +131,7 @@ npm install
 npm start
 ```
 
-App: `http://localhost:4200` (CORS already allowed by the API).
+App: `http://localhost:4200` (CORS already allowed by the API). PRs that touch the Angular app run GitHub Actions `angular-ci`.
 
 ## Architecture
 

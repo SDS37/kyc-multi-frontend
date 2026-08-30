@@ -54,6 +54,7 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 |---|---|
 | Runnable Angular 22+ app | Yes |
 | Env GraphQL + auth interceptor | Yes |
+| `angular-ci` (build + unit tests) | Yes |
 | Login / case list / review | Later (061–063) |
 | Angular shell composing remotes | Not required for MVP |
 

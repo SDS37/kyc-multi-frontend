@@ -16,6 +16,7 @@ Conventions for UI apps under `apps/` (Angular admin, React customer, Vue report
 | Config | GraphQL (and REST API) base URLs come from environment / build config — not hard-coded production hosts |
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
 | Commits | [Conventional Commits](commits.md) with scopes like `angular`, `react`, `vue`, `docs` |
+| CI | Angular admin: GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`) when `apps/angular-admin/**` changes |
 
 Do not invent Tenant user-management UIs in W4–W6 — that API does not exist yet (`apps/angular-admin/README.md`).
 

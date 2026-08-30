@@ -19,7 +19,7 @@ One repo holds three future frontends, one .NET GraphQL API, local Docker depend
 | `apps/` | Deployable products. One folder per app so Angular / React / Vue / .NET never share a bundler. |
 | `docs/` | Decisions and target architecture. Source of truth for “what we meant.” |
 | `infrastructure/` | Postgres / Redis / MinIO via Compose. Not the API container (API still runs on the host). |
-| `.github/workflows/` | `api-ci` — the only automated proof that the API still builds and isolates tenants. |
+| `.github/workflows/` | `api-ci` + `angular-ci` — automated proof API and Angular admin still build/test. |
 | `.config/` | Local .NET tools (`dotnet-ef`). Analogous to a repo-level `npx` binary pin. |
 | `global.json` | Pins the .NET SDK, like an `.nvmrc` / Volta pin. |
 | `.editorconfig` | Shared formatting. Not architecture. |
@@ -71,7 +71,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 4. [apps/api/README.STUDY.md](apps/api/README.STUDY.md) — solution vs project vs tests.
 5. Follow **one mutation** through [Kyc.Api](apps/api/Kyc.Api/README.STUDY.md) → [GraphQL](apps/api/Kyc.Api/GraphQL/README.STUDY.md) → [Application](apps/api/Kyc.Api/Application/README.STUDY.md) → [Domain](apps/api/Kyc.Api/Domain/README.STUDY.md) → [Data](apps/api/Kyc.Api/Data/README.STUDY.md). Then skim [Documents](apps/api/Kyc.Api/Application/Documents/README.STUDY.md) for the REST upload path.
 6. [Tests](apps/api/Kyc.Api.Tests/README.STUDY.md) — especially tenant isolation. This is the sentence isolation conversations hang on.
-7. [api-ci](.github/workflows/README.STUDY.md) — what CI actually proves.
+7. [Workflows](.github/workflows/README.STUDY.md) — what `api-ci` / `angular-ci` prove.
 8. Frontends: [angular-admin](apps/angular-admin/README.STUDY.md) (KYC-060 scaffold), then placeholders [react-customer](apps/react-customer/README.STUDY.md), [vue-reports](apps/vue-reports/README.STUDY.md).
 
 ## What to skip
