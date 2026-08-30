@@ -75,7 +75,8 @@
                   mat-stroked-button
                   type="button"
                   (click)="download(doc)"
-                  [disabled]="downloadingId() === doc.id"
+                  [disabled]="downloadingId() !== null"
+                  [attr.aria-busy]="downloadingId() === doc.id"
                   [attr.aria-label]="'Download ' + doc.fileName"
                 >
                   @if (downloadingId() === doc.id) {
