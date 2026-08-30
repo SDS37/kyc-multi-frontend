@@ -21,7 +21,8 @@ This file is not a copy of angular.dev or of the Angular Architects blog.
 | API contract | GraphQL for domain reads/writes; document **download** is REST with the same JWT; do not invent extra BFF routes |
 | Auth | Store the access token after login; send `Authorization: Bearer <token>` on authenticated API calls; never put `tenant_id` / role in client-supplied request bodies for authorized ops (ADR-007) |
 | Config | GraphQL (and REST API) base URLs come from environment / build config — not hard-coded production hosts |
-| Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map Material/other UI kits to tokens; do not fork palettes per app |
+| Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map each app’s UI kit to tokens; do not fork palettes per app |
+| Angular UI kit | **Angular Material** (+ CDK) themed to `@kyc/design-tokens`. **Do not** add the Bootstrap CSS framework (or a second spacing/color system) |
 | **Models files** | Feature DTOs / form maps / domain errors in `*.models.ts` (not inside services/components). Same convention in every UI app. |
 | **Functional style** | Prefer pure mappers/helpers; side effects only at I/O edges (HTTP, router, storage). See below. |
 | Accessibility | WCAG 2.2 AA intent + WAI-ARIA across Angular/React/Vue (same `aria-*` platform). Labels, focus visible (`--kyc-focus-ring`), errors not by color alone — details in [ux-design-tokens.md](ux-design-tokens.md) |
@@ -91,7 +92,8 @@ Follow the official [Angular Style Guide](https://angular.dev/style-guide) and r
 |---|---|---|
 | Angular | Latest stable major (22+ at KYC-060 writing) | Pin an outdated major “because the issue once said 19” |
 | Components | **Standalone** only | Add NgModules for app features |
-| Bootstrap | `src/main.ts` | Alternate entry layouts without a reason |
+| App entry | `src/main.ts` (`bootstrapApplication`) | Alternate entry layouts without a reason |
+| UI kit | Angular Material + `@kyc/design-tokens` (`material-theme.scss`) | Bootstrap CSS, competing CSS frameworks, or a second hard-coded palette |
 | UI code | Under `src/` | Dump feature code at the app root |
 
 ### Naming and structure ([Style Guide](https://angular.dev/style-guide))
@@ -239,7 +241,7 @@ constructor() {
 
 Prefer Angular **signals** (`signal` / `computed` / `WritableSignal`) for UI and feature state that should be explicit and readable (loading flags, form-level errors, list filter, items). Keep GraphQL/HTTP in injectable services; components (or a small feature service) own the signals that the template reads.
 
-**Do not** add NgRx **SignalStore** (or classic NgRx store) for MVP by default. This app stays small through KYC-062 (case list): login + list + later review is still a handful of feature services, not a multi-domain shared state graph.
+**Do not** add NgRx **SignalStore** (or classic NgRx store) for MVP by default. Shipped surface today: login (KYC-061) + case list (KYC-062). Case review (KYC-063+) should stay component/feature-service signals until list↔detail sharing actually hurts.
 
 Practical rule (MVP):
 
@@ -280,13 +282,13 @@ Suggested post-MVP shape (sketch only — implement when the pain is real):
 - Provide HttpClient with **functional** interceptors: `provideHttpClient(withInterceptors([authInterceptor]))` ([official recommendation](https://angular.dev/guide/http/interceptors))
 - Auth interceptor: read the token from a small token/auth service, `req.clone({ headers: … })`, attach `Authorization` when a token exists; skip public calls (login) via URL or `HttpContext` if needed
 - Token storage: a dedicated service (MVP may use `localStorage` or `sessionStorage`); do not scatter `localStorage.getItem` across features
-- GraphQL endpoint (and API origin for document download) live in Angular `environment` / application config used at bootstrap
+- GraphQL endpoint (and REST API origin for document download) live in Angular `environment` / `APP_CONFIG` (injected at app start)
 
 ### Routing
 
 - Use the Angular Router with a clear `routes` config (`provideRouter`)
-- Lazy-load feature routes where it keeps the foundation bundle small
-- Guard authenticated areas once login exists (KYC-061+); foundation may stub a shell route first
+- Lazy-load feature routes (`login`, `cases`, later review) where it keeps the foundation bundle small
+- Guard authenticated areas with `authGuard`; send guests to login with `guestGuard` (KYC-061+)
 
 ### TypeScript and formatting
 
@@ -299,7 +301,7 @@ Suggested post-MVP shape (sketch only — implement when the pain is real):
 - Call MinIO or Postgres directly — only the .NET API
 - Trust client-supplied tenant id for authorization
 - Reintroduce NgModule-based feature modules “for familiarity”
-- Add Bootstrap alongside Material; hard-code a second color/spacing system instead of `@kyc/design-tokens`
+- Add the **Bootstrap CSS** framework alongside Material; hard-code a second color/spacing system instead of `@kyc/design-tokens`
 - Add NgRx SignalStore / global store “for scale” before shared list↔detail case state actually needs it (see Signals and client state above)
 - Declare exported DTOs / form maps / domain errors inside services or components instead of `*.models.ts`
 - Bury storage / router / HTTP side effects inside pure mappers (see Functional style / purity)
@@ -313,7 +315,7 @@ Suggested post-MVP shape (sketch only — implement when the pain is real):
 
 ## React and Vue (later)
 
-Apply the **Shared** section (including design tokens and a11y). Framework-specific subsections will be added with KYC-070 / KYC-080 foundations, still pointing at each framework’s official docs as the authority. Import `@kyc/design-tokens/tokens.css` at app bootstrap the same way Angular does.
+Apply the **Shared** section (including design tokens and a11y). Framework-specific subsections will be added with KYC-070 / KYC-080 foundations, still pointing at each framework’s official docs as the authority. Import `@kyc/design-tokens/tokens.css` at app start the same way Angular does.
 
 ## Links
 

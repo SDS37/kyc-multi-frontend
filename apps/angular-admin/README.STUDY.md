@@ -85,7 +85,7 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 - Inventing user-management screens
 - Calling MinIO / Postgres from the browser
 - NgModules for features
-- Bootstrap next to Material
+- Bootstrap CSS next to Material
 - Apollo until a story chooses a GraphQL client (HttpClient POST to `/graphql` is enough)
 - NgRx SignalStore during MVP — prefer plain signals / feature services. **After MVP**, use the checklist under [Signals and client state → After MVP](../../docs/frontend-code-standards.md#after-mvp--when-to-extend-with-signalstore) before adding `@ngrx/signals`
 - Mixing side effects into mappers — keep [functional style / purity](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends) (`*.mappers.ts` pure; I/O in services)
