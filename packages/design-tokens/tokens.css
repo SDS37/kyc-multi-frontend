@@ -55,11 +55,18 @@
 
   /* —— Elevation / focus (a11y) —— */
   --kyc-shadow-sm: 0 1px 2px rgb(26 35 50 / 6%);
-  --kyc-focus-ring: 0 0 0 3px color-mix(in srgb, var(--kyc-color-focus) 35%, transparent);
+  /* Fallback without color-mix (older browsers); enhanced below when supported. */
+  --kyc-focus-ring: 0 0 0 3px rgb(15 110 86 / 35%);
 
   /* —— Layout —— */
   --kyc-content-max: 40rem;
   --kyc-page-gutter: var(--kyc-space-5);
+}
+
+@supports (color: color-mix(in srgb, #000 35%, transparent)) {
+  :root {
+    --kyc-focus-ring: 0 0 0 3px color-mix(in srgb, var(--kyc-color-focus) 35%, transparent);
+  }
 }
 
 @media (max-width: 640px) {

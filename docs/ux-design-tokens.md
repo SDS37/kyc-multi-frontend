@@ -40,7 +40,7 @@ Scale `--kyc-space-1` … `--kyc-space-8` (4px base). Page gutter: `--kyc-page-g
 
 ### Focus
 
-`--kyc-focus-ring` — visible keyboard focus is required. Do not remove outlines without an equivalent.
+`--kyc-focus-ring` — visible keyboard focus is required. The token has a non-`color-mix` fallback plus an `@supports` enhancement. Apps should keep a real `outline` (not `outline: none` alone) and handle `forced-colors: active` so high-contrast modes still show focus (WCAG 2.4.7 / 2.4.11).
 
 ## Accessibility (all three frameworks)
 
