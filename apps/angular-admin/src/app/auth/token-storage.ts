@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-const ACCESS_TOKEN_KEY = 'kyc.angular-admin.accessToken';
+const ACCESS_TOKEN_KEY: string = 'kyc.angular-admin.accessToken';
 
 /**
  * JWT access-token storage for the admin app (KYC-060).

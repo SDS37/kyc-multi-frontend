@@ -1,20 +1,24 @@
 import { HttpClient, HttpContext, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { APP_CONFIG } from '../config/app-config';
 import { authInterceptor } from './auth.interceptor';
 import { SKIP_AUTH } from './skip-auth';
 import { TokenStorage } from './token-storage';
 
-const apiBaseUrl = 'http://localhost:5295';
-const graphqlUrl = `${apiBaseUrl}/graphql`;
+const apiBaseUrl: string = 'http://localhost:5295';
+const graphqlUrl: string = `${apiBaseUrl}/graphql`;
 
 describe('authInterceptor', () => {
   let http: HttpClient;
   let httpTesting: HttpTestingController;
   let tokens: TokenStorage;
 
-  beforeEach(() => {
+  beforeEach((): void => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
@@ -31,38 +35,40 @@ describe('authInterceptor', () => {
     tokens.clearAccessToken();
   });
 
-  afterEach(() => {
+  afterEach((): void => {
     httpTesting.verify();
     tokens.clearAccessToken();
   });
 
-  it('attaches Bearer token for configured API URLs', () => {
+  it('attaches Bearer token for configured API URLs', (): void => {
     tokens.setAccessToken('test-jwt');
     http.get(graphqlUrl).subscribe();
-    const req = httpTesting.expectOne(graphqlUrl);
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
     expect(req.request.headers.get('Authorization')).toBe('Bearer test-jwt');
     req.flush({});
   });
 
-  it('omits Authorization when no token is stored', () => {
+  it('omits Authorization when no token is stored', (): void => {
     http.get(graphqlUrl).subscribe();
-    const req = httpTesting.expectOne(graphqlUrl);
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
   });
 
-  it('skips Authorization when SKIP_AUTH is set', () => {
+  it('skips Authorization when SKIP_AUTH is set', (): void => {
     tokens.setAccessToken('test-jwt');
-    http.get(graphqlUrl, { context: new HttpContext().set(SKIP_AUTH, true) }).subscribe();
-    const req = httpTesting.expectOne(graphqlUrl);
+    http
+      .get(graphqlUrl, { context: new HttpContext().set(SKIP_AUTH, true) })
+      .subscribe();
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
   });
 
-  it('does not attach Authorization for non-API origins', () => {
+  it('does not attach Authorization for non-API origins', (): void => {
     tokens.setAccessToken('test-jwt');
     http.get('https://example.com/data').subscribe();
-    const req = httpTesting.expectOne('https://example.com/data');
+    const req: TestRequest = httpTesting.expectOne('https://example.com/data');
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
   });

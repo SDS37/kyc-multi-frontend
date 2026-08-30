@@ -1,4 +1,4 @@
 import { HttpContextToken } from '@angular/common/http';
 
 /** When true, the auth interceptor must not attach Authorization (e.g. login). */
-export const SKIP_AUTH = new HttpContextToken<boolean>(() => false);
+export const SKIP_AUTH: HttpContextToken<boolean> = new HttpContextToken<boolean>(() => false);

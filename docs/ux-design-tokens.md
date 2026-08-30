@@ -80,4 +80,4 @@ Do **not** share compiled Angular/React/Vue component bundles as the design syst
 - [ADR-005](architecture-decision-records.md) (independent apps / MF deferred)
 - [WAI-ARIA](https://www.w3.org/WAI/ARIA/apg/)
 - [WCAG 2.2](https://www.w3.org/WAI/WCAG22/quickref/)
-- Angular Material theming (map to `--kyc-*` in KYC-061)
+- Angular Material theming mapped to `--kyc-*` (`apps/angular-admin/src/material-theme.scss`, KYC-061)
