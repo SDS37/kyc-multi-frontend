@@ -1,0 +1,58 @@
+// Angular Material M3 theme mapped onto shared @kyc/design-tokens (KYC-061).
+// Spec: docs/ux-design-tokens.md — do not fork a second palette here.
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+
+  // Green base is closest to teal brand; $overrides pin exact --kyc-* values.
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$green-palette,
+        tertiary: mat.$cyan-palette,
+      ),
+      typography: (
+        plain-family: var(--kyc-font-sans),
+        brand-family: var(--kyc-font-sans),
+      ),
+      density: 0,
+    ),
+    $overrides: (
+      primary: var(--kyc-color-brand),
+      on-primary: var(--kyc-color-on-brand),
+      primary-container: var(--kyc-color-surface-raised),
+      on-primary-container: var(--kyc-color-text),
+      surface: var(--kyc-color-surface),
+      on-surface: var(--kyc-color-text),
+      on-surface-variant: var(--kyc-color-text-muted),
+      surface-container: var(--kyc-color-surface-raised),
+      surface-container-low: var(--kyc-color-surface),
+      surface-container-highest: var(--kyc-color-surface-raised),
+      outline: var(--kyc-color-border),
+      outline-variant: var(--kyc-color-border),
+      error: var(--kyc-color-danger),
+      on-error: var(--kyc-color-on-brand),
+      error-container: var(--kyc-color-danger-bg),
+      on-error-container: var(--kyc-color-danger),
+    )
+  );
+
+  @include mat.strong-focus-indicators(
+    (
+      border-color: var(--kyc-color-focus),
+      border-width: 2px,
+    )
+  );
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background-color: var(--kyc-color-surface);
+  color: var(--kyc-color-text);
+  font-family: var(--kyc-font-sans);
+  font-size: var(--kyc-text-md);
+  line-height: var(--kyc-leading-normal);
+}
