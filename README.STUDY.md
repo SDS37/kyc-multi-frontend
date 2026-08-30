@@ -17,6 +17,7 @@ One repo holds three future frontends, one .NET GraphQL API, local Docker depend
 | Folder / file | Why it is here |
 |---|---|
 | `apps/` | Deployable products. One folder per app so Angular / React / Vue / .NET never share a bundler. |
+| `packages/` | Shared **non-UI-framework** libs (e.g. `design-tokens` CSS). Not a second monorepo app. |
 | `docs/` | Decisions and target architecture. Source of truth for “what we meant.” |
 | `infrastructure/` | Postgres / Redis / MinIO via Compose. Not the API container (API still runs on the host). |
 | `.github/workflows/` | `api-ci` + `angular-ci` — automated proof API and Angular admin still build/test. |

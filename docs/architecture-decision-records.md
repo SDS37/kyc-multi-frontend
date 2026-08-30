@@ -128,15 +128,20 @@ The original target is a shell that loads Angular, React and Vue remotes. Module
 ### Decision
 Ship three independent apps against the same GraphQL API and auth contract. Treat Module Federation as a Week 7 spike. If it is not stable, keep separate apps for MVP.
 
+**Sharing rule (MVP and if MF lands):** share design tokens (`@kyc/design-tokens`), GraphQL/JWT contract, and a11y docs — not framework component libraries or compiled UI across Angular/React/Vue. See [architecture.md §3](architecture.md) and [ux-design-tokens.md](ux-design-tokens.md).
+
 ### Alternatives
 - Module Federation from week 1
 - Single-page app in one framework only
+- One shared cross-framework component library (rejected for MVP cost and MF complexity)
 
 ### Consequences
 - MVP can focus on domain, security and GraphQL
 - Each app can still demonstrate its stack
 - No runtime composition in the first release
-- Some duplicated login and token handling
+- Some duplicated login and token *wiring* (same JWT semantics)
+- Visual consistency comes from CSS tokens, not shared Material/React/Vue widgets
+- MF spike can compose remotes without inventing a new share model
 
 ---
 

@@ -2,7 +2,7 @@
 
 Angular **22+** admin / reviewer portal (`apps/angular-admin`). Foundation: KYC-060. Login and case UI: KYC-061–064.
 
-**How to write this app:** [Frontend code standards](../../docs/frontend-code-standards.md) (Angular section follows official [angular.dev](https://angular.dev/style-guide) docs).
+**How to write this app:** [Frontend code standards](../../docs/frontend-code-standards.md) (Angular section follows official [angular.dev](https://angular.dev/style-guide) docs). Shared colors/spacing: [UX design tokens](../../docs/ux-design-tokens.md) / `@kyc/design-tokens`.
 
 ## Prerequisites
 
