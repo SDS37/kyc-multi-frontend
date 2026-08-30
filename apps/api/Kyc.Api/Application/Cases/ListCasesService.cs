@@ -69,6 +69,7 @@ public sealed class ListCasesService(
                 c.Status,
                 c.TenantId,
                 c.CustomerUserId,
+                c.CustomerUser.Email,
                 c.CreatedAt,
                 c.UpdatedAt,
                 c.SubmittedAt,

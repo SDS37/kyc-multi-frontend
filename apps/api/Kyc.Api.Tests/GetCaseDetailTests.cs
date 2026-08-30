@@ -210,7 +210,7 @@ public sealed class GetCaseDetailTests(ApiFactory factory) : IClassFixture<ApiFa
         var payload = await PostGraphqlAsync(
             $$"""
             {
-              "query": "query($id: UUID!) { case(id: $id) { case { id title customerUserId } documents { id fileName } } }",
+              "query": "query($id: UUID!) { case(id: $id) { case { id title customerUserId customerEmail } documents { id fileName } } }",
               "variables": { "id": "{{_customerBCaseId}}" }
             }
             """);
@@ -219,6 +219,7 @@ public sealed class GetCaseDetailTests(ApiFactory factory) : IClassFixture<ApiFa
         var c = payload.GetProperty("data").GetProperty("case").GetProperty("case");
         Assert.Equal(_customerBCaseId.ToString(), c.GetProperty("id").GetString());
         Assert.Equal(_customerBId.ToString(), c.GetProperty("customerUserId").GetString());
+        Assert.Equal("customer-b@detail.example", c.GetProperty("customerEmail").GetString());
     }
 
     [Fact]

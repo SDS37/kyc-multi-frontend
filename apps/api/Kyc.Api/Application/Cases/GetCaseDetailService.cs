@@ -41,7 +41,11 @@ public sealed class GetCaseDetailService(
             return (null, Array.Empty<string>(), false, "NOT_FOUND", CaseVisibility.NotFoundMessage);
         }
 
-        var caseResponse = CreateDraftCaseService.ToResponse(entity);
+        var customerEmail = await CreateDraftCaseService.GetCustomerEmailAsync(
+            db,
+            entity.CustomerUserId,
+            cancellationToken);
+        var caseResponse = CreateDraftCaseService.ToResponse(entity, customerEmail);
         IReadOnlyList<CaseCommentResponse> comments = string.IsNullOrWhiteSpace(entity.ReviewComment)
             ? Array.Empty<CaseCommentResponse>()
             : [new CaseCommentResponse(entity.ReviewComment.Trim(), entity.ReviewedAt, entity.ReviewedBy)];

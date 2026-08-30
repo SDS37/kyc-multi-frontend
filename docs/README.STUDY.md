@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. These files **are** the project documentation. This note only tells you **how to read them** as a frontend architect.
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`).
 
 ## Purpose
 

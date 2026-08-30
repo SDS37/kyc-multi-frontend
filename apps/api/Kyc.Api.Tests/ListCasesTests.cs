@@ -195,18 +195,24 @@ public sealed class ListCasesTests(ApiFactory factory) : IClassFixture<ApiFactor
         var payload = await PostGraphqlAsync(
             """
             {
-              "query": "query { cases { totalCount items { id } } }"
+              "query": "query { cases { totalCount items { id customerUserId customerEmail } } }"
             }
             """);
 
         Assert.False(payload.TryGetProperty("errors", out _), payload.ToString());
         var list = payload.GetProperty("data").GetProperty("cases");
         Assert.Equal(3, list.GetProperty("totalCount").GetInt32());
-        var ids = list.GetProperty("items").EnumerateArray().Select(e => e.GetProperty("id").GetString()).ToHashSet();
+        var items = list.GetProperty("items").EnumerateArray().ToList();
+        var ids = items.Select(e => e.GetProperty("id").GetString()).ToHashSet();
         Assert.Contains(_customerADraftId.ToString(), ids);
         Assert.Contains(_customerASubmittedId.ToString(), ids);
         Assert.Contains(_customerBDraftId.ToString(), ids);
         Assert.DoesNotContain(_otherTenantCaseId.ToString(), ids);
+        var aDraft = items.Single(e => e.GetProperty("id").GetString() == _customerADraftId.ToString());
+        Assert.Equal(_customerAId.ToString(), aDraft.GetProperty("customerUserId").GetString());
+        Assert.Equal("customer-a@list.example", aDraft.GetProperty("customerEmail").GetString());
+        var bDraft = items.Single(e => e.GetProperty("id").GetString() == _customerBDraftId.ToString());
+        Assert.Equal("customer-b@list.example", bDraft.GetProperty("customerEmail").GetString());
     }
 
     [Fact]

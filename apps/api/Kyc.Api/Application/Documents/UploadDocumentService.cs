@@ -158,7 +158,13 @@ public sealed partial class UploadDocumentService(
         catch (Exception ex)
         {
             LogObjectStoragePutFailed(logger, ex, caseEntity.Id);
-            return (null, ["Could not store the document. Please try again."], false, false, null, null);
+            return (
+                null,
+                Array.Empty<string>(),
+                false,
+                false,
+                "STORAGE",
+                "Could not store the document. Please try again.");
         }
 
         var document = new Document

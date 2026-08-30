@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Official stub: [README.md](README.md).
 
-**Aligned with:** `main` after KYC-040. **No Angular workspace exists yet** — only this README.
+**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`). **No Angular workspace exists yet** — only this README.
 
 ## Purpose
 
@@ -19,8 +19,9 @@ Same API as the other two UIs. You will not get a private BFF.
 | Need | GraphQL / auth |
 |---|---|
 | Login | `login` mutation → JWT (`sub`, `tenant_id`, `role`, `email`) |
-| Review queue | `cases` with `status` filter; Reviewer sees **all tenant** cases |
-| Detail | `case(id)` — FormData, comments, **document metadata** (bytes via Customer upload REST; Reviewer reads metadata here) |
+| Review queue | `cases` with `status` filter; list items include `customerEmail`; Reviewer sees **all tenant** cases |
+| Detail | `case(id)` — FormData, comments, `customerEmail`, document metadata |
+| Download | REST `GET /api/cases/{caseId}/documents/{documentId}` (KYC-042 / KYC-063); same JWT |
 | Start review | `startCaseReview` |
 | Decide | `approveCase` / `rejectCase` (reject requires comment) |
 | Tenant admin extras | User/role management is **not** in the API yet — do not invent REST for it |
@@ -40,13 +41,13 @@ flowchart LR
 
 ADR-005: MVP is **three independent apps**. A shell loading React/Vue remotes is a Week 7 spike. Do not design Week 4 admin as a federation host unless that spike is explicitly in progress.
 
-Expected local URL when scaffolded: `http://localhost:4200` (README). CORS is KYC-091 — not implemented until a UI exists. First `ng serve` against `localhost:5295` will fail CORS until that story; use the GraphQL IDE until then, or expect a dedicated story.
+Expected local URL when scaffolded: `http://localhost:4200` (README). CORS for that origin is already on the API (KYC-091 W4 slice). Security headers / HSTS remain W6.
 
 ## Today vs target
 
 | Target | Today |
 |---|---|
-| Case list, review, documents, tenant users | Folder + README |
+| Case list, review, document download | Folder + README |
 | Angular shell composing remotes | Not required for MVP |
 
 ## What to skip

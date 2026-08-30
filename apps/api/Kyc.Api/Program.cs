@@ -100,6 +100,24 @@ else
         $"Unknown ObjectStorage:Provider '{objectStorageOptions.Provider}'. Use Minio or InMemory.");
 }
 
+var corsSection = builder.Configuration.GetSection(CorsOptions.SectionName);
+builder.Services.Configure<CorsOptions>(corsSection);
+var corsOptions = corsSection.Get<CorsOptions>() ?? new CorsOptions();
+var corsOrigins = corsOptions.AllowedOrigins
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .Select(origin => origin.Trim().TrimEnd('/'))
+    .Distinct(StringComparer.Ordinal)
+    .ToArray();
+if (corsOrigins.Length > 0)
+{
+    builder.Services.AddCors(options =>
+        options.AddPolicy(CorsOptions.PolicyName, policy =>
+            policy.WithOrigins(corsOrigins)
+                .WithMethods("GET", "POST", "OPTIONS")
+                .WithHeaders("Authorization", "Content-Type", "X-Request-Id", "Apollo-Require-Preflight")
+                .WithExposedHeaders("X-Request-Id")));
+}
+
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 builder.Services.Configure<JwtOptions>(jwtSection);
 var jwtOptions = jwtSection.Get<JwtOptions>() ?? new JwtOptions();
@@ -185,6 +203,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<RequestCorrelationMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
+if (corsOrigins.Length > 0)
+{
+    app.UseCors(CorsOptions.PolicyName);
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRequestTimeouts();
@@ -297,6 +320,13 @@ app.MapPost("/api/cases/{caseId:guid}/documents", async (
         return Results.Json(
             new { error = errorMessage ?? UploadDocumentService.NotFoundMessage, code = "NOT_FOUND" },
             statusCode: StatusCodes.Status404NotFound);
+    }
+
+    if (errorCode == "STORAGE")
+    {
+        return Results.Json(
+            new { error = errorMessage ?? "Could not store the document. Please try again.", code = "STORAGE" },
+            statusCode: StatusCodes.Status502BadGateway);
     }
 
     if (errorCode is not null)

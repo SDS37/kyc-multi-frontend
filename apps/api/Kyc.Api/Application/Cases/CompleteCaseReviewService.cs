@@ -139,6 +139,10 @@ public sealed class CompleteCaseReviewService(
         entity.ReviewedBy = reviewerUserId.Value;
         entity.ReviewComment = normalizedComment;
         entity.UpdatedAt = now;
-        return (CreateDraftCaseService.ToResponse(entity), Array.Empty<string>(), false, null, null);
+        var customerEmail = await CreateDraftCaseService.GetCustomerEmailAsync(
+            db,
+            entity.CustomerUserId,
+            cancellationToken);
+        return (CreateDraftCaseService.ToResponse(entity, customerEmail), Array.Empty<string>(), false, null, null);
     }
 }

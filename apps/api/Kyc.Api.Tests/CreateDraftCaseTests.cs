@@ -62,7 +62,7 @@ public sealed class CreateDraftCaseTests(ApiFactory factory) : IClassFixture<Api
         var payload = await PostGraphqlAsync(
             """
             {
-              "query": "mutation($input: CreateDraftCaseRequestInput!) { createDraftCase(input: $input) { id title status formData tenantId customerUserId } }",
+              "query": "mutation($input: CreateDraftCaseRequestInput!) { createDraftCase(input: $input) { id title status formData tenantId customerUserId customerEmail } }",
               "variables": { "input": { "title": "Onboarding ACME" } }
             }
             """);
@@ -74,6 +74,7 @@ public sealed class CreateDraftCaseTests(ApiFactory factory) : IClassFixture<Api
         Assert.Equal("{}", created.GetProperty("formData").GetString());
         Assert.Equal(_tenantId, created.GetProperty("tenantId").GetGuid());
         Assert.Equal(_customerId, created.GetProperty("customerUserId").GetGuid());
+        Assert.Equal("customer@draft.example", created.GetProperty("customerEmail").GetString());
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

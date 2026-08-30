@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. The official runbook is [README.md](README.md).
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`).
 
 ## Purpose
 
@@ -64,8 +64,8 @@ Tests do **not** need the real port: `WebApplicationFactory<Program>` boots the 
 
 ## Today vs target
 
-- **Today:** one deployable, layered folders, GraphQL + two REST identity endpoints.
-- **Target:** still one deployable (not microservices), but **module** folders (Identity / Cases / Documents / Audit) and CQRS. Documents + Audit are Week 3.
+- **Today:** one deployable, layered folders, GraphQL cases/documents/audit, REST identity twins, REST upload/download, local CORS.
+- **Target:** still one deployable (not microservices). CQRS / MediatR remains a target, not current. Three UI apps are W4–W6.
 
 ## What to skip
 

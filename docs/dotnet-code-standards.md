@@ -121,8 +121,9 @@ if (entity.CustomerUserId != customerUserId.Value)
 
 | Surface | Use for |
 |---|---|
-| GraphQL `/graphql` | Public contract for identity, cases, document **metadata** (ADR-002) |
+| GraphQL `/graphql` | Public contract for identity, cases (incl. `customerEmail`), document **metadata**, case audit (ADR-002) |
 | REST `POST /api/cases/{caseId}/documents` | Multipart upload (intentional; keep it REST) |
+| REST `GET /api/cases/{caseId}/documents/{documentId}` | Authenticated download stream (intentional; keep it REST) |
 | REST `POST /api/register-tenant`, `POST /api/login` | Temporary twins of GraphQL; same Application services; retire when UIs consume GraphQL (DoD) |
 
 Keep `Query` / `Mutation` thin. New fields inherit type-level `[Authorize]` unless you add `[AllowAnonymous]` — do that only for a documented anonymous identity operation.
@@ -140,7 +141,9 @@ GraphQL returns HTTP 200 with `errors[].extensions.code`. Use these codes only:
 | `NOT_FOUND` | Missing **or not visible** |
 | `DOMAIN` | Legal input, illegal state (submit a non-draft) |
 
-REST document download also uses `STORAGE` (HTTP 502) for MinIO/object-store failures — never map those to `VALIDATION`.
+REST document **upload and download** use `STORAGE` (HTTP 502) for MinIO/object-store failures — never map those to `VALIDATION`.
+
+Local browser UIs are allowed via `Cors:AllowedOrigins` (`http://localhost:4200`, `http://localhost:5173`). Do not add `*` or reflect the request Origin. Security headers / HSTS stay W6.
 
 Do not invent `FORBIDDEN`, `CONFLICT`, or leak emails / existence on login. Login failures stay generic (`LoginService.GenericAuthFailure`).
 

@@ -42,13 +42,13 @@ public sealed class CreateDraftCaseService(
         }
 
         // Ensure the JWT subject is a real user in this tenant (FK + tenant consistency).
-        var customerExists = await db.Users
+        var customerEmail = await db.Users
             .AsNoTracking()
-            .AnyAsync(
-                u => u.Id == customerUserId && u.TenantId == tenantId,
-                cancellationToken);
+            .Where(u => u.Id == customerUserId && u.TenantId == tenantId)
+            .Select(u => u.Email)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!customerExists)
+        if (customerEmail is null)
         {
             return (null, Array.Empty<string>(), true);
         }
@@ -79,10 +79,23 @@ public sealed class CreateDraftCaseService(
             now);
         await db.SaveChangesAsync(cancellationToken);
 
-        return (ToResponse(entity), Array.Empty<string>(), false);
+        return (ToResponse(entity, customerEmail), Array.Empty<string>(), false);
     }
 
-    internal static CaseResponse ToResponse(Case entity) =>
+    internal static async Task<string> GetCustomerEmailAsync(
+        AppDbContext db,
+        Guid customerUserId,
+        CancellationToken cancellationToken)
+    {
+        var email = await db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == customerUserId)
+            .Select(u => u.Email)
+            .FirstOrDefaultAsync(cancellationToken);
+        return email ?? string.Empty;
+    }
+
+    internal static CaseResponse ToResponse(Case entity, string customerEmail) =>
         new(
             entity.Id,
             entity.Title,
@@ -90,6 +103,7 @@ public sealed class CreateDraftCaseService(
             entity.FormData,
             entity.TenantId,
             entity.CustomerUserId,
+            customerEmail,
             entity.CreatedAt,
             entity.UpdatedAt,
             entity.SubmittedAt,

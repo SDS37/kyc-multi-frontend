@@ -63,7 +63,7 @@ Every HTTP call, including GraphQL. Application services do not reference these 
 
 ## Today vs target
 
-No OpenTelemetry exporters, no Prometheus scrape, no APM (KYC-104: logs + `/ready` are the MVP signals). CORS and security headers are KYC-091 when the first UI exists — **not** in this folder yet. Rate limits KYC-093 still ahead.
+No OpenTelemetry exporters, no Prometheus scrape, no APM (KYC-104: logs + `/ready` are the MVP signals). CORS for local UIs is registered in `Program.cs` from `Cors:AllowedOrigins` (KYC-091 W4). Security headers / HSTS and rate limits (KYC-093) stay W6.
 
 ## What to skip
 
