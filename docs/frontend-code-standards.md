@@ -144,12 +144,13 @@ flowchart TB
 
   Outlet --> Login["Login<br/><code>app-login</code><br/>OnPush<br/>signals: submitting, formError"]
   Outlet --> CaseList["CaseList<br/><code>app-case-list</code><br/>OnPush<br/>signals: items, filter, loading, …"]
+  Outlet --> CaseReview["CaseReview<br/><code>app-case-review</code><br/>OnPush<br/>signals: detail, actions, …"]
 
-  CaseList -.->|"later KYC-063+"| Presentational["Presentational children<br/><code>input()</code> / <code>output()</code> only"]
+  CaseReview -.->|"optional later"| Presentational["Presentational children<br/><code>input()</code> / <code>output()</code> only"]
 
   classDef dirty fill:#dbeafe,stroke:#2563eb,color:#0f172a
   classDef idle fill:#f1f5f9,stroke:#64748b,color:#0f172a
-  class CaseList dirty
+  class CaseList,CaseReview dirty
   class App,Login,Outlet idle
 ```
 
@@ -158,6 +159,7 @@ flowchart TB
 | Component | Checked? | Why |
 |---|---|---|
 | `CaseList` | Yes | It read/wrote signals the template binds to |
+| `CaseReview` | Only when mounted on `/cases/:id` and its signals change | Lazy route — separate subtree |
 | Presentational child (later) | Only if its `input()` values changed | OnPush + new input references |
 | `App` | No need to re-check the whole app for list data | Outlet host is not dirtied by the list’s signal write |
 | `Login` | Not in the tree on `/cases` | Lazy route — not mounted |

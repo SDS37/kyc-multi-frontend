@@ -101,6 +101,30 @@
   font-size: var(--kyc-text-sm);
 }
 
+.cases__link {
+  color: var(--kyc-color-brand);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cases__link:hover,
+.cases__link:focus-visible {
+  text-decoration: underline;
+}
+
+.cases__row {
+  cursor: pointer;
+}
+
+.cases__row:hover {
+  background: var(--kyc-color-surface);
+}
+
+.cases__row:focus-visible {
+  outline: var(--kyc-focus-ring);
+  outline-offset: -2px;
+}
+
 .cases__status {
   display: inline-block;
   padding: var(--kyc-space-1) var(--kyc-space-2);

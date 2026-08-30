@@ -1,8 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+  normalizeRejectComment,
+  parseCaseDetail,
+  parseCaseFormData,
   parseCasesPage,
   parseStatusFilterValue,
+  resolveReviewActions,
   toCasesLoadError,
+  toDocumentDownloadUrl,
   toListCasesVariables,
 } from './cases.mappers';
 import { CasesLoadError } from './cases.models';
@@ -77,5 +82,90 @@ describe('cases.mappers', () => {
 
   it('toCasesLoadError maps network failures', (): void => {
     expect(toCasesLoadError(new HttpErrorResponse({ status: 0 })).code).toBe('NETWORK');
+  });
+
+  it('resolveReviewActions follows status rules', (): void => {
+    expect(resolveReviewActions('SUBMITTED')).toEqual({
+      canStartReview: true,
+      canApprove: false,
+      canReject: false,
+    });
+    expect(resolveReviewActions('IN_REVIEW')).toEqual({
+      canStartReview: false,
+      canApprove: true,
+      canReject: true,
+    });
+    expect(resolveReviewActions('DRAFT').canStartReview).toBe(false);
+  });
+
+  it('parseCaseFormData orders known keys', (): void => {
+    const fields = parseCaseFormData(
+      JSON.stringify({
+        address: '1 Road',
+        fullName: 'Ada',
+        nationality: 'SE',
+        dateOfBirth: '1990-01-01',
+      }),
+    );
+    expect(fields.map((f) => f.key)).toEqual([
+      'fullName',
+      'dateOfBirth',
+      'nationality',
+      'address',
+    ]);
+  });
+
+  it('parseCaseDetail maps documents and form fields', (): void => {
+    const detail = parseCaseDetail({
+      data: {
+        case: {
+          case: {
+            id: '11111111-1111-1111-1111-111111111111',
+            title: 'Onboarding',
+            status: 'SUBMITTED',
+            formData: '{"fullName":"Ada"}',
+            customerUserId: '22222222-2222-2222-2222-222222222222',
+            customerEmail: 'ada@acme.example',
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-01-02T00:00:00Z',
+            submittedAt: '2026-01-02T00:00:00Z',
+            reviewedAt: null,
+            reviewedBy: null,
+            reviewComment: null,
+          },
+          comments: [],
+          documents: [
+            {
+              id: '33333333-3333-3333-3333-333333333333',
+              fileName: 'id.pdf',
+              contentType: 'application/pdf',
+              sizeBytes: 1200,
+              uploadedAt: '2026-01-02T00:00:00Z',
+              uploadedBy: '22222222-2222-2222-2222-222222222222',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(detail.formFields[0]?.value).toBe('Ada');
+    expect(detail.documents).toHaveLength(1);
+  });
+
+  it('normalizeRejectComment requires non-empty trimmed text', (): void => {
+    expect(normalizeRejectComment('   ').ok).toBe(false);
+    expect(normalizeRejectComment('Missing ID').ok).toBe(true);
+  });
+
+  it('toDocumentDownloadUrl builds REST path', (): void => {
+    expect(
+      toDocumentDownloadUrl(
+        'http://localhost:5295/',
+        '11111111-1111-1111-1111-111111111111',
+        '33333333-3333-3333-3333-333333333333',
+      ),
+    ).toBe(
+      'http://localhost:5295/api/cases/11111111-1111-1111-1111-111111111111/documents/33333333-3333-3333-3333-333333333333',
+    );
   });
 });

@@ -1,0 +1,207 @@
+<main class="review">
+  <header class="review__header">
+    <div>
+      <p class="review__brand">KYC Admin</p>
+      <p class="review__back">
+        <a routerLink="/cases" class="review__back-link">← Back to cases</a>
+      </p>
+      @if (detail(); as caseDetail) {
+        <h1 id="review-heading" class="review__title">{{ caseDetail.title }}</h1>
+        <p class="review__meta">
+          <span class="review__status" [attr.data-status]="caseDetail.status">{{
+            statusLabel()
+          }}</span>
+          <span class="review__email">{{ caseDetail.customerEmail }}</span>
+        </p>
+      } @else {
+        <h1 id="review-heading" class="review__title">Case review</h1>
+      }
+    </div>
+  </header>
+
+  @if (loadError(); as error) {
+    <div class="review__alert" role="alert">
+      <p>{{ error }}</p>
+      @if (caseId) {
+        <button mat-stroked-button type="button" (click)="reload()">Try again</button>
+          } @else {
+            <a routerLink="/cases" class="review__back-link">Back to cases</a>
+          }
+    </div>
+  } @else if (loading()) {
+    <div class="review__loading" role="status" aria-live="polite">
+      <mat-spinner diameter="36" aria-label="Loading case" />
+      <span>Loading case…</span>
+    </div>
+  } @else if (detail(); as caseDetail) {
+    <div class="review__grid">
+      <section class="review__section" aria-labelledby="form-heading">
+        <h2 id="form-heading" class="review__section-title">Application form</h2>
+        @if (caseDetail.formFields.length === 0) {
+          <p class="review__muted" role="status">No form fields on this case.</p>
+        } @else {
+          <dl class="review__dl">
+            @for (field of caseDetail.formFields; track field.key) {
+              <div class="review__dl-row">
+                <dt>{{ field.label }}</dt>
+                <dd>{{ field.value || '—' }}</dd>
+              </div>
+            }
+          </dl>
+        }
+      </section>
+
+      <section class="review__section" aria-labelledby="docs-heading">
+        <h2 id="docs-heading" class="review__section-title">Documents</h2>
+        @if (downloadError(); as dlError) {
+          <div class="review__alert review__alert--inline" role="alert">
+            <p>{{ dlError }}</p>
+          </div>
+        }
+        @if (caseDetail.documents.length === 0) {
+          <p class="review__muted" role="status">No documents uploaded.</p>
+        } @else {
+          <ul class="review__docs">
+            @for (doc of caseDetail.documents; track doc.id) {
+              <li class="review__doc">
+                <div class="review__doc-info">
+                  <span class="review__doc-name">{{ doc.fileName }}</span>
+                  <span class="review__doc-meta">
+                    {{ formatSize(doc.sizeBytes) }} · {{ doc.contentType }} ·
+                    {{ doc.uploadedAt | date: 'medium' }}
+                  </span>
+                </div>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="download(doc)"
+                  [disabled]="downloadingId() === doc.id"
+                  [attr.aria-label]="'Download ' + doc.fileName"
+                >
+                  @if (downloadingId() === doc.id) {
+                    Downloading…
+                  } @else {
+                    Download
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      @if (caseDetail.comments.length > 0 || caseDetail.reviewComment) {
+        <section class="review__section" aria-labelledby="comments-heading">
+          <h2 id="comments-heading" class="review__section-title">Review notes</h2>
+          @if (caseDetail.comments.length > 0) {
+            <ul class="review__comments">
+              @for (comment of caseDetail.comments; track comment.createdAt + comment.authorUserId) {
+                <li>
+                  <p class="review__comment-text">{{ comment.text }}</p>
+                  <p class="review__doc-meta">
+                    {{ comment.createdAt | date: 'medium' }}
+                  </p>
+                </li>
+              }
+            </ul>
+          } @else if (caseDetail.reviewComment) {
+            <p class="review__comment-text">{{ caseDetail.reviewComment }}</p>
+          }
+        </section>
+      }
+
+      <section class="review__section review__actions" aria-labelledby="actions-heading">
+        <h2 id="actions-heading" class="review__section-title">Actions</h2>
+
+        @if (actionError(); as actError) {
+          <div class="review__alert review__alert--inline" role="alert">
+            <p>{{ actError }}</p>
+          </div>
+        }
+
+        @if (actions().canStartReview) {
+          <p class="review__lede">This case is submitted and ready for review.</p>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="startReview()"
+            [disabled]="actionBusy()"
+          >
+            Start review
+          </button>
+        }
+
+        @if (actions().canApprove || actions().canReject) {
+          <div class="review__decide">
+            <mat-form-field appearance="outline" class="review__field" subscriptSizing="dynamic">
+              <mat-label>Optional approve comment</mat-label>
+              <textarea
+                matInput
+                rows="2"
+                [attr.maxlength]="commentMaxLength"
+                [value]="approveComment()"
+                (input)="onApproveCommentInput($event)"
+                aria-describedby="approve-comment-hint"
+              ></textarea>
+              <mat-hint id="approve-comment-hint">Optional when approving</mat-hint>
+            </mat-form-field>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="approve()"
+              [disabled]="actionBusy() || !actions().canApprove"
+            >
+              Approve
+            </button>
+
+            <form class="review__reject" [formGroup]="rejectForm" (ngSubmit)="reject()" novalidate>
+              <mat-form-field appearance="outline" class="review__field" subscriptSizing="dynamic">
+                <mat-label>Reject comment (required)</mat-label>
+                <textarea
+                  matInput
+                  rows="3"
+                  formControlName="comment"
+                  [attr.maxlength]="commentMaxLength"
+                  [attr.aria-invalid]="
+                    rejectForm.controls.comment.invalid && rejectForm.controls.comment.touched
+                  "
+                  [attr.aria-describedby]="
+                    rejectForm.controls.comment.invalid && rejectForm.controls.comment.touched
+                      ? 'reject-comment-error'
+                      : 'reject-comment-hint'
+                  "
+                ></textarea>
+                <mat-hint id="reject-comment-hint">Required to reject · max {{ commentMaxLength }}</mat-hint>
+                @if (rejectForm.controls.comment.hasError('required')) {
+                  <mat-error id="reject-comment-error">A comment is required to reject.</mat-error>
+                } @else if (rejectForm.controls.comment.hasError('maxlength')) {
+                  <mat-error id="reject-comment-error"
+                    >Comment must be at most {{ commentMaxLength }} characters.</mat-error
+                  >
+                }
+              </mat-form-field>
+
+              <button
+                mat-stroked-button
+                color="warn"
+                type="submit"
+                [disabled]="actionBusy() || !actions().canReject"
+              >
+                Reject
+              </button>
+            </form>
+          </div>
+        }
+
+        @if (!actions().canStartReview && !actions().canApprove && !actions().canReject) {
+          <p class="review__muted" role="status">
+            No review actions available for status {{ statusLabel() }}.
+          </p>
+        }
+      </section>
+    </div>
+  }
+</main>
