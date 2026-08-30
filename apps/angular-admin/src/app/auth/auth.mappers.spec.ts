@@ -1,9 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   normalizeLoginCredentials,
+  parseAccessTokenClaims,
   parseLoginSuccess,
   resolvePostLoginUrl,
   toLoginFailedError,
+  toShellSession,
 } from './auth.mappers';
 import { LoginFailedError } from './auth.models';
 
@@ -60,5 +62,46 @@ describe('auth.mappers', () => {
       new HttpErrorResponse({ status: 0 }),
     );
     expect(mapped.code).toBe('NETWORK');
+  });
+
+  it('parseAccessTokenClaims reads email role and tenant_id', (): void => {
+    const payload: string = btoa(
+      JSON.stringify({
+        sub: '11111111-1111-1111-1111-111111111111',
+        tenant_id: '22222222-2222-2222-2222-222222222222',
+        role: 'TenantAdmin',
+        email: 'admin@acme.example',
+      }),
+    )
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    const token: string = `hdr.${payload}.sig`;
+
+    expect(parseAccessTokenClaims(token)).toEqual({
+      subject: '11111111-1111-1111-1111-111111111111',
+      tenantId: '22222222-2222-2222-2222-222222222222',
+      role: 'TenantAdmin',
+      email: 'admin@acme.example',
+    });
+  });
+
+  it('toShellSession prefers tenant slug when present', (): void => {
+    const payload: string = btoa(
+      JSON.stringify({
+        sub: '11111111-1111-1111-1111-111111111111',
+        tenant_id: '22222222-2222-2222-2222-222222222222',
+        role: 'Reviewer',
+        email: 'rev@acme.example',
+      }),
+    )
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    const token: string = `hdr.${payload}.sig`;
+
+    expect(toShellSession(token, 'acme')?.tenantSlug).toBe('acme');
+    expect(toShellSession(token, null)?.tenantSlug).toBeNull();
+    expect(toShellSession(null, 'acme')).toBeNull();
   });
 });

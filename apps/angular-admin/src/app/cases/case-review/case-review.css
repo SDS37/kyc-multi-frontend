@@ -10,13 +10,6 @@
   margin-bottom: var(--kyc-space-5);
 }
 
-.review__brand {
-  margin: 0 0 var(--kyc-space-2);
-  font-size: var(--kyc-text-sm);
-  font-weight: 600;
-  color: var(--kyc-color-brand);
-}
-
 .review__back {
   margin: 0 0 var(--kyc-space-3);
 }

@@ -167,7 +167,7 @@ Their useful thesis for us: **structure the app so illegal dependencies cannot b
 
 Angular 22 components default to **OnPush**. That means a component is checked when something it cares about changes (signal read, `input()` / bound `@Input`, template event, explicit mark) — **not** whenever any ancestor runs change detection. Pair that with **immutable signal updates** so OnPush actually sees the change.
 
-Current `angular-admin` tree (lazy routes under the root outlet):
+Current `angular-admin` tree (lazy routes; authenticated pages nest under `AdminShell`):
 
 ```mermaid
 flowchart TB
@@ -178,15 +178,18 @@ flowchart TB
   App --> Outlet["RouterOutlet"]
 
   Outlet --> Login["Login<br/><code>app-login</code><br/>OnPush<br/>signals: submitting, formError"]
-  Outlet --> CaseList["CaseList<br/><code>app-case-list</code><br/>OnPush<br/>signals: items, filter, loading, …"]
-  Outlet --> CaseReview["CaseReview<br/><code>app-case-review</code><br/>OnPush<br/>signals: detail, actions, …"]
+  Outlet --> Shell["AdminShell<br/><code>app-admin-shell</code><br/>OnPush<br/>signals: session"]
+
+  Shell --> ShellOutlet["child RouterOutlet"]
+  ShellOutlet --> CaseList["CaseList<br/><code>app-case-list</code><br/>OnPush<br/>signals: items, filter, loading, …"]
+  ShellOutlet --> CaseReview["CaseReview<br/><code>app-case-review</code><br/>OnPush<br/>signals: detail, actions, …"]
 
   CaseReview -.->|"optional later"| Presentational["Presentational children<br/><code>input()</code> / <code>output()</code> only"]
 
   classDef dirty fill:#dbeafe,stroke:#2563eb,color:#0f172a
   classDef idle fill:#f1f5f9,stroke:#64748b,color:#0f172a
   class CaseList,CaseReview dirty
-  class App,Login,Outlet idle
+  class App,Login,Outlet,Shell,ShellOutlet idle
 ```
 
 **Isolation example:** `CaseList` does `items.set(page.items)` after a GraphQL load.
@@ -194,7 +197,8 @@ flowchart TB
 | Component | Checked? | Why |
 |---|---|---|
 | `CaseList` | Yes | It read/wrote signals the template binds to |
-| `CaseReview` | Only when mounted on `/cases/:id` and its signals change | Lazy route — separate subtree |
+| `AdminShell` | No (for list data) | Child signal writes do not dirty the shell |
+| `CaseReview` | Only when mounted on `/cases/:id` and its signals change | Lazy child route — separate subtree |
 | Presentational child (later) | Only if its `input()` values changed | OnPush + new input references |
 | `App` | No need to re-check the whole app for list data | Outlet host is not dirtied by the list’s signal write |
 | `Login` | Not in the tree on `/cases` | Lazy route — not mounted |

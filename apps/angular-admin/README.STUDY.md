@@ -84,14 +84,15 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 
 ## Today vs target
 
-| Target | Today (KYC-062) |
+| Target | Today (KYC-064) |
 |---|---|
 | Runnable Angular 22+ app | Yes |
 | Env GraphQL + auth interceptor | Yes |
 | Material + `@kyc/design-tokens` theme | Yes |
 | Login + guards | Yes |
 | Case list + status filter | Yes |
-| Case review / shell chrome | Review done (063); shell later (064) |
+| Case review | Yes (063) |
+| Shell chrome (tenant/user, Cases nav, logout) | Yes (064) |
 | Angular shell composing remotes | Not required for MVP |
 
 ## What to skip

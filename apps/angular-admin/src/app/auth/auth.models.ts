@@ -20,6 +20,31 @@ export interface LoginFormControls {
   password: FormControl<string>;
 }
 
+/** JWT `role` claim values issued by the API. */
+export const APP_ROLES = ['TenantAdmin', 'Reviewer', 'Customer'] as const;
+
+export type AppRole = (typeof APP_ROLES)[number];
+
+export function isAppRole(value: string): value is AppRole {
+  return (APP_ROLES as readonly string[]).includes(value);
+}
+
+/** Display-only claims from the access token (never trust for authorization). */
+export interface AccessTokenClaims {
+  subject: string;
+  tenantId: string;
+  role: AppRole;
+  email: string;
+}
+
+/** Shell header session (JWT claims + login tenant slug). */
+export interface ShellSession {
+  tenantSlug: string | null;
+  tenantId: string;
+  email: string;
+  role: AppRole;
+}
+
 /** User-facing login failure (validation, AUTH_FAILED, or transport). */
 export class LoginFailedError extends Error {
   constructor(

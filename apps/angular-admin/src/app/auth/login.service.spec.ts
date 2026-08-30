@@ -77,6 +77,7 @@ describe('LoginService', () => {
 
     expect(succeeded).toBe(true);
     expect(tokens.getAccessToken()).toBe('jwt-token');
+    expect(tokens.getTenantSlug()).toBe('Acme');
   });
 
   it('maps GraphQL AUTH_FAILED to LoginFailedError without storing a token', (): void => {
