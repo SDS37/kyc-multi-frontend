@@ -55,6 +55,25 @@ describe('Login', () => {
     httpTesting.expectNone(graphqlUrl);
   });
 
+  it('surfaces maxlength errors for overlong fields', (): void => {
+    setFormValues(fixture, {
+      tenantSlug: 't'.repeat(65),
+      email: `${'a'.repeat(250)}@example.com`,
+      password: 'p'.repeat(129),
+    });
+    submitForm(fixture);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Tenant slug must be at most 64 characters.',
+    );
+    expect(fixture.nativeElement.textContent).toContain('Email must be at most 256 characters.');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Password must be at most 128 characters.',
+    );
+    httpTesting.expectNone(graphqlUrl);
+  });
+
   it('stores the token and navigates to /cases on success', (): void => {
     const navigateSpy: MockInstance = vi
       .spyOn(router, 'navigateByUrl')

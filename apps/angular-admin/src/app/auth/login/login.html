@@ -32,6 +32,8 @@
         />
         @if (form.controls.tenantSlug.hasError('required')) {
           <mat-error id="tenantSlug-error">Tenant slug is required.</mat-error>
+        } @else if (form.controls.tenantSlug.hasError('maxlength')) {
+          <mat-error id="tenantSlug-error">Tenant slug must be at most 64 characters.</mat-error>
         }
       </mat-form-field>
 
@@ -49,6 +51,8 @@
         />
         @if (form.controls.email.hasError('required')) {
           <mat-error id="email-error">Email is required.</mat-error>
+        } @else if (form.controls.email.hasError('maxlength')) {
+          <mat-error id="email-error">Email must be at most 256 characters.</mat-error>
         } @else if (form.controls.email.hasError('email')) {
           <mat-error id="email-error">Enter a valid email address.</mat-error>
         }
@@ -70,6 +74,8 @@
         />
         @if (form.controls.password.hasError('required')) {
           <mat-error id="password-error">Password is required.</mat-error>
+        } @else if (form.controls.password.hasError('maxlength')) {
+          <mat-error id="password-error">Password must be at most 128 characters.</mat-error>
         }
       </mat-form-field>
 
