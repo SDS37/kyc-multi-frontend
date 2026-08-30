@@ -8,8 +8,9 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
-| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | Three UI apps (W4 Angular, W5 React, W6 Vue) |
+| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | React customer + Vue reports foundations; Angular login/cases (KYC-061–064) |
 | GraphQL case lifecycle, `cases` / `case` (incl. `customerEmail`), document metadata, `caseAuditEntries`; REST upload + download | Optional user-management APIs; seed data (KYC-101) |
+| Angular admin foundation (KYC-060): standalone 22+, routing, GraphQL env, auth interceptor | |
 | Temporary register/login (JWT) + fail-closed tenant filters | Auth rate limits when leaving localhost (KYC-093) |
 | CORS allow-list for local UIs (`localhost:4200`, `:5173`) — KYC-091 W4 slice | Security headers / HSTS (rest of KYC-091, W6) |
 | Hot Chocolate `/graphql` + `/health` + `/ready`; JSON logs; deny-by-default JWT; introspection/SDL Development-only | GraphQL cost analyzer when list volume grows |

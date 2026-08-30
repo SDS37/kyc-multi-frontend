@@ -38,7 +38,8 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | GraphQL role authorization | Ready (KYC-022; Customer + Reviewer/TenantAdmin case mutations) |
 | Case mutation hardening | Ready (KYC-106; non-owner → `NOT_FOUND`; FormData 64 KiB / depth 8) |
 | CORS (local UIs) | Ready (KYC-091 W4 slice: `localhost:4200`, `localhost:5173`) |
-| Angular / React / Vue apps | Placeholders only |
+| Angular Admin foundation | Ready (KYC-060: Angular 22+, routing, GraphQL env, auth interceptor) |
+| React / Vue apps | Placeholders only |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
 
@@ -59,7 +60,7 @@ Yes — the project is intended to reach the full target (GraphQL, CQRS modular 
 ```
 kyc-multi-frontend/
 ├── apps/
-│   ├── angular-admin/     # Angular shell + admin/reviewer (not scaffolded yet)
+│   ├── angular-admin/     # Angular 22+ admin/reviewer (KYC-060 foundation)
 │   ├── react-customer/    # React customer portal (not scaffolded yet)
 │   ├── vue-reports/       # Vue reports portal (not scaffolded yet)
 │   └── api/               # .NET API + tests (GraphQL + document REST)
@@ -119,6 +120,18 @@ Stop with `docker compose -f infrastructure/docker-compose.yml down`.
 
 See [apps/api/README.md](apps/api/README.md) (config, restore, migrate, `dotnet run`, test). Local HTTP: `http://localhost:5295` (Development only; do not send real secrets over plain HTTP outside local use). PRs that touch the API run GitHub Actions `api-ci`.
 
+### 4. Run Angular Admin (optional)
+
+Requires Node 20.19+ (22 recommended). See [apps/angular-admin/README.md](apps/angular-admin/README.md).
+
+```bash
+cd apps/angular-admin
+npm install
+npm start
+```
+
+App: `http://localhost:4200` (CORS already allowed by the API).
+
 ## Architecture
 
 Diagrams in [docs/architecture.md](docs/architecture.md) describe the **target end state**. Decisions and sequencing live in [ADRs](docs/architecture-decision-records.md).
@@ -159,6 +172,7 @@ flowchart TB
 - [Architecture Decision Records](docs/architecture-decision-records.md)
 - [Commit Convention](docs/commits.md)
 - [.NET code standards](docs/dotnet-code-standards.md)
+- [Frontend code standards](docs/frontend-code-standards.md) (Angular section follows [angular.dev](https://angular.dev/style-guide))
 - [API runbook](apps/api/README.md)
 - [.NET API for frontend engineers](docs/guides/dotnet-api-for-frontend-engineers.md)
 

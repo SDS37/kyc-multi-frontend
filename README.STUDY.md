@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`). The three UIs are still placeholders.
+**Aligned with:** KYC-060 Angular foundation on branch; W4 preflight (CORS + `customerEmail`) on `main`.
 
 Tracked in git so they render on GitHub. They are a tour, not a contract — ADRs and official READMEs win if anything disagrees. Update these files when the code or architecture moves; they can be deleted from the repo later.
 
@@ -55,13 +55,13 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 
 | Target ([architecture](docs/architecture.md), [ADRs](docs/architecture-decision-records.md)) | Today on `main` |
 |---|---|
-| Three UIs + GraphQL API | API is real; UIs are README placeholders |
+| Three UIs + GraphQL API | API is real; **Angular admin foundation** (KYC-060); React/Vue still placeholders |
 | Modular monolith (Identity, Cases, Documents, Audit) | **Layer folders** inside one .NET project; Documents use-cases exist |
 | CQRS + MediatR | Application **services** called from GraphQL / REST upload |
 | GraphQL as the only public API | Cases are GraphQL; **upload is dedicated REST**; login/register still have temporary REST twins |
 | MinIO for KYC files | Compose + API `IObjectStorage` / MinIO (InMemory in tests) |
 
-**What you can say with confidence:** “Week 2 delivered the case lifecycle on Hot Chocolate with fail-closed JWT tenant isolation. Week 3 KYC-040–051 covered documents and audit (write + Reviewer/TenantAdmin case history). Frontends are still ahead.”
+**What you can say with confidence:** “Week 2–3 delivered cases, documents, and audit on Hot Chocolate with fail-closed JWT tenant isolation. KYC-060 scaffolds Angular 22+ admin (routing, GraphQL env, auth interceptor). Login and case UI are still ahead.”
 
 ## Suggested reading order
 
@@ -72,7 +72,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 5. Follow **one mutation** through [Kyc.Api](apps/api/Kyc.Api/README.STUDY.md) → [GraphQL](apps/api/Kyc.Api/GraphQL/README.STUDY.md) → [Application](apps/api/Kyc.Api/Application/README.STUDY.md) → [Domain](apps/api/Kyc.Api/Domain/README.STUDY.md) → [Data](apps/api/Kyc.Api/Data/README.STUDY.md). Then skim [Documents](apps/api/Kyc.Api/Application/Documents/README.STUDY.md) for the REST upload path.
 6. [Tests](apps/api/Kyc.Api.Tests/README.STUDY.md) — especially tenant isolation. This is the sentence isolation conversations hang on.
 7. [api-ci](.github/workflows/README.STUDY.md) — what CI actually proves.
-8. Frontend placeholders last: [angular-admin](apps/angular-admin/README.STUDY.md), [react-customer](apps/react-customer/README.STUDY.md), [vue-reports](apps/vue-reports/README.STUDY.md).
+8. Frontends: [angular-admin](apps/angular-admin/README.STUDY.md) (KYC-060 scaffold), then placeholders [react-customer](apps/react-customer/README.STUDY.md), [vue-reports](apps/vue-reports/README.STUDY.md).
 
 ## What to skip
 

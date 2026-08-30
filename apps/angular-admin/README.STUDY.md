@@ -1,66 +1,73 @@
 # Study: `apps/angular-admin`
 
-Study tour of this folder. Distinct from the official README. Official stub: [README.md](README.md).
+Study tour of this folder. Distinct from the official README. Official runbook: [README.md](README.md).
 
-**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`). **No Angular workspace exists yet** — only this README.
+**Aligned with:** `feat/kyc-060-angular-foundation` / KYC-060 (+ W4 preflight CORS / `customerEmail`).
 
 ## Purpose
 
-This folder is the **future Tenant Admin / Reviewer product** (ADR-004): the UI you are strongest at. Week 4 (KYC-060–064) is when it should become a real `ng` app. Until then, treat it as a named slot in the architecture diagram, not a code review target.
+Tenant Admin / Reviewer product (ADR-004). KYC-060 is the **scaffold**: standalone Angular 22+, routing, env GraphQL URL, token storage, functional auth interceptor. Login and cases are later stories.
 
-## Why the folder exists empty
+## Why these folders exist
 
-The monorepo reserved the path so apps never collide (`angular-admin` vs `react-customer`). Scaffolding too early would rot `package.json` against an API that was still gaining mutations. Week 2 closed the GraphQL case lifecycle — **this is now the right moment to think about the client**, even though code is still ahead.
+| Path | Role |
+|---|---|
+| `src/app/shell/` | Foundation home route (lazy-loaded) |
+| `src/app/auth/` | `TokenStorage` + `authInterceptor` + `SKIP_AUTH` |
+| `src/app/config/` | `APP_CONFIG` injection token |
+| `src/environments/` | Dev/prod API + GraphQL URLs (file replacement) |
 
-## What it will consume (so you design from the contract)
+Feature folders, not `components/` / `services/` type buckets ([frontend code standards](../../docs/frontend-code-standards.md) / [angular.dev style guide](https://angular.dev/style-guide)).
 
-Same API as the other two UIs. You will not get a private BFF.
+## What it consumes
+
+Same API as the other two UIs. No private BFF.
 
 | Need | GraphQL / auth |
 |---|---|
-| Login | `login` mutation → JWT (`sub`, `tenant_id`, `role`, `email`) |
-| Review queue | `cases` with `status` filter; list items include `customerEmail`; Reviewer sees **all tenant** cases |
+| Login | `login` mutation → JWT (`sub`, `tenant_id`, `role`, `email`) — **KYC-061** |
+| Review queue | `cases` with `status` filter; `customerEmail`; Reviewer sees **all tenant** cases |
 | Detail | `case(id)` — FormData, comments, `customerEmail`, document metadata |
-| Download | REST `GET /api/cases/{caseId}/documents/{documentId}` (KYC-042 / KYC-063); same JWT |
-| Start review | `startCaseReview` |
-| Decide | `approveCase` / `rejectCase` (reject requires comment) |
-| Tenant admin extras | User/role management is **not** in the API yet — do not invent REST for it |
+| Download | REST `GET /api/cases/{caseId}/documents/{documentId}` (same JWT) |
+| Start / decide | `startCaseReview`, `approveCase` / `rejectCase` |
 
-Auth header: `Authorization: Bearer <accessToken>`. Tenant id is **not** a query param (ADR-007). An Angular interceptor should attach the JWT; it must **not** attach a client-chosen `tenantId`.
+Auth header: `Authorization: Bearer <accessToken>` via interceptor. Tenant id is **not** a query param (ADR-007).
 
-Role: this app is for `Reviewer` and `TenantAdmin`. A Customer JWT hitting reviewer mutations gets `AUTH_NOT_AUTHORIZED`. Route guards should match that, but **guards are UX**, not security.
+Role: this app is for `Reviewer` and `TenantAdmin`. Guards are UX, not security.
 
 ```mermaid
 flowchart LR
-    Admin["Angular Admin W4"]
+    Admin["Angular Admin"]
     GQL["POST /graphql"]
     Admin -->|"JWT role Reviewer or TenantAdmin"| GQL
 ```
 
-## Module Federation (do not block on it)
+## Module Federation
 
-ADR-005: MVP is **three independent apps**. A shell loading React/Vue remotes is a Week 7 spike. Do not design Week 4 admin as a federation host unless that spike is explicitly in progress.
+ADR-005: MVP is **three independent apps**. Do not design this app as a federation host in W4.
 
-Expected local URL when scaffolded: `http://localhost:4200` (README). CORS for that origin is already on the API (KYC-091 W4 slice). Security headers / HSTS remain W6.
+Local URL: `http://localhost:4200`. CORS: KYC-091.
 
 ## Today vs target
 
-| Target | Today |
+| Target | Today (KYC-060) |
 |---|---|
-| Case list, review, document download | Folder + README |
+| Runnable Angular 22+ app | Yes |
+| Env GraphQL + auth interceptor | Yes |
+| Login / case list / review | Later (061–063) |
 | Angular shell composing remotes | Not required for MVP |
 
 ## What to skip
 
-- Creating `package.json` from this study file — wait for the Week 4 story.
-- Copying domain types by hand forever — prefer codegen from schema once the app exists.
+- Inventing user-management screens
+- Calling MinIO / Postgres from the browser
+- NgModules for features
+- Apollo until a story chooses a GraphQL client (HttpClient POST to `/graphql` is enough to start)
 
 ## Links
 
 - [README.md](README.md)
-- [ADR-004 Angular admin](../../docs/architecture-decision-records.md)
-- [ADR-005 Module Federation deferred](../../docs/architecture-decision-records.md)
+- [Frontend code standards](../../docs/frontend-code-standards.md)
+- [ADR-004 / ADR-005 / ADR-007](../../docs/architecture-decision-records.md)
 - [API GraphQL STUDY](../api/Kyc.Api/GraphQL/README.STUDY.md)
-- [Case visibility](../api/Kyc.Api/Application/Cases/README.STUDY.md)
-- [Angular docs](https://angular.dev/)
-- [Apollo Angular](https://the-guild.dev/graphql/apollo-angular/docs) (likely client; not chosen in-repo yet)
+- [angular.dev](https://angular.dev/)
