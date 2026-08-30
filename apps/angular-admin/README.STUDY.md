@@ -19,7 +19,7 @@ Tenant Admin / Reviewer product (ADR-004). KYC-062 adds the **case list** (statu
 | `src/environments/` | Dev/prod API + GraphQL URLs (file replacement) |
 | `src/material-theme.scss` | Material M3 `mat.theme` + `$overrides` → `--kyc-*` |
 
-Feature folders, not `components/` / `services/` type buckets ([frontend code standards](../../docs/frontend-code-standards.md) / [angular.dev style guide](https://angular.dev/style-guide)).
+Feature folders, not `components/` / `services/` type buckets ([frontend code standards](../../docs/frontend-code-standards.md) / [angular.dev](https://angular.dev/style-guide) / [Angular Architects slice we use](../../docs/frontend-code-standards.md#angular-architects-practices-filtered-for-this-app)).
 
 ## Case list (KYC-062)
 
@@ -87,6 +87,7 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 - Apollo until a story chooses a GraphQL client (HttpClient POST to `/graphql` is enough)
 - NgRx SignalStore during MVP — prefer plain signals / feature services. **After MVP**, use the checklist under [Signals and client state → After MVP](../../docs/frontend-code-standards.md#after-mvp--when-to-extend-with-signalstore) before adding `@ngrx/signals`
 - Mixing side effects into mappers — keep [functional style / purity](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends) (`*.mappers.ts` pure; I/O in services)
+- Component `constructor()` logic / subscriptions — wire in `ngOnInit` (see [Dependency injection](../../docs/frontend-code-standards.md#dependency-injection))
 
 ## Links
 

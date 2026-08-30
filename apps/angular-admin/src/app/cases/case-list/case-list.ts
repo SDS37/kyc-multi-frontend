@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import {
   Component,
+  DestroyRef,
   OnInit,
   WritableSignal,
   computed,
@@ -49,6 +50,7 @@ export class CaseList implements OnInit {
   private readonly casesService: CasesService = inject(CasesService);
   private readonly tokens: TokenStorage = inject(TokenStorage);
   private readonly router: Router = inject(Router);
+  private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
   private readonly reloadRequests: Subject<void> = new Subject<void>();
 
@@ -72,7 +74,7 @@ export class CaseList implements OnInit {
     (): boolean => !this.loading() && this.loadError() === null && this.items().length === 0,
   );
 
-  constructor() {
+  ngOnInit(): void {
     this.reloadRequests
       .pipe(
         tap((): void => {
@@ -91,16 +93,14 @@ export class CaseList implements OnInit {
               }),
             ),
         ),
-        takeUntilDestroyed(),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((page: CaseListPage): void => {
         this.items.set(page.items);
         this.totalCount.set(page.totalCount);
         this.loading.set(false);
       });
-  }
 
-  ngOnInit(): void {
     this.reload();
   }
 
