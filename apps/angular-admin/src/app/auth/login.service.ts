@@ -1,8 +1,12 @@
-import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { APP_CONFIG, AppConfig } from '../config/app-config';
-import { GraphqlError } from '../shared/graphql.models';
+import {
+  normalizeLoginCredentials,
+  parseLoginSuccess,
+  toLoginFailedError,
+} from './auth.mappers';
 import {
   GraphqlLoginBody,
   LoginCredentials,
@@ -24,7 +28,7 @@ const LOGIN_MUTATION: string = `
 
 /**
  * Anonymous GraphQL `login` against the shared API (KYC-061).
- * Writes the JWT into TokenStorage on success; uses SKIP_AUTH so the interceptor stays quiet.
+ * Pure parse/normalize in `auth.mappers`; token write is the intentional side effect here.
  */
 @Injectable({ providedIn: 'root' })
 export class LoginService {
@@ -33,57 +37,25 @@ export class LoginService {
   private readonly tokens: TokenStorage = inject(TokenStorage);
 
   login(credentials: LoginCredentials): Observable<LoginSuccess> {
+    const input: LoginCredentials = normalizeLoginCredentials(credentials);
+
     return this.http
       .post<GraphqlLoginBody>(
         this.config.graphqlUrl,
         {
           query: LOGIN_MUTATION,
-          variables: {
-            input: {
-              tenantSlug: credentials.tenantSlug.trim(),
-              email: credentials.email.trim(),
-              password: credentials.password,
-            },
-          },
+          variables: { input },
         },
         { context: new HttpContext().set(SKIP_AUTH, true) },
       )
       .pipe(
-        map((body: GraphqlLoginBody): LoginSuccess => {
-          const gqlError: GraphqlError | undefined = body.errors?.[0];
-          if (gqlError) {
-            throw new LoginFailedError(
-              gqlError.message?.trim() || 'Sign-in failed. Check your details and try again.',
-              gqlError.extensions?.code,
-            );
-          }
-
-          const login: LoginSuccess | null | undefined = body.data?.login;
-          if (!login?.accessToken) {
-            throw new LoginFailedError('Sign-in failed. Check your details and try again.');
-          }
-
+        map((body: GraphqlLoginBody): LoginSuccess => parseLoginSuccess(body)),
+        tap((login: LoginSuccess): void => {
           this.tokens.setAccessToken(login.accessToken);
-          return login;
         }),
-        catchError((err: unknown): Observable<never> => {
-          if (err instanceof LoginFailedError) {
-            return throwError((): LoginFailedError => err);
-          }
-          if (err instanceof HttpErrorResponse) {
-            return throwError(
-              (): LoginFailedError =>
-                new LoginFailedError(
-                  'Unable to reach the sign-in service. Try again in a moment.',
-                  'NETWORK',
-                ),
-            );
-          }
-          return throwError(
-            (): LoginFailedError =>
-              new LoginFailedError('Sign-in failed. Check your details and try again.'),
-          );
-        }),
+        catchError((err: unknown): Observable<never> =>
+          throwError((): LoginFailedError => toLoginFailedError(err)),
+        ),
       );
   }
 }

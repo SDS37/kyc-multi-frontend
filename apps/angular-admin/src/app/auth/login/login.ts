@@ -5,7 +5,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoginFailedError, LoginFormControls } from '../auth.models';
+import { resolvePostLoginUrl, toLoginFailedError } from '../auth.mappers';
+import { LoginFormControls } from '../auth.models';
 import { LoginService } from '../login.service';
 
 /**
@@ -55,19 +56,11 @@ export class Login {
         // Reset before navigate so a delayed/failed redirect does not leave the CTA disabled.
         this.submitting.set(false);
         const returnUrl: string | null = this.route.snapshot.queryParamMap.get('returnUrl');
-        const target: string =
-          returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')
-            ? returnUrl
-            : '/cases';
-        void this.router.navigateByUrl(target);
+        void this.router.navigateByUrl(resolvePostLoginUrl(returnUrl));
       },
       error: (err: unknown): void => {
         this.submitting.set(false);
-        const message: string =
-          err instanceof LoginFailedError
-            ? err.message
-            : 'Sign-in failed. Check your details and try again.';
-        this.formError.set(message);
+        this.formError.set(toLoginFailedError(err).message);
       },
     });
   }

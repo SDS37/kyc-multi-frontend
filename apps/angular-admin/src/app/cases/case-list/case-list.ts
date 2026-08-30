@@ -14,14 +14,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
 import { TokenStorage } from '../../auth/token-storage';
+import { parseStatusFilterValue, toCasesLoadError } from '../cases.mappers';
 import {
   CASE_STATUSES,
   CASE_STATUS_LABELS,
   CaseListItem,
   CaseStatus,
-  CasesLoadError,
   caseStatusLabel,
-  isCaseStatus,
 } from '../cases.models';
 import { CasesService } from '../cases.service';
 
@@ -81,13 +80,11 @@ export class CaseList implements OnInit {
   }
 
   protected onStatusFilterChange(value: unknown): void {
-    if (value === null) {
-      this.filterStatus(null);
+    const parsed: CaseStatus | null | undefined = parseStatusFilterValue(value);
+    if (parsed === undefined) {
       return;
     }
-    if (typeof value === 'string' && isCaseStatus(value)) {
-      this.filterStatus(value);
-    }
+    this.filterStatus(parsed);
   }
 
   protected reload(): void {
@@ -104,11 +101,7 @@ export class CaseList implements OnInit {
         this.loading.set(false);
         this.items.set([]);
         this.totalCount.set(0);
-        const message: string =
-          err instanceof CasesLoadError
-            ? err.message
-            : 'Unable to load cases. Try again.';
-        this.loadError.set(message);
+        this.loadError.set(toCasesLoadError(err).message);
       },
     });
   }

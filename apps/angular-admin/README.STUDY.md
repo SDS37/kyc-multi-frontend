@@ -12,8 +12,8 @@ Tenant Admin / Reviewer product (ADR-004). KYC-062 adds the **case list** (statu
 
 | Path | Role |
 |---|---|
-| `src/app/auth/` | `auth.models`, `TokenStorage`, interceptor, `SKIP_AUTH`, `LoginService`, guards, login page |
-| `src/app/cases/` | `cases.models` (status + list DTOs), `CasesService`, case list UI |
+| `src/app/auth/` | `auth.models`, `auth.mappers` (pure), `TokenStorage`, interceptor, `LoginService`, guards, login page |
+| `src/app/cases/` | `cases.models`, `cases.mappers` (pure), `CasesService`, case list UI |
 | `src/app/config/` | `config.models` (`AppConfig`), `APP_CONFIG` token |
 | `src/app/shared/` | Cross-feature models (e.g. `graphql.models`) |
 | `src/environments/` | Dev/prod API + GraphQL URLs (file replacement) |
@@ -86,6 +86,7 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 - Bootstrap next to Material
 - Apollo until a story chooses a GraphQL client (HttpClient POST to `/graphql` is enough)
 - NgRx SignalStore during MVP — prefer plain signals / feature services. **After MVP**, use the checklist under [Signals and client state → After MVP](../../docs/frontend-code-standards.md#after-mvp--when-to-extend-with-signalstore) before adding `@ngrx/signals`
+- Mixing side effects into mappers — keep [functional style / purity](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends) (`*.mappers.ts` pure; I/O in services)
 
 ## Links
 
