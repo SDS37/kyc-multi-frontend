@@ -29,10 +29,14 @@ public sealed class ListCaseAuditService(
             return (null, ["Case id is required."], false, false, null, null);
         }
 
-        var tenantId = currentTenant.TenantId;
-        var userId = currentUser.UserId;
-        var role = currentUser.Role;
-        if (tenantId is null || userId is null || role is null)
+        // Resolve caller (JWT + DB user) before role gate so deleted users get AUTH_FAILED, not Forbidden.
+        var (userId, role, unauthorized) = await CaseVisibility.ResolveCallerAsync(
+            db,
+            currentTenant,
+            currentUser,
+            cancellationToken);
+
+        if (unauthorized)
         {
             return (null, Array.Empty<string>(), true, false, null, null);
         }
@@ -42,20 +46,9 @@ public sealed class ListCaseAuditService(
             return (null, Array.Empty<string>(), false, true, null, null);
         }
 
-        var userExists = await db.Users
-            .AsNoTracking()
-            .AnyAsync(
-                u => u.Id == userId && u.TenantId == tenantId,
-                cancellationToken);
-
-        if (!userExists)
-        {
-            return (null, Array.Empty<string>(), true, false, null, null);
-        }
-
         // Tenant filter + reviewer/admin see all tenant cases (CaseVisibility).
         var caseExists = await CaseVisibility
-            .ApplyRoleFilter(db.Cases.AsNoTracking(), role.Value, userId.Value)
+            .ApplyRoleFilter(db.Cases.AsNoTracking(), role, userId)
             .AnyAsync(c => c.Id == caseId, cancellationToken);
 
         if (!caseExists)
@@ -63,11 +56,11 @@ public sealed class ListCaseAuditService(
             return (null, Array.Empty<string>(), false, false, "NOT_FOUND", NotFoundMessage);
         }
 
-        var documentIds = await db.Documents
+        // Keep as IQueryable so EF emits a subquery (no client-side IN list).
+        var documentIds = db.Documents
             .AsNoTracking()
             .Where(d => d.CaseId == caseId)
-            .Select(d => d.Id)
-            .ToListAsync(cancellationToken);
+            .Select(d => d.Id);
 
         var entries = await db.AuditEntries
             .AsNoTracking()
