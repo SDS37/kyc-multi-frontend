@@ -75,6 +75,7 @@ Tests do **not** need the real port: `WebApplicationFactory<Program>` boots the 
 ## Links
 
 - [README.md](README.md) — commands, health vs ready, GraphQL field index
+- [.NET code standards](../../docs/dotnet-code-standards.md)
 - [Frontend .NET guide](../../docs/guides/dotnet-api-for-frontend-engineers.md)
 - [Architecture](../../docs/architecture.md)
 - [ADR-002 GraphQL](../../docs/architecture-decision-records.md) · [ADR-003 modular monolith](../../docs/architecture-decision-records.md)

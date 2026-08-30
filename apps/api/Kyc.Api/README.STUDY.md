@@ -100,7 +100,7 @@ sequenceDiagram
 
 ## Today vs target
 
-`Program.cs` maps **REST** login/register (temporary twins of GraphQL) **and** `POST /api/cases/{caseId}/documents` (permanent dedicated upload — ADR-001). Do not describe login REST as the long-term API; do describe document upload as REST-on-purpose.
+`Program.cs` maps **REST** login/register (temporary twins of GraphQL) **and** document upload/download on `/api/cases/{caseId}/documents` (permanent dedicated byte path — ADR-001 / ADR-002). Do not describe login REST as the long-term API; do describe document bytes as REST-on-purpose.
 
 Health: `/health` = process (liveness). `/ready` = Postgres reachable. Orchestrators restart on liveness failure and stop traffic on readiness failure. [Health checks](https://learn.microsoft.com/aspnet/core/host-and-deploy/health-checks)
 

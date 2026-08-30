@@ -26,7 +26,7 @@ ADR-004/005: three stacks, one API. A Customer route inside Angular admin would 
 
 Do not send `customerUserId` or `tenantId` on create. If a React form includes them, you are fighting ADR-007.
 
-Documents: metadata on GraphQL detail; bytes via the REST upload above (ADR-001). Never expect `StorageKey` in the API response. Download is KYC-042.
+Documents: metadata on GraphQL detail / `documents(caseId)`; bytes via REST upload + download (ADR-001 / ADR-002). Never expect `StorageKey` in the API response. Download: `GET /api/cases/{caseId}/documents/{documentId}` (blob).
 
 ```mermaid
 stateDiagram-v2
