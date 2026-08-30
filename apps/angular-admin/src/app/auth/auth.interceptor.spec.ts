@@ -32,12 +32,12 @@ describe('authInterceptor', () => {
     http = TestBed.inject(HttpClient);
     httpTesting = TestBed.inject(HttpTestingController);
     tokens = TestBed.inject(TokenStorage);
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   afterEach((): void => {
     httpTesting.verify();
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   it('attaches Bearer token for configured API URLs', (): void => {

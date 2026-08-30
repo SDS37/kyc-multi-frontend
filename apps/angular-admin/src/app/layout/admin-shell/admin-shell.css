@@ -1,0 +1,112 @@
+.shell {
+  box-sizing: border-box;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kyc-space-4);
+  padding: var(--kyc-space-3) var(--kyc-page-gutter);
+  border-bottom: 1px solid var(--kyc-color-border);
+  background: var(--kyc-color-surface-raised);
+}
+
+.shell__brand-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kyc-space-4);
+}
+
+.shell__brand {
+  margin: 0;
+  font-size: var(--kyc-text-sm);
+  font-weight: 600;
+  color: var(--kyc-color-brand);
+}
+
+.shell__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--kyc-space-3);
+}
+
+.shell__nav-link {
+  font-size: var(--kyc-text-sm);
+  font-weight: 600;
+  color: var(--kyc-color-text-muted);
+  text-decoration: none;
+  padding: var(--kyc-space-1) var(--kyc-space-2);
+  border-radius: var(--kyc-radius-sm);
+}
+
+.shell__nav-link:hover,
+.shell__nav-link:focus-visible {
+  color: var(--kyc-color-brand);
+  text-decoration: underline;
+}
+
+.shell__nav-link--active {
+  color: var(--kyc-color-brand);
+  background: var(--kyc-color-surface);
+}
+
+.shell__session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--kyc-space-3);
+}
+
+.shell__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kyc-space-2);
+  font-size: var(--kyc-text-sm);
+  color: var(--kyc-color-text-muted);
+}
+
+.shell__tenant {
+  font-weight: 600;
+  color: var(--kyc-color-text);
+}
+
+.shell__email {
+  font-family: var(--kyc-font-mono);
+}
+
+.shell__role {
+  padding: var(--kyc-space-1) var(--kyc-space-2);
+  border-radius: var(--kyc-radius-sm);
+  border: 1px solid var(--kyc-color-border);
+  background: var(--kyc-color-surface);
+  color: var(--kyc-color-text);
+  font-size: var(--kyc-text-xs);
+  font-weight: 600;
+}
+
+.shell__sep {
+  opacity: 0.5;
+}
+
+.shell__content {
+  flex: 1 1 auto;
+}
+
+@media (max-width: 640px) {
+  .shell__header {
+    align-items: flex-start;
+  }
+
+  .shell__session {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

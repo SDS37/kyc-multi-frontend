@@ -51,7 +51,7 @@ export class LoginService {
       .pipe(
         map((body: GraphqlLoginBody): LoginSuccess => parseLoginSuccess(body)),
         tap((login: LoginSuccess): void => {
-          this.tokens.setAccessToken(login.accessToken);
+          this.tokens.setSession(login.accessToken, input.tenantSlug);
         }),
         catchError((err: unknown): Observable<never> =>
           throwError((): LoginFailedError => toLoginFailedError(err)),

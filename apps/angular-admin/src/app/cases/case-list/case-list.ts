@@ -16,7 +16,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { Router, RouterLink } from '@angular/router';
 import { EMPTY, Observable, Subject, catchError, switchMap, tap } from 'rxjs';
-import { TokenStorage } from '../../auth/token-storage';
 import { parseStatusFilterValue, toCasesLoadError } from '../cases.mappers';
 import {
   CASE_STATUSES,
@@ -30,7 +29,7 @@ import { CasesService } from '../cases.service';
 
 /**
  * Reviewer / TenantAdmin case list with status filter (KYC-062).
- * Row opens case review (KYC-063). UI state via signals — no SignalStore.
+ * Row opens case review (KYC-063). Chrome / logout live in AdminShell (KYC-064).
  * Overlapping reloads cancel via `switchMap` so only the latest response updates UI.
  */
 @Component({
@@ -49,7 +48,6 @@ import { CasesService } from '../cases.service';
 })
 export class CaseList implements OnInit {
   private readonly casesService: CasesService = inject(CasesService);
-  private readonly tokens: TokenStorage = inject(TokenStorage);
   private readonly router: Router = inject(Router);
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
@@ -128,10 +126,5 @@ export class CaseList implements OnInit {
 
   protected openCase(row: CaseListItem): void {
     void this.router.navigate(['/cases', row.id]);
-  }
-
-  protected signOut(): void {
-    this.tokens.clearAccessToken();
-    void this.router.navigateByUrl('/login');
   }
 }

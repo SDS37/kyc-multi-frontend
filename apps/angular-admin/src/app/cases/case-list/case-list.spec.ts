@@ -39,7 +39,7 @@ describe('CaseList', () => {
 
   afterEach((): void => {
     httpTesting.verify();
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   it('shows loading then rows with title, customer, status, and updated date', (): void => {
