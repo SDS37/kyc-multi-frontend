@@ -48,7 +48,7 @@ describe('CaseReview', () => {
 
   afterEach((): void => {
     httpTesting.verify();
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   function flushDetail(status: string = 'SUBMITTED'): void {

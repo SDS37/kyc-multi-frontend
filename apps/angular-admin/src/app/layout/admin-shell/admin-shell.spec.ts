@@ -25,7 +25,7 @@ describe('AdminShell', () => {
 
     tokens = TestBed.inject(TokenStorage);
     router = TestBed.inject(Router);
-    tokens.clearAccessToken();
+    tokens.clearSession();
 
     tokens.setSession(
       makeToken({
@@ -42,7 +42,7 @@ describe('AdminShell', () => {
   });
 
   afterEach((): void => {
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   it('shows tenant slug, user email, role, and Cases nav', (): void => {

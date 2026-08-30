@@ -33,12 +33,12 @@ describe('LoginService', () => {
     service = TestBed.inject(LoginService);
     httpTesting = TestBed.inject(HttpTestingController);
     tokens = TestBed.inject(TokenStorage);
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   afterEach((): void => {
     httpTesting.verify();
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   it('posts GraphQL login without Authorization and stores the access token', (): void => {

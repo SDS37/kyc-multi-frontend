@@ -36,13 +36,13 @@ describe('Login', () => {
     httpTesting = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
     tokens = TestBed.inject(TokenStorage);
-    tokens.clearAccessToken();
+    tokens.clearSession();
     fixture.detectChanges();
   });
 
   afterEach((): void => {
     httpTesting.verify();
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   it('shows field errors when submitted empty', (): void => {

@@ -33,12 +33,12 @@ describe('CasesService', () => {
     service = TestBed.inject(CasesService);
     httpTesting = TestBed.inject(HttpTestingController);
     tokens = TestBed.inject(TokenStorage);
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   afterEach((): void => {
     httpTesting.verify();
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   it('lists cases with Bearer token and maps items', (): void => {

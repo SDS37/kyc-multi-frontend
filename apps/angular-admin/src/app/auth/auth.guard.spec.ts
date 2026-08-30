@@ -28,11 +28,11 @@ describe('authGuard', () => {
     });
     tokens = TestBed.inject(TokenStorage);
     router = TestBed.inject(Router);
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   afterEach((): void => {
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   it('allows navigation when a token is present', (): void => {
@@ -63,11 +63,11 @@ describe('guestGuard', () => {
     });
     tokens = TestBed.inject(TokenStorage);
     router = TestBed.inject(Router);
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   afterEach((): void => {
-    tokens.clearAccessToken();
+    tokens.clearSession();
   });
 
   it('allows login when unauthenticated', (): void => {

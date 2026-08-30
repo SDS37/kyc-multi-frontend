@@ -43,7 +43,7 @@ export class AdminShell implements OnInit {
   }
 
   protected signOut(): void {
-    this.tokens.clearAccessToken();
+    this.tokens.clearSession();
     this.sessionState.set(null);
     void this.router.navigateByUrl('/login');
   }

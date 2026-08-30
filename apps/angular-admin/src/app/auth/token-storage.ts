@@ -28,8 +28,14 @@ export class TokenStorage {
     sessionStorage.setItem(TENANT_SLUG_KEY, tenantSlug);
   }
 
-  clearAccessToken(): void {
+  /** Clear JWT and tenant slug (full sign-out). */
+  clearSession(): void {
     sessionStorage.removeItem(ACCESS_TOKEN_KEY);
     sessionStorage.removeItem(TENANT_SLUG_KEY);
+  }
+
+  /** @deprecated Prefer `clearSession()` — also clears tenant slug. */
+  clearAccessToken(): void {
+    this.clearSession();
   }
 }
