@@ -1,9 +1,6 @@
 import { InjectionToken } from '@angular/core';
+import { AppConfig } from './config.models';
 
-/** Runtime API endpoints (from Angular environments). */
-export interface AppConfig {
-  readonly apiBaseUrl: string;
-  readonly graphqlUrl: string;
-}
+export type { AppConfig } from './config.models';
 
 export const APP_CONFIG: InjectionToken<AppConfig> = new InjectionToken<AppConfig>('APP_CONFIG');

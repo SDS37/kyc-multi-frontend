@@ -176,7 +176,7 @@ flowchart TB
 - [Architecture Decision Records](docs/architecture-decision-records.md)
 - [Commit Convention](docs/commits.md)
 - [.NET code standards](docs/dotnet-code-standards.md)
-- [Frontend code standards](docs/frontend-code-standards.md) (Angular section follows [angular.dev](https://angular.dev/style-guide))
+- [Frontend code standards](docs/frontend-code-standards.md) (angular.dev + filtered [Angular Architects](https://www.angulararchitects.io/en/) practices)
 - [UX design tokens & accessibility](docs/ux-design-tokens.md) (`packages/design-tokens`)
 - [API runbook](apps/api/README.md)
 - [.NET API for frontend engineers](docs/guides/dotnet-api-for-frontend-engineers.md)

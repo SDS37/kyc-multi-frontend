@@ -1,23 +1,13 @@
 import { Component, WritableSignal, inject, signal } from '@angular/core';
-import {
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoginFailedError, LoginService } from '../login.service';
-
-interface LoginFormControls {
-  tenantSlug: FormControl<string>;
-  email: FormControl<string>;
-  password: FormControl<string>;
-}
+import { resolvePostLoginUrl, toLoginFailedError } from '../auth.mappers';
+import { LoginFormControls } from '../auth.models';
+import { LoginService } from '../login.service';
 
 /**
  * Admin / reviewer sign-in (KYC-061).
@@ -66,19 +56,11 @@ export class Login {
         // Reset before navigate so a delayed/failed redirect does not leave the CTA disabled.
         this.submitting.set(false);
         const returnUrl: string | null = this.route.snapshot.queryParamMap.get('returnUrl');
-        const target: string =
-          returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')
-            ? returnUrl
-            : '/cases';
-        void this.router.navigateByUrl(target);
+        void this.router.navigateByUrl(resolvePostLoginUrl(returnUrl));
       },
       error: (err: unknown): void => {
         this.submitting.set(false);
-        const message: string =
-          err instanceof LoginFailedError
-            ? err.message
-            : 'Sign-in failed. Check your details and try again.';
-        this.formError.set(message);
+        this.formError.set(toLoginFailedError(err).message);
       },
     });
   }

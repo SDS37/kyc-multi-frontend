@@ -1,4 +1,4 @@
-import { AppConfig } from '../app/config/app-config';
+import { AppConfig } from '../app/config/config.models';
 
 export const environment: AppConfig & { readonly production: boolean } = {
   production: false,

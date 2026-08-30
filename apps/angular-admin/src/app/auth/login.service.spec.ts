@@ -7,7 +7,8 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { APP_CONFIG } from '../config/app-config';
 import { authInterceptor } from './auth.interceptor';
-import { LoginFailedError, LoginService, LoginSuccess } from './login.service';
+import { LoginFailedError, LoginSuccess } from './auth.models';
+import { LoginService } from './login.service';
 import { TokenStorage } from './token-storage';
 
 const apiBaseUrl: string = 'http://localhost:5295';

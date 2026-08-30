@@ -19,7 +19,7 @@ Committed markdown here is the **contract with yourself and reviewers**: what th
 | [DoD.md](DoD.md) | MVP exit criteria (isolation tested, three UIs on one API) | Week-by-week tasks |
 | [commits.md](commits.md) | Commit message format | Design |
 | [dotnet-code-standards.md](dotnet-code-standards.md) | How to write C# in `apps/api` (layers, errors, tenancy, tests) | Why GraphQL / JWT (ADRs); exact `dotnet` commands |
-| [frontend-code-standards.md](frontend-code-standards.md) | How to write UI apps; **Angular** section mirrors [angular.dev](https://angular.dev/style-guide) | API runbook; React/Vue details until those foundations land |
+| [frontend-code-standards.md](frontend-code-standards.md) | How to write UI apps; **Angular** follows angular.dev plus a filtered [Angular Architects](https://www.angulararchitects.io/en/) slice | API runbook; their Agentic UI / Sheriff / MF talks; React/Vue details until those foundations land |
 | [ux-design-tokens.md](ux-design-tokens.md) | Shared color/spacing tokens + a11y baseline for all UIs (MF-safe) | Framework component APIs |
 | [guides/dotnet-api-for-frontend-engineers.md](guides/dotnet-api-for-frontend-engineers.md) | First .NET orientation (csproj vs package.json) | Current field list — it can lag; prefer [apps/api/README.md](../apps/api/README.md) |
 
