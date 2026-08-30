@@ -1,0 +1,26 @@
+<main class="shell">
+  <header class="shell__header">
+    <h1>{{ title }}</h1>
+    <p class="shell__lede">
+      Angular admin foundation (KYC-060). Reviewer / TenantAdmin UI — login and cases come next.
+    </p>
+  </header>
+
+  <section class="shell__config" aria-label="API configuration">
+    <h2>Environment</h2>
+    <dl>
+      <div>
+        <dt>GraphQL</dt>
+        <dd><code>{{ graphqlUrl }}</code></dd>
+      </div>
+      <div>
+        <dt>API base</dt>
+        <dd><code>{{ apiBaseUrl }}</code></dd>
+      </div>
+      <div>
+        <dt>Access token</dt>
+        <dd>{{ hasToken ? 'Present in session storage' : 'Not stored yet (login is KYC-061)' }}</dd>
+      </div>
+    </dl>
+  </section>
+</main>

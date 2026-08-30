@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. These files **are** the project documentation. This note only tells you **how to read them** as a frontend architect.
 
-**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`).
+**Aligned with:** W4 — Angular foundation (KYC-060) + API preflight.
 
 ## Purpose
 
@@ -19,6 +19,7 @@ Committed markdown here is the **contract with yourself and reviewers**: what th
 | [DoD.md](DoD.md) | MVP exit criteria (isolation tested, three UIs on one API) | Week-by-week tasks |
 | [commits.md](commits.md) | Commit message format | Design |
 | [dotnet-code-standards.md](dotnet-code-standards.md) | How to write C# in `apps/api` (layers, errors, tenancy, tests) | Why GraphQL / JWT (ADRs); exact `dotnet` commands |
+| [frontend-code-standards.md](frontend-code-standards.md) | How to write UI apps; **Angular** section mirrors [angular.dev](https://angular.dev/style-guide) | API runbook; React/Vue details until those foundations land |
 | [guides/dotnet-api-for-frontend-engineers.md](guides/dotnet-api-for-frontend-engineers.md) | First .NET orientation (csproj vs package.json) | Current field list — it can lag; prefer [apps/api/README.md](../apps/api/README.md) |
 
 There is no `docs/api/` Swagger dump. The GraphQL schema **is** the API doc (IDE in Development).

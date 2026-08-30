@@ -1,0 +1,48 @@
+# Build and test the Angular admin app on PRs and main.
+name: angular-ci
+
+on:
+  pull_request:
+    paths:
+      - "apps/angular-admin/**"
+      - ".github/workflows/angular-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/angular-admin/**"
+      - ".github/workflows/angular-ci.yml"
+
+concurrency:
+  group: angular-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/angular-admin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: apps/angular-admin/.nvmrc
+          cache: npm
+          cache-dependency-path: apps/angular-admin/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test:ci
