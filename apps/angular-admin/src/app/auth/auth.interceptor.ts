@@ -1,15 +1,21 @@
 import { HttpHandlerFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { APP_CONFIG } from '../config/app-config';
 import { SKIP_AUTH } from './skip-auth';
 import { TokenStorage } from './token-storage';
 
 /**
- * Attaches `Authorization: Bearer <token>` when a token is stored.
+ * Attaches `Authorization: Bearer <token>` for requests to the configured API origin only.
  * Does not send tenant id headers (ADR-007). Skip with `SKIP_AUTH` for anonymous calls.
  * @see https://angular.dev/guide/http/interceptors
  */
 export function authInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn) {
   if (req.context.get(SKIP_AUTH)) {
+    return next(req);
+  }
+
+  const { apiBaseUrl } = inject(APP_CONFIG);
+  if (!isConfiguredApiRequest(req.url, apiBaseUrl)) {
     return next(req);
   }
 
@@ -23,4 +29,15 @@ export function authInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn) 
       setHeaders: { Authorization: `Bearer ${token}` },
     }),
   );
+}
+
+/** True when the request targets the configured .NET API (GraphQL or REST under apiBaseUrl). */
+export function isConfiguredApiRequest(requestUrl: string, apiBaseUrl: string): boolean {
+  const base = apiBaseUrl.replace(/\/$/, '');
+  try {
+    const absolute = new URL(requestUrl, typeof window !== 'undefined' ? window.location.origin : base);
+    return absolute.href === base || absolute.href.startsWith(`${base}/`);
+  } catch {
+    return false;
+  }
 }
