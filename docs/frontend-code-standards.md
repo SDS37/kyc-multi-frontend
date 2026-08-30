@@ -260,6 +260,7 @@ If an Angular Architects article and an ADR disagree, the ADR wins. If it disagr
 - Keep lifecycle hooks thin; implement the lifecycle interfaces (`OnInit`, etc.) when used
 - Avoid heavy logic in templates — move complexity into the class (e.g. `computed`)
 - Wire RxJS / first-load requests in `ngOnInit` (or later hooks), not in `constructor()`
+- Any long-lived or fire-and-forget HTTP `.subscribe` in a component must use `takeUntilDestroyed(this.destroyRef)` (or an equivalent `DestroyRef` teardown) so callbacks do not touch signals after destroy
 
 ```typescript
 // ✅ GOOD — inject fields; subscribe in ngOnInit

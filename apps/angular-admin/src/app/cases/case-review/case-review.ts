@@ -190,33 +190,38 @@ export class CaseReview implements OnInit {
     this.downloadError.set(null);
     this.downloadingId.set(doc.id);
 
-    this.casesService.downloadDocument(this.caseId, doc.id).subscribe({
-      next: (blob: Blob): void => {
-        this.downloadingId.set(null);
-        triggerBlobDownload(blob, doc.fileName);
-      },
-      error: (err: unknown): void => {
-        this.downloadingId.set(null);
-        this.downloadError.set(toCaseDownloadError(err).message);
-      },
-    });
+    this.casesService
+      .downloadDocument(this.caseId, doc.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob: Blob): void => {
+          this.downloadingId.set(null);
+          triggerBlobDownload(blob, doc.fileName);
+        },
+        error: (err: unknown): void => {
+          this.downloadingId.set(null);
+          this.downloadError.set(toCaseDownloadError(err).message);
+        },
+      });
   }
 
   private runAction(factory: () => Observable<unknown>): void {
     this.actionBusy.set(true);
     this.actionError.set(null);
-    factory().subscribe({
-      next: (): void => {
-        this.actionBusy.set(false);
-        this.rejectForm.reset({ comment: '' });
-        this.approveComment.set('');
-        this.reload();
-      },
-      error: (err: unknown): void => {
-        this.actionBusy.set(false);
-        this.actionError.set(toCaseActionError(err).message);
-      },
-    });
+    factory()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (): void => {
+          this.actionBusy.set(false);
+          this.rejectForm.reset({ comment: '' });
+          this.approveComment.set('');
+          this.reload();
+        },
+        error: (err: unknown): void => {
+          this.actionBusy.set(false);
+          this.actionError.set(toCaseActionError(err).message);
+        },
+      });
   }
 }
 
