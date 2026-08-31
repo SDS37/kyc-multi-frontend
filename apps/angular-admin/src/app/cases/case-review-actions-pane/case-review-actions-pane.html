@@ -45,7 +45,9 @@
         {{ copy.approve }}
       </button>
 
-      <form class="pane__reject" (submit)="$event.preventDefault(); reject.emit()">
+      <!-- novalidate: [formField] mirrors schema `required` onto the control; without this the
+           browser blocks submit and Reject never reaches CaseReview. -->
+      <form class="pane__reject" novalidate (submit)="$event.preventDefault(); reject.emit()">
         @let commentField = rejectCommentField();
         <mat-form-field appearance="outline" class="pane__field" subscriptSizing="dynamic">
           <mat-label>{{ copy.rejectCommentLabel }}</mat-label>

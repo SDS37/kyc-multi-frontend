@@ -93,7 +93,14 @@ export class CaseReview {
   protected readonly downloadError: WritableSignal<string | null> = signal(null);
   protected readonly downloadingId: WritableSignal<string | null> = signal(null);
 
-  protected readonly detail = computed((): CaseDetail | null => this.caseResource.value() ?? null);
+  protected readonly detail = computed((): CaseDetail | null => {
+    // Never call `.value()` while the resource is in error — it throws ResourceValueError
+    // and breaks the template (header binds `detail()` outside the loadError branch).
+    if (!this.caseResource.hasValue()) {
+      return null;
+    }
+    return this.caseResource.value() ?? null;
+  });
 
   protected readonly loading = computed((): boolean => this.caseResource.isLoading());
 

@@ -125,6 +125,22 @@ describe('CaseReview', () => {
     httpTesting.expectNone(graphqlUrl);
   });
 
+  it('shows an error when the case is not found', async (): Promise<void> => {
+    expect(fixture.nativeElement.textContent).toContain('Loading case');
+    httpTesting.expectOne(graphqlUrl).flush({
+      errors: [{ message: 'Case was not found.', extensions: { code: 'NOT_FOUND' } }],
+      data: null,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alertText: string =
+      (fixture.nativeElement.querySelector('[role="alert"]')?.textContent as string | undefined) ??
+      '';
+    expect(alertText).toContain('Case was not found');
+    expect(fixture.nativeElement.textContent).not.toContain('Loading case');
+  });
+
   it('starts review then reloads detail', async (): Promise<void> => {
     await flushDetail('SUBMITTED');
     fixture.componentInstance['startReview']();
