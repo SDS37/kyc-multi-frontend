@@ -113,6 +113,15 @@ export function parseAccessTokenClaims(accessToken: string): AccessTokenClaims |
     return null;
   }
 
+  const exp: unknown = record['exp'];
+  if (typeof exp !== 'number' || !Number.isFinite(exp)) {
+    return null;
+  }
+  // JWT exp is seconds since epoch; reject expired tokens for shell/guards.
+  if (exp * 1000 <= Date.now()) {
+    return null;
+  }
+
   return {
     subject,
     tenantId,

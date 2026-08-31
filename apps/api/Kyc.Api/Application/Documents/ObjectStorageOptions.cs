@@ -5,8 +5,8 @@ public sealed class ObjectStorageOptions
     public const string SectionName = "ObjectStorage";
 
     /// <summary>
-    /// <c>Minio</c> when fully configured; blank or <c>InMemory</c> uses the in-process store
-    /// (tests, design-time, and hosts that have not configured MinIO yet — see Program.cs).
+    /// Required. <c>Minio</c> for local/prod hosts; <c>InMemory</c> only in Development/Testing.
+    /// Empty provider fails closed at startup (see Program.cs) — copy appsettings.Development.json.example.
     /// </summary>
     public string Provider { get; set; } = string.Empty;
 

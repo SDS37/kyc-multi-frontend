@@ -1,5 +1,6 @@
 import { appConfig } from '../config/app-config';
 import type { GraphqlError, GraphqlResponse } from './graphql.models';
+import { notifySessionCleared } from '../auth/session-events';
 import { tokenStorage } from '../auth/token-storage';
 
 /** Auth attachment options for GraphQL and REST helpers. */
@@ -11,7 +12,7 @@ export interface ApiAuthOptions {
 /**
  * Typed GraphQL POST helper (KYC-070).
  * Attaches Authorization when a session token exists unless skipAuth is set.
- * Clears the session on HTTP 401.
+ * Clears the session on HTTP 401 or GraphQL AUTH_NOT_AUTHENTICATED.
  */
 export async function graphqlRequest<TData>(
   query: string,
@@ -22,7 +23,7 @@ export async function graphqlRequest<TData>(
     'Content-Type': 'application/json',
   });
 
-  if (!options.skipAuth) {
+  if (!options.skipAuth && isConfiguredApiUrl(appConfig.graphqlUrl)) {
     const token: string | null = tokenStorage.getAccessToken();
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
@@ -42,7 +43,9 @@ export async function graphqlRequest<TData>(
   }
 
   const raw: unknown = await response.json();
-  return parseGraphqlResponse<TData>(raw);
+  const parsed: GraphqlResponse<TData> = parseGraphqlResponse<TData>(raw);
+  clearSessionOnGraphqlAuthFailure(parsed.errors);
+  return parsed;
 }
 
 /** REST helper under apiBaseUrl with the same JWT attachment rules. */
@@ -52,25 +55,50 @@ export async function apiFetch(
   options: ApiAuthOptions = {},
 ): Promise<Response> {
   const headers: Headers = new Headers(init.headers);
-  if (!options.skipAuth) {
+  const url: string = path.startsWith('http')
+    ? path
+    : `${appConfig.apiBaseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+
+  if (!options.skipAuth && isConfiguredApiUrl(url)) {
     const token: string | null = tokenStorage.getAccessToken();
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
   }
 
-  const url: string = path.startsWith('http')
-    ? path
-    : `${appConfig.apiBaseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
-
   const response: Response = await fetch(url, { ...init, headers });
   clearSessionOnUnauthorized(response);
   return response;
 }
 
+/** True when the URL is under the configured API origin (Angular interceptor parity). */
+export function isConfiguredApiUrl(requestUrl: string): boolean {
+  const base: string = appConfig.apiBaseUrl.replace(/\/$/, '');
+  try {
+    const absolute: URL = new URL(requestUrl, typeof window !== 'undefined' ? window.location.origin : base);
+    return absolute.href === base || absolute.href.startsWith(`${base}/`);
+  } catch {
+    return false;
+  }
+}
+
 function clearSessionOnUnauthorized(response: Response): void {
   if (response.status === 401) {
     tokenStorage.clearSession();
+    notifySessionCleared();
+  }
+}
+
+function clearSessionOnGraphqlAuthFailure(errors: GraphqlError[] | undefined): void {
+  if (!errors?.length) {
+    return;
+  }
+  const expired: boolean = errors.some(
+    (err: GraphqlError): boolean => err.extensions?.code === 'AUTH_NOT_AUTHENTICATED',
+  );
+  if (expired) {
+    tokenStorage.clearSession();
+    notifySessionCleared();
   }
 }
 

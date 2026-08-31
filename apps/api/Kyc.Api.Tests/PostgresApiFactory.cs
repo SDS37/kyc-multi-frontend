@@ -53,5 +53,6 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Jwt:ExpiresMinutes", "60");
         builder.UseSetting("ObjectStorage:Provider", "InMemory");
         builder.UseSetting("ObjectStorage:BucketName", "kyc-documents");
+        builder.UseSetting("Registration:AllowPublicRegistration", "true");
     }
 }

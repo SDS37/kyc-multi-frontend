@@ -56,25 +56,25 @@ public sealed partial class UploadDocumentService(
 
         var tenantId = currentTenant.TenantId;
         var userId = currentUser.UserId;
-        var role = currentUser.Role;
-        if (tenantId is null || userId is null || role is null)
+        if (tenantId is null || userId is null)
         {
             return (null, Array.Empty<string>(), true, false, null, null);
         }
 
-        if (role != UserRole.Customer)
+        var allowed = await CallerAuthorization.EnsureUserWithRolesAsync(
+            db,
+            tenantId.Value,
+            userId.Value,
+            currentUser.Role,
+            [UserRole.Customer],
+            cancellationToken);
+        if (!allowed)
         {
-            return (null, Array.Empty<string>(), false, true, null, null);
-        }
+            if (currentUser.Role is not null and not UserRole.Customer)
+            {
+                return (null, Array.Empty<string>(), false, true, null, null);
+            }
 
-        var userExists = await db.Users
-            .AsNoTracking()
-            .AnyAsync(
-                u => u.Id == userId && u.TenantId == tenantId,
-                cancellationToken);
-
-        if (!userExists)
-        {
             return (null, Array.Empty<string>(), true, false, null, null);
         }
 
@@ -204,7 +204,14 @@ public sealed partial class UploadDocumentService(
         catch (Exception ex)
         {
             LogDocumentMetadataSaveFailed(logger, ex, documentId);
-            await objectStorage.DeleteAsync(storageKey, cancellationToken);
+            try
+            {
+                await objectStorage.DeleteAsync(storageKey, cancellationToken);
+            }
+            catch (Exception deleteEx)
+            {
+                LogDocumentOrphanCleanupFailed(logger, deleteEx, storageKey);
+            }
             return (null, ["Could not save document metadata. Please try again."], false, false, null, null);
         }
 
@@ -230,6 +237,11 @@ public sealed partial class UploadDocumentService(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Document metadata save failed for {DocumentId}; compensating delete")]
     private static partial void LogDocumentMetadataSaveFailed(ILogger logger, Exception ex, Guid documentId);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Compensating object-storage delete failed for key {StorageKey}; object may be orphaned")]
+    private static partial void LogDocumentOrphanCleanupFailed(ILogger logger, Exception ex, string storageKey);
 
     [LoggerMessage(
         Level = LogLevel.Information,

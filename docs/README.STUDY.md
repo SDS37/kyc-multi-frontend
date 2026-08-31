@@ -37,7 +37,7 @@ This folder is the architecture decision log you wish every Angular repo kept: A
 
 ## Today vs target
 
-Architecture diagrams include Angular/React/Vue and Audit **modules** that are not code yet. Documents **metadata + upload** exist in the API; UI apps do not. Citing empty UI folders as implemented is the main way to sound wrong in a review.
+Architecture diagrams include Angular/React/Vue and Audit **modules**. API + Angular admin + React customer are real; Vue reports is still empty. Citing empty UI folders as implemented is the main way to sound wrong in a review.
 
 ADR-008: no formal AI context packs for MVP. `README.STUDY.md` files are a **tour of the tree**, not a versioned agent context pack — they do not contradict that ADR. Keep them aligned with the code; delete them from the repo when they are no longer useful.
 

@@ -128,7 +128,7 @@ public sealed class PostgresIntegrationTests(PostgresApiFactory factory) : IClas
                       "tenantName": "Dup Co",
                       "tenantSlug": "{{slug}}",
                       "adminEmail": "a@{{slug}}.example",
-                      "adminPassword": "ChangeMe1"
+                      "adminPassword": "ChangeMe1234"
                     }
                   }
                 }

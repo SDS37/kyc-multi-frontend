@@ -15,6 +15,9 @@ public sealed class ProductionApiFactory : ApiFactory
     {
         base.ConfigureWebHost(builder);
         builder.UseEnvironment("Production");
+        // Test host still uses InMemory SQLite + object store; allow that outside Development.
+        builder.UseSetting("ObjectStorage:AllowInMemoryOutsideDevelopment", "true");
+        builder.UseSetting("Registration:AllowInProduction", "true");
     }
 }
 
@@ -101,7 +104,7 @@ public sealed class GraphQlHostHardeningTests(ApiFactory development, Production
                   "tenantName": "Host Co",
                   "tenantSlug": "{{slug}}",
                   "adminEmail": "a@{{slug}}.example",
-                  "adminPassword": "ChangeMe1"
+                  "adminPassword": "ChangeMe1234"
                 }
               }
             }
@@ -115,7 +118,7 @@ public sealed class GraphQlHostHardeningTests(ApiFactory development, Production
                 "input": {
                   "tenantSlug": "{{slug}}",
                   "email": "a@{{slug}}.example",
-                  "password": "ChangeMe1"
+                  "password": "ChangeMe1234"
                 }
               }
             }

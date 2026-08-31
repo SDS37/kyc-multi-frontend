@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Threading.RateLimiting;
 using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Documents;
@@ -14,7 +15,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
@@ -74,10 +77,25 @@ builder.WebHost.ConfigureKestrel(options =>
 var objectStorageSection = builder.Configuration.GetSection(ObjectStorageOptions.SectionName);
 builder.Services.Configure<ObjectStorageOptions>(objectStorageSection);
 var objectStorageOptions = objectStorageSection.Get<ObjectStorageOptions>() ?? new ObjectStorageOptions();
-if (string.IsNullOrWhiteSpace(objectStorageOptions.Provider) ||
-    string.Equals(objectStorageOptions.Provider, "InMemory", StringComparison.OrdinalIgnoreCase))
+if (string.IsNullOrWhiteSpace(objectStorageOptions.Provider))
 {
-    // Tests, design-time (`dotnet ef`), and hosts that have not configured MinIO yet.
+    throw new InvalidOperationException(
+        "ObjectStorage:Provider is required. Use Minio for local/prod hosts or InMemory for tests. " +
+        "Copy appsettings.Development.json.example or set ObjectStorage__Provider.");
+}
+
+if (string.Equals(objectStorageOptions.Provider, "InMemory", StringComparison.OrdinalIgnoreCase))
+{
+    var allowInMemoryOutsideDev =
+        builder.Configuration.GetValue("ObjectStorage:AllowInMemoryOutsideDevelopment", false);
+    if (!builder.Environment.IsDevelopment() &&
+        !builder.Environment.IsEnvironment("Testing") &&
+        !allowInMemoryOutsideDev)
+    {
+        throw new InvalidOperationException(
+            "ObjectStorage:Provider InMemory is only allowed in Development or Testing. Use Minio for other environments.");
+    }
+
     builder.Services.AddSingleton<IObjectStorage, InMemoryObjectStorage>();
 }
 else if (string.Equals(objectStorageOptions.Provider, "Minio", StringComparison.OrdinalIgnoreCase))
@@ -168,6 +186,20 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.Configure<RegistrationOptions>(
+    builder.Configuration.GetSection(RegistrationOptions.SectionName));
+var registrationOptions = builder.Configuration
+    .GetSection(RegistrationOptions.SectionName)
+    .Get<RegistrationOptions>() ?? new RegistrationOptions();
+if (registrationOptions.AllowPublicRegistration &&
+    !builder.Environment.IsDevelopment() &&
+    !registrationOptions.AllowInProduction)
+{
+    throw new InvalidOperationException(
+        "Registration:AllowPublicRegistration is true outside Development. " +
+        "Set Registration:AllowInProduction=true only as an explicit break-glass, or disable public registration.");
+}
+
 builder.Services.AddScoped<RegisterTenantService>();
 builder.Services.AddScoped<LoginService>();
 builder.Services.AddScoped<CreateDraftCaseService>();
@@ -194,12 +226,66 @@ builder.Services
     .ModifyRequestOptions(options =>
         options.IncludeExceptionDetails = builder.Environment.IsDevelopment());
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Development: trust local reverse proxies so rate-limit partitions use the real client IP.
+    // Production: keep KnownProxies/Networks defaults (or set them explicitly) — do not clear blindly.
+    if (builder.Environment.IsDevelopment())
+    {
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    }
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Strict bucket for REST login / register (and any endpoint tagged "auth").
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // Separate GraphQL bucket so normal UI traffic does not share login's 30/min limit.
+    var graphqlPermit = builder.Environment.IsDevelopment() ? 120 : 60;
+    options.AddPolicy("graphql", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = graphqlPermit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
 }
+else
+{
+    app.UseHsts();
+}
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    await next();
+});
 
 app.UseMiddleware<RequestCorrelationMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
@@ -210,6 +296,7 @@ if (corsOrigins.Length > 0)
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseRequestTimeouts();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
@@ -226,6 +313,7 @@ app.MapHealthChecks("/ready", new HealthCheckOptions
 // field auth (Query/Mutation [Authorize] + [AllowAnonymous]) enforces deny-by-default.
 app.MapGraphQL("/graphql")
     .AllowAnonymous()
+    .RequireRateLimiting("graphql")
     .WithOptions(options =>
     {
         var development = app.Environment.IsDevelopment();
@@ -252,6 +340,7 @@ app.MapPost("/api/register-tenant", async (
 })
 .WithName("RegisterTenant")
 .AllowAnonymous()
+.RequireRateLimiting("auth")
 .DisableAntiforgery();
 
 app.MapPost("/api/login", async (
@@ -276,6 +365,7 @@ app.MapPost("/api/login", async (
 })
 .WithName("Login")
 .AllowAnonymous()
+.RequireRateLimiting("auth")
 .DisableAntiforgery();
 
 // Document upload (KYC-040) — multipart bytes on REST; metadata via GraphQL case detail.

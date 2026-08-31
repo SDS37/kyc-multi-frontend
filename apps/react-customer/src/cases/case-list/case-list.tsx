@@ -90,7 +90,7 @@ export function CaseList(): ReactElement {
     ? copy.loading
     : loadError !== null
       ? null
-      : casesCountLabel(totalCount);
+      : casesCountLabel(items.length, totalCount);
   const emptyMessage: string = statusFilter
     ? casesEmptyForStatusLabel(statusFilter)
     : copy.emptyAll;

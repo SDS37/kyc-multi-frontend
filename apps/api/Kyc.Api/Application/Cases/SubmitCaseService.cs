@@ -4,6 +4,7 @@ using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
+using Kyc.Api.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kyc.Api.Application.Cases;
@@ -32,13 +33,14 @@ public sealed class SubmitCaseService(
             return (null, Array.Empty<string>(), true, null, null);
         }
 
-        var customerExists = await db.Users
-            .AsNoTracking()
-            .AnyAsync(
-                u => u.Id == customerUserId && u.TenantId == tenantId,
-                cancellationToken);
-
-        if (!customerExists)
+        var allowed = await CallerAuthorization.EnsureUserWithRolesAsync(
+            db,
+            tenantId.Value,
+            customerUserId.Value,
+            currentUser.Role,
+            [UserRole.Customer],
+            cancellationToken);
+        if (!allowed)
         {
             return (null, Array.Empty<string>(), true, null, null);
         }

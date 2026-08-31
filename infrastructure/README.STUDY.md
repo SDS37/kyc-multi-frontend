@@ -62,7 +62,7 @@ Volumes (`postgres_data`, …) survive `compose down` without `-v`. Data persist
 | MinIO | `ObjectStorage:Provider=Minio` in Dev settings; S3-compatible put/delete |
 | Redis | Compose only — no client in the API yet |
 
-Blank / missing `ObjectStorage:Provider` → **InMemory** store (tests and hosts that have not configured MinIO). That is intentional so `dotnet ef` and CI SQLite tests do not need MinIO.
+Blank / missing `ObjectStorage:Provider` **fails closed at startup**. Use `Minio` (local Dev example) or `InMemory` only in Development/Testing. Copy `appsettings.Development.json.example`.
 
 ## What to skip
 

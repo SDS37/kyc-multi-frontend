@@ -40,8 +40,10 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Case mutation hardening | Ready (KYC-106; non-owner → `NOT_FOUND`; FormData 64 KiB / depth 8) |
 | CORS (local UIs) | Ready (KYC-091 W4 slice: `localhost:4200`, `localhost:5173`) |
 | Angular Admin foundation | Ready (KYC-060: Angular 22+, routing, GraphQL env, auth interceptor) |
-| Shared UX design tokens | Ready (`packages/design-tokens`; used by Angular; React/Vue later) |
-| React / Vue apps | Placeholders only |
+| Shared UX design tokens | Ready (`packages/design-tokens`; Angular + React) |
+| Angular Admin | Ready (KYC-060–065: login, shell, case list, review) |
+| React Customer | Ready (KYC-070–072: login, shell, my cases + create draft) |
+| Vue Reports | Placeholder only (KYC-080) |
 
 Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
 
@@ -133,6 +135,20 @@ cd apps/angular-admin
 npm install
 npm start
 ```
+
+App: `http://localhost:4200`.
+
+### 5. Run React Customer (optional)
+
+Same Node requirement. See [apps/react-customer/README.md](apps/react-customer/README.md).
+
+```bash
+cd apps/react-customer
+npm install
+npm start
+```
+
+App: `http://localhost:5173` (CORS already allows this origin).
 
 App: `http://localhost:4200` (CORS already allowed by the API). PRs that touch the Angular app run GitHub Actions `angular-ci`.
 

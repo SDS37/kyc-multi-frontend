@@ -1,6 +1,8 @@
-import { Component, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { appRoleLabel, toShellSession } from '../../auth/auth.mappers';
 import { ShellSession } from '../../auth/auth.models';
 import { TokenStorage } from '../../auth/token-storage';
@@ -19,6 +21,7 @@ import { SHELL_MESSAGES, tenantIdTitle } from '../shell.messages';
 export class AdminShell implements OnInit {
   private readonly tokens: TokenStorage = inject(TokenStorage);
   private readonly router: Router = inject(Router);
+  private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
   private readonly sessionState: WritableSignal<ShellSession | null> = signal(null);
 
@@ -45,14 +48,26 @@ export class AdminShell implements OnInit {
   });
 
   ngOnInit(): void {
-    this.sessionState.set(
-      toShellSession(this.tokens.getAccessToken(), this.tokens.getTenantSlug()),
-    );
+    this.syncSession();
+    this.router.events
+      .pipe(
+        filter((event: unknown): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((): void => {
+        this.syncSession();
+      });
   }
 
   protected signOut(): void {
     this.tokens.clearSession();
     this.sessionState.set(null);
     void this.router.navigateByUrl('/login');
+  }
+
+  private syncSession(): void {
+    this.sessionState.set(
+      toShellSession(this.tokens.getAccessToken(), this.tokens.getTenantSlug()),
+    );
   }
 }

@@ -1,7 +1,9 @@
 import type { ReactElement } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate, type NavigateFunction } from 'react-router';
 import { appRoleLabel } from '../auth/auth.mappers';
 import type { ShellSession } from '../auth/auth.models';
+import { onSessionCleared } from '../auth/session-events';
 import { getValidShellSession } from '../auth/session';
 import { tokenStorage } from '../auth/token-storage';
 import { SHELL_MESSAGES, type ShellMessages, tenantIdTitle } from './shell.messages';
@@ -14,13 +16,20 @@ import styles from './customer-shell.module.css';
 export function CustomerShell(): ReactElement {
   const copy: ShellMessages = SHELL_MESSAGES;
   const navigate: NavigateFunction = useNavigate();
-  const session: ShellSession | null = getValidShellSession();
+  const [session, setSession] = useState<ShellSession | null>(() => getValidShellSession());
+
+  useEffect(() => {
+    return onSessionCleared((): void => {
+      setSession(null);
+    });
+  }, []);
 
   const tenantLabel: string =
     session?.tenantSlug?.trim() || session?.tenantId || '';
 
   function signOut(): void {
     tokenStorage.clearSession();
+    setSession(null);
     void navigate('/login', { replace: true });
   }
 

@@ -51,7 +51,7 @@ public sealed class LoginTimingTests(LoginTimingApiFactory factory) : IClassFixt
         var slug = await RegisterAsync(client, "miss-user");
         var before = factory.Hasher.VerifyCount;
 
-        var payload = await PostGraphqlAsync(client, LoginBody(slug, "nobody@miss.example", "ChangeMe1"));
+        var payload = await PostGraphqlAsync(client, LoginBody(slug, "nobody@miss.example", "ChangeMe1234"));
         Assert.Contains("AUTH_FAILED", payload.GetProperty("errors").ToString(), StringComparison.Ordinal);
         Assert.True(factory.Hasher.VerifyCount > before, "missing user must still call VerifyHashedPassword");
     }
@@ -64,7 +64,7 @@ public sealed class LoginTimingTests(LoginTimingApiFactory factory) : IClassFixt
 
         var payload = await PostGraphqlAsync(
             client,
-            LoginBody("no-such-tenant", "a@example.com", "ChangeMe1"));
+            LoginBody("no-such-tenant", "a@example.com", "ChangeMe1234"));
         Assert.Contains("AUTH_FAILED", payload.GetProperty("errors").ToString(), StringComparison.Ordinal);
         Assert.True(factory.Hasher.VerifyCount > before, "missing tenant must still call VerifyHashedPassword");
     }
@@ -84,7 +84,7 @@ public sealed class LoginTimingTests(LoginTimingApiFactory factory) : IClassFixt
         }
 
         var before = factory.Hasher.VerifyCount;
-        var payload = await PostGraphqlAsync(client, LoginBody(slug, $"a@{slug}.example", "ChangeMe1"));
+        var payload = await PostGraphqlAsync(client, LoginBody(slug, $"a@{slug}.example", "ChangeMe1234"));
         Assert.Contains("AUTH_FAILED", payload.GetProperty("errors").ToString(), StringComparison.Ordinal);
         Assert.True(factory.Hasher.VerifyCount > before, "inactive tenant must still call VerifyHashedPassword");
     }
@@ -117,7 +117,7 @@ public sealed class LoginTimingTests(LoginTimingApiFactory factory) : IClassFixt
                   "tenantName": "Login Co",
                   "tenantSlug": "{{slug}}",
                   "adminEmail": "a@{{slug}}.example",
-                  "adminPassword": "ChangeMe1"
+                  "adminPassword": "ChangeMe1234"
                 }
               }
             }

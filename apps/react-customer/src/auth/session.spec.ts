@@ -2,6 +2,19 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { getValidShellSession } from './session';
 import { tokenStorage } from './token-storage';
 
+function testJwt(claims: Record<string, unknown>): string {
+  const payload: string = btoa(
+    JSON.stringify({
+      ...claims,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }),
+  )
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  return `hdr.${payload}.sig`;
+}
+
 describe('getValidShellSession', () => {
   afterEach((): void => {
     tokenStorage.clearSession();
@@ -15,18 +28,15 @@ describe('getValidShellSession', () => {
   });
 
   it('returns a session for a well-formed token', (): void => {
-    const payload: string = btoa(
-      JSON.stringify({
+    tokenStorage.setSession(
+      testJwt({
         sub: '11111111-1111-1111-1111-111111111111',
         tenant_id: '22222222-2222-2222-2222-222222222222',
         role: 'Customer',
         email: 'user@acme.example',
       }),
-    )
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    tokenStorage.setSession(`hdr.${payload}.sig`, 'acme');
+      'acme',
+    );
 
     const session = getValidShellSession();
     expect(session?.email).toBe('user@acme.example');

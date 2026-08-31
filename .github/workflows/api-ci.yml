@@ -57,8 +57,7 @@ jobs:
       - name: Restore
         run: dotnet restore Kyc.Api.sln
 
-      - name: Vulnerable packages (warn)
-        continue-on-error: true
+      - name: Vulnerable packages
         run: dotnet list Kyc.Api.sln package --vulnerable --include-transitive
 
       - name: Build

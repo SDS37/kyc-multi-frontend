@@ -264,4 +264,4 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-109 | Login password max 128; `updateDraftCase` DOMAIN before FormData; status docs for 105–108 |
 | KYC-091 | CORS allow-list `http://localhost:4200` and `http://localhost:5173` (`Cors:AllowedOrigins`); preflight on GraphQL and document REST |
 
-Out of scope here: auth rate limits (KYC-093). Security headers / HSTS remain W6 (KYC-091 remainder). Local HTTP is for Development only.
+Auth rate limits: REST login/register use policy `auth` (30/min/IP); GraphQL uses policy `graphql` (120/min Development, 60/min otherwise). Forwarded headers trusted in Development for client IP. Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are on; HSTS outside Development. Local HTTP is for Development only.

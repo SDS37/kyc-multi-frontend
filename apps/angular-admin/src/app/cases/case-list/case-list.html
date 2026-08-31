@@ -24,8 +24,8 @@
     <p class="cases__count" aria-live="polite">
       @if (loading()) {
         {{ copy.loading }}
-      } @else if (loadError(); as error) {
-        {{ error }}
+      } @else if (loadError()) {
+        <!-- Error copy lives in the alert below (avoid duplicate announcements). -->
       } @else {
         {{ countLabel() }}
       }
@@ -53,8 +53,7 @@
             <a
               class="cases__link"
               [routerLink]="['/cases', row.id]"
-              (click)="$event.stopPropagation()"
-              (keydown)="$event.stopPropagation()"
+              [attr.aria-label]="row.openAriaLabel"
             >
               {{ row.title }}
             </a>
@@ -87,11 +86,6 @@
           mat-row
           *matRowDef="let row; columns: displayedColumns"
           class="cases__row"
-          tabindex="0"
-          [attr.aria-label]="row.openAriaLabel"
-          (click)="openCase(row)"
-          (keydown.enter)="openCase(row)"
-          (keydown.space)="$event.preventDefault(); openCase(row)"
         ></tr>
       </table>
     </div>
