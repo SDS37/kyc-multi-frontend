@@ -253,7 +253,7 @@ export function CaseList(): ReactElement {
         </label>
 
         <p className={styles['count']} aria-live="polite">
-          {loading ? copy.loading : loadError !== null ? loadError : countLabel}
+          {loading ? copy.loading : loadError !== null ? null : countLabel}
         </p>
       </section>
 
