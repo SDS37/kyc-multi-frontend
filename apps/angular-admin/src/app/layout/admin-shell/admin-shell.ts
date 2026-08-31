@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { appRoleLabel, toShellSession } from '../../auth/auth.mappers';
 import { ShellSession } from '../../auth/auth.models';
 import { TokenStorage } from '../../auth/token-storage';
+import { SHELL_MESSAGES, tenantIdTitle } from '../shell.messages';
 
 /**
  * Authenticated chrome for KYC-064: brand, Cases nav, tenant/user, logout.
@@ -21,6 +22,8 @@ export class AdminShell implements OnInit {
 
   private readonly sessionState: WritableSignal<ShellSession | null> = signal(null);
 
+  protected readonly copy = SHELL_MESSAGES;
+
   protected readonly session = computed((): ShellSession | null => this.sessionState());
 
   protected readonly roleLabel = computed((): string => {
@@ -34,6 +37,11 @@ export class AdminShell implements OnInit {
       return '';
     }
     return current.tenantSlug ?? current.tenantId;
+  });
+
+  protected readonly tenantTitle = computed((): string => {
+    const current: ShellSession | null = this.sessionState();
+    return current ? tenantIdTitle(current.tenantId) : '';
   });
 
   ngOnInit(): void {

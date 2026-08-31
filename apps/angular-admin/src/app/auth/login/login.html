@@ -1,8 +1,8 @@
 <main class="login">
   <section class="login__panel" aria-labelledby="login-heading">
-    <p class="login__brand">KYC Admin</p>
-    <h1 id="login-heading" class="login__title">Sign in</h1>
-    <p class="login__lede">Use your tenant slug, work email, and password.</p>
+    <p class="login__brand">{{ brand }}</p>
+    <h1 id="login-heading" class="login__title">{{ copy.title }}</h1>
+    <p class="login__lede">{{ copy.lede }}</p>
 
     <form
       class="login__form"
@@ -18,7 +18,7 @@
       }
 
       <mat-form-field appearance="outline" class="login__field">
-        <mat-label>Tenant slug</mat-label>
+        <mat-label>{{ copy.tenantSlugLabel }}</mat-label>
         <input
           matInput
           formControlName="tenantSlug"
@@ -31,14 +31,14 @@
           "
         />
         @if (form.controls.tenantSlug.hasError('required')) {
-          <mat-error id="tenantSlug-error">Tenant slug is required.</mat-error>
+          <mat-error id="tenantSlug-error">{{ copy.tenantSlugRequired }}</mat-error>
         } @else if (form.controls.tenantSlug.hasError('maxlength')) {
-          <mat-error id="tenantSlug-error">Tenant slug must be at most 64 characters.</mat-error>
+          <mat-error id="tenantSlug-error">{{ copy.tenantSlugMaxLength }}</mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="login__field">
-        <mat-label>Email</mat-label>
+        <mat-label>{{ copy.emailLabel }}</mat-label>
         <input
           matInput
           type="email"
@@ -50,16 +50,16 @@
           "
         />
         @if (form.controls.email.hasError('required')) {
-          <mat-error id="email-error">Email is required.</mat-error>
+          <mat-error id="email-error">{{ copy.emailRequired }}</mat-error>
         } @else if (form.controls.email.hasError('maxlength')) {
-          <mat-error id="email-error">Email must be at most 256 characters.</mat-error>
+          <mat-error id="email-error">{{ copy.emailMaxLength }}</mat-error>
         } @else if (form.controls.email.hasError('email')) {
-          <mat-error id="email-error">Enter a valid email address.</mat-error>
+          <mat-error id="email-error">{{ copy.emailInvalid }}</mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="login__field">
-        <mat-label>Password</mat-label>
+        <mat-label>{{ copy.passwordLabel }}</mat-label>
         <input
           matInput
           type="password"
@@ -73,9 +73,9 @@
           "
         />
         @if (form.controls.password.hasError('required')) {
-          <mat-error id="password-error">Password is required.</mat-error>
+          <mat-error id="password-error">{{ copy.passwordRequired }}</mat-error>
         } @else if (form.controls.password.hasError('maxlength')) {
-          <mat-error id="password-error">Password must be at most 128 characters.</mat-error>
+          <mat-error id="password-error">{{ copy.passwordMaxLength }}</mat-error>
         }
       </mat-form-field>
 
@@ -87,10 +87,10 @@
         [disabled]="submitting()"
       >
         @if (submitting()) {
-          <mat-spinner diameter="20" aria-label="Signing in" />
-          <span>Signing in…</span>
+          <mat-spinner diameter="20" [attr.aria-label]="copy.submittingAria" />
+          <span>{{ copy.submitting }}</span>
         } @else {
-          Sign in
+          {{ copy.submit }}
         }
       </button>
     </form>

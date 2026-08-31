@@ -2,7 +2,7 @@
   <header class="review__header">
     <div>
       <p class="review__back">
-        <a routerLink="/cases" class="review__back-link">← Back to cases</a>
+        <a routerLink="/cases" class="review__back-link">{{ copy.backToCases }}</a>
       </p>
       @if (detail(); as caseDetail) {
         <h1 id="review-heading" class="review__title">{{ caseDetail.title }}</h1>
@@ -13,7 +13,7 @@
           <span class="review__email">{{ caseDetail.customerEmail }}</span>
         </p>
       } @else {
-        <h1 id="review-heading" class="review__title">Case review</h1>
+        <h1 id="review-heading" class="review__title">{{ copy.fallbackTitle }}</h1>
       }
     </div>
   </header>
@@ -22,28 +22,28 @@
     <div class="review__alert" role="alert">
       <p>{{ error }}</p>
       @if (caseId) {
-        <button mat-stroked-button type="button" (click)="reload()">Try again</button>
-          } @else {
-            <a routerLink="/cases" class="review__back-link">Back to cases</a>
-          }
+        <button mat-stroked-button type="button" (click)="reload()">{{ sharedCopy.tryAgain }}</button>
+      } @else {
+        <a routerLink="/cases" class="review__back-link">{{ copy.backToCasesShort }}</a>
+      }
     </div>
   } @else if (loading()) {
     <div class="review__loading" role="status" aria-live="polite">
-      <mat-spinner diameter="36" aria-label="Loading case" />
-      <span>Loading case…</span>
+      <mat-spinner diameter="36" [attr.aria-label]="copy.loadingAria" />
+      <span>{{ copy.loading }}</span>
     </div>
   } @else if (detail(); as caseDetail) {
     <div class="review__grid">
       <section class="review__section" aria-labelledby="form-heading">
-        <h2 id="form-heading" class="review__section-title">Application form</h2>
+        <h2 id="form-heading" class="review__section-title">{{ copy.formHeading }}</h2>
         @if (caseDetail.formFields.length === 0) {
-          <p class="review__muted" role="status">No form fields on this case.</p>
+          <p class="review__muted" role="status">{{ copy.formEmpty }}</p>
         } @else {
           <dl class="review__dl">
             @for (field of caseDetail.formFields; track field.key) {
               <div class="review__dl-row">
                 <dt>{{ field.label }}</dt>
-                <dd>{{ field.value || '—' }}</dd>
+                <dd>{{ field.value || sharedCopy.emptyValue }}</dd>
               </div>
             }
           </dl>
@@ -51,14 +51,14 @@
       </section>
 
       <section class="review__section" aria-labelledby="docs-heading">
-        <h2 id="docs-heading" class="review__section-title">Documents</h2>
+        <h2 id="docs-heading" class="review__section-title">{{ copy.docsHeading }}</h2>
         @if (downloadError(); as dlError) {
           <div class="review__alert review__alert--inline" role="alert">
             <p>{{ dlError }}</p>
           </div>
         }
         @if (caseDetail.documents.length === 0) {
-          <p class="review__muted" role="status">No documents uploaded.</p>
+          <p class="review__muted" role="status">{{ copy.docsEmpty }}</p>
         } @else {
           <ul class="review__docs">
             @for (doc of caseDetail.documents; track doc.id) {
@@ -66,7 +66,7 @@
                 <div class="review__doc-info">
                   <span class="review__doc-name">{{ doc.fileName }}</span>
                   <span class="review__doc-meta">
-                    {{ formatSize(doc.sizeBytes) }} · {{ doc.contentType }} ·
+                    {{ doc.sizeLabel }} · {{ doc.contentType }} ·
                     {{ doc.uploadedAt | date: 'medium' }}
                   </span>
                 </div>
@@ -76,12 +76,12 @@
                   (click)="download(doc)"
                   [disabled]="downloadingId() !== null"
                   [attr.aria-busy]="downloadingId() === doc.id"
-                  [attr.aria-label]="'Download ' + doc.fileName"
+                  [attr.aria-label]="doc.downloadAriaLabel"
                 >
                   @if (downloadingId() === doc.id) {
-                    Downloading…
+                    {{ copy.downloading }}
                   } @else {
-                    Download
+                    {{ copy.download }}
                   }
                 </button>
               </li>
@@ -92,7 +92,7 @@
 
       @if (caseDetail.comments.length > 0 || caseDetail.reviewComment) {
         <section class="review__section" aria-labelledby="comments-heading">
-          <h2 id="comments-heading" class="review__section-title">Review notes</h2>
+          <h2 id="comments-heading" class="review__section-title">{{ copy.commentsHeading }}</h2>
           @if (caseDetail.comments.length > 0) {
             <ul class="review__comments">
               @for (comment of caseDetail.comments; track comment.createdAt + comment.authorUserId) {
@@ -111,7 +111,7 @@
       }
 
       <section class="review__section review__actions" aria-labelledby="actions-heading">
-        <h2 id="actions-heading" class="review__section-title">Actions</h2>
+        <h2 id="actions-heading" class="review__section-title">{{ copy.actionsHeading }}</h2>
 
         @if (actionError(); as actError) {
           <div class="review__alert review__alert--inline" role="alert">
@@ -120,7 +120,7 @@
         }
 
         @if (actions().canStartReview) {
-          <p class="review__lede">This case is submitted and ready for review.</p>
+          <p class="review__lede">{{ copy.startReviewLede }}</p>
           <button
             mat-flat-button
             color="primary"
@@ -128,14 +128,14 @@
             (click)="startReview()"
             [disabled]="actionBusy()"
           >
-            Start review
+            {{ copy.startReview }}
           </button>
         }
 
         @if (actions().canApprove || actions().canReject) {
           <div class="review__decide">
             <mat-form-field appearance="outline" class="review__field" subscriptSizing="dynamic">
-              <mat-label>Optional approve comment</mat-label>
+              <mat-label>{{ copy.approveCommentLabel }}</mat-label>
               <textarea
                 matInput
                 rows="2"
@@ -144,7 +144,7 @@
                 (input)="onApproveCommentInput($event)"
                 aria-describedby="approve-comment-hint"
               ></textarea>
-              <mat-hint id="approve-comment-hint">Optional when approving</mat-hint>
+              <mat-hint id="approve-comment-hint">{{ copy.approveCommentHint }}</mat-hint>
             </mat-form-field>
 
             <button
@@ -154,12 +154,12 @@
               (click)="approve()"
               [disabled]="actionBusy() || !actions().canApprove"
             >
-              Approve
+              {{ copy.approve }}
             </button>
 
             <form class="review__reject" [formGroup]="rejectForm" (ngSubmit)="reject()" novalidate>
               <mat-form-field appearance="outline" class="review__field" subscriptSizing="dynamic">
-                <mat-label>Reject comment (required)</mat-label>
+                <mat-label>{{ copy.rejectCommentLabel }}</mat-label>
                 <textarea
                   matInput
                   rows="3"
@@ -174,13 +174,11 @@
                       : 'reject-comment-hint'
                   "
                 ></textarea>
-                <mat-hint id="reject-comment-hint">Required to reject · max {{ commentMaxLength }}</mat-hint>
+                <mat-hint id="reject-comment-hint">{{ rejectHint }}</mat-hint>
                 @if (rejectForm.controls.comment.hasError('required')) {
-                  <mat-error id="reject-comment-error">A comment is required to reject.</mat-error>
+                  <mat-error id="reject-comment-error">{{ copy.rejectCommentRequired }}</mat-error>
                 } @else if (rejectForm.controls.comment.hasError('maxlength')) {
-                  <mat-error id="reject-comment-error"
-                    >Comment must be at most {{ commentMaxLength }} characters.</mat-error
-                  >
+                  <mat-error id="reject-comment-error">{{ rejectMaxLengthError }}</mat-error>
                 }
               </mat-form-field>
 
@@ -190,16 +188,14 @@
                 type="submit"
                 [disabled]="actionBusy() || !actions().canReject"
               >
-                Reject
+                {{ copy.reject }}
               </button>
             </form>
           </div>
         }
 
         @if (!actions().canStartReview && !actions().canApprove && !actions().canReject) {
-          <p class="review__muted" role="status">
-            No review actions available for status {{ statusLabel() }}.
-          </p>
+          <p class="review__muted" role="status">{{ noActionsMessage() }}</p>
         }
       </section>
     </div>

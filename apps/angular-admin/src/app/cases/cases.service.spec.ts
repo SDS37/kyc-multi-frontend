@@ -87,8 +87,10 @@ describe('CasesService', () => {
           id: '11111111-1111-1111-1111-111111111111',
           title: 'Acme onboarding',
           status: 'SUBMITTED',
+          statusLabel: 'Submitted',
           customerEmail: 'customer@acme.example',
           updatedAt: '2026-08-30T12:00:00Z',
+          openAriaLabel: 'Open case Acme onboarding',
         },
       ],
     });
