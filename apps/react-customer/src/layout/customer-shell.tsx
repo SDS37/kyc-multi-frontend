@@ -1,15 +1,14 @@
 import type { ReactElement } from 'react';
 import { Outlet } from 'react-router';
-import { UI_MESSAGES } from '../shared/ui.messages';
+import { UI_MESSAGES, type UiMessages } from '../shared/ui.messages';
 import { tokenStorage } from '../auth/token-storage';
 import styles from './customer-shell.module.css';
 
 /**
- * Authenticated chrome host (KYC-070).
- * Feature screens mount via Outlet (KYC-072+).
+ * App chrome host (KYC-070) — guest home now; authenticated screens via Outlet (KYC-071+).
  */
 export function CustomerShell(): ReactElement {
-  const copy: typeof UI_MESSAGES = UI_MESSAGES;
+  const copy: UiMessages = UI_MESSAGES;
   const tenantSlug: string | null = tokenStorage.getTenantSlug();
   const hasSession: boolean = tokenStorage.getAccessToken() !== null;
 

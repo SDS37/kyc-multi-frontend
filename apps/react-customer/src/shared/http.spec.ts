@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { tokenStorage } from '../auth/token-storage';
-import { graphqlRequest } from './http';
+import { apiFetch, graphqlRequest } from './http';
 
 describe('graphqlRequest', () => {
   afterEach((): void => {
@@ -12,6 +12,7 @@ describe('graphqlRequest', () => {
     tokenStorage.setAccessToken('secret-jwt');
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      status: 200,
       json: async () => ({ data: { apiStatus: 'ok' } }),
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -28,6 +29,7 @@ describe('graphqlRequest', () => {
     tokenStorage.setAccessToken('secret-jwt');
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      status: 200,
       json: async () => ({ data: { login: null } }),
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -37,5 +39,39 @@ describe('graphqlRequest', () => {
     const init: RequestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
     const headers: Headers = new Headers(init.headers);
     expect(headers.get('Authorization')).toBeNull();
+  });
+
+  it('clears the session on HTTP 401', async (): Promise<void> => {
+    tokenStorage.setSession('secret-jwt', 'acme');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({}),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(graphqlRequest('{ apiStatus }')).rejects.toThrow(/401/);
+    expect(tokenStorage.getAccessToken()).toBeNull();
+    expect(tokenStorage.getTenantSlug()).toBeNull();
+  });
+});
+
+describe('apiFetch', () => {
+  afterEach((): void => {
+    tokenStorage.clearSession();
+    vi.unstubAllGlobals();
+  });
+
+  it('clears the session on HTTP 401', async (): Promise<void> => {
+    tokenStorage.setSession('secret-jwt', 'acme');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response: Response = await apiFetch('/api/cases');
+    expect(response.status).toBe(401);
+    expect(tokenStorage.getAccessToken()).toBeNull();
   });
 });

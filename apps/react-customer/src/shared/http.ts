@@ -1,8 +1,9 @@
 import { appConfig } from '../config/app-config';
-import type { GraphqlResponse } from './graphql.models';
+import type { GraphqlError, GraphqlResponse } from './graphql.models';
 import { tokenStorage } from '../auth/token-storage';
 
-export interface GraphqlRequestOptions {
+/** Auth attachment options for GraphQL and REST helpers. */
+export interface ApiAuthOptions {
   /** When true, do not attach Bearer (login / registerTenant). */
   readonly skipAuth?: boolean;
 }
@@ -10,11 +11,12 @@ export interface GraphqlRequestOptions {
 /**
  * Typed GraphQL POST helper (KYC-070).
  * Attaches Authorization when a session token exists unless skipAuth is set.
+ * Clears the session on HTTP 401.
  */
 export async function graphqlRequest<TData>(
   query: string,
   variables?: Record<string, unknown>,
-  options: GraphqlRequestOptions = {},
+  options: ApiAuthOptions = {},
 ): Promise<GraphqlResponse<TData>> {
   const headers: Headers = new Headers({
     'Content-Type': 'application/json',
@@ -33,21 +35,23 @@ export async function graphqlRequest<TData>(
     body: JSON.stringify({ query, variables }),
   });
 
+  clearSessionOnUnauthorized(response);
+
   if (!response.ok) {
     throw new Error(`GraphQL HTTP ${String(response.status)}`);
   }
 
-  const body: GraphqlResponse<TData> = (await response.json()) as GraphqlResponse<TData>;
-  return body;
+  const raw: unknown = await response.json();
+  return parseGraphqlResponse<TData>(raw);
 }
 
 /** REST helper under apiBaseUrl with the same JWT attachment rules. */
 export async function apiFetch(
   path: string,
   init: RequestInit = {},
-  options: GraphqlRequestOptions = {},
+  options: ApiAuthOptions = {},
 ): Promise<Response> {
-  const headers = new Headers(init.headers);
+  const headers: Headers = new Headers(init.headers);
   if (!options.skipAuth) {
     const token: string | null = tokenStorage.getAccessToken();
     if (token) {
@@ -59,5 +63,50 @@ export async function apiFetch(
     ? path
     : `${appConfig.apiBaseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 
-  return fetch(url, { ...init, headers });
+  const response: Response = await fetch(url, { ...init, headers });
+  clearSessionOnUnauthorized(response);
+  return response;
+}
+
+function clearSessionOnUnauthorized(response: Response): void {
+  if (response.status === 401) {
+    tokenStorage.clearSession();
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseGraphqlResponse<TData>(value: unknown): GraphqlResponse<TData> {
+  if (!isRecord(value)) {
+    throw new Error('Invalid GraphQL response body');
+  }
+
+  const data: TData | null | undefined =
+    'data' in value ? (value['data'] as TData | null | undefined) : undefined;
+
+  const errorsRaw: unknown = value['errors'];
+  const errors: GraphqlError[] | undefined = Array.isArray(errorsRaw)
+    ? errorsRaw.filter(isRecord).map(toGraphqlError)
+    : undefined;
+
+  return { data, errors };
+}
+
+function toGraphqlError(value: Record<string, unknown>): GraphqlError {
+  const messageRaw: unknown = value['message'];
+  const message: string | undefined =
+    typeof messageRaw === 'string' ? messageRaw : undefined;
+
+  const extensionsRaw: unknown = value['extensions'];
+  let extensions: GraphqlError['extensions'];
+  if (isRecord(extensionsRaw)) {
+    const codeRaw: unknown = extensionsRaw['code'];
+    const code: string | undefined =
+      typeof codeRaw === 'string' ? codeRaw : undefined;
+    extensions = code === undefined ? undefined : { code };
+  }
+
+  return { message, extensions };
 }

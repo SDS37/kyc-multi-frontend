@@ -1,3 +1,11 @@
+export interface TokenStorage {
+  getAccessToken(): string | null;
+  getTenantSlug(): string | null;
+  setAccessToken(token: string): void;
+  setSession(accessToken: string, tenantSlug: string): void;
+  clearSession(): void;
+}
+
 const ACCESS_TOKEN_KEY: string = 'kyc.react-customer.accessToken';
 const TENANT_SLUG_KEY: string = 'kyc.react-customer.tenantSlug';
 
@@ -6,7 +14,7 @@ const TENANT_SLUG_KEY: string = 'kyc.react-customer.tenantSlug';
  * Login (KYC-071) writes access token + tenant slug; HTTP helper reads the token.
  * MVP uses sessionStorage so a tab close clears the session.
  */
-export const tokenStorage = {
+export const tokenStorage: TokenStorage = {
   getAccessToken(): string | null {
     return sessionStorage.getItem(ACCESS_TOKEN_KEY);
   },
@@ -30,4 +38,4 @@ export const tokenStorage = {
     sessionStorage.removeItem(ACCESS_TOKEN_KEY);
     sessionStorage.removeItem(TENANT_SLUG_KEY);
   },
-} as const;
+};
