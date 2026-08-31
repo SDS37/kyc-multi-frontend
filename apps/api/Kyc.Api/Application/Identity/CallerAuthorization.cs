@@ -29,7 +29,7 @@ public static class CallerAuthorization
         }
 
         var row = await LoadCallerRowAsync(db, tenantId, userId, cancellationToken);
-        if (row is null || !row.TenantActive)
+        if (row?.TenantActive is not true)
         {
             return false;
         }
@@ -54,7 +54,7 @@ public static class CallerAuthorization
         }
 
         var row = await LoadCallerRowAsync(db, tenantId.Value, userId.Value, cancellationToken);
-        if (row is null || !row.TenantActive || row.Role != jwtRole.Value)
+        if (row?.TenantActive is not true || row.Role != jwtRole.Value)
         {
             return (default, default, true);
         }
@@ -67,18 +67,16 @@ public static class CallerAuthorization
         };
     }
 
-    private static async Task<CallerRow?> LoadCallerRowAsync(
+    private static Task<CallerRow?> LoadCallerRowAsync(
         AppDbContext db,
         Guid tenantId,
         Guid userId,
-        CancellationToken cancellationToken)
-    {
-        return await db.Users
+        CancellationToken cancellationToken) =>
+        db.Users
             .AsNoTracking()
             .Where(u => u.Id == userId && u.TenantId == tenantId)
             .Select(u => new CallerRow(u.Role, u.Tenant.IsActive))
             .FirstOrDefaultAsync(cancellationToken);
-    }
 
     private sealed record CallerRow(UserRole Role, bool TenantActive);
 }
