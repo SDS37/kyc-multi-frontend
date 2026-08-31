@@ -53,8 +53,8 @@ export class CaseList implements OnInit {
 
   private readonly reloadRequests: Subject<void> = new Subject<void>();
 
-  protected readonly copy = CASES_LIST_MESSAGES;
-  protected readonly sharedCopy = UI_MESSAGES;
+  protected readonly copy: typeof CASES_LIST_MESSAGES = CASES_LIST_MESSAGES;
+  protected readonly sharedCopy: typeof UI_MESSAGES = UI_MESSAGES;
   protected readonly statusOptions: readonly CaseStatus[] = CASE_STATUSES;
   protected readonly statusLabels: Readonly<Record<CaseStatus, string>> = CASE_STATUS_LABELS;
   protected readonly displayedColumns: readonly string[] = [

@@ -2,21 +2,25 @@ import { DatePipe } from '@angular/common';
 import {
   Component,
   DestroyRef,
-  OnInit,
+  ResourceLoaderParams,
+  ResourceRef,
+  Signal,
   WritableSignal,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
+import type { RxResourceOptions } from '@angular/core/rxjs-interop';
+import { FieldTree, form } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { EMPTY, Observable, Subject, catchError, switchMap, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { UI_MESSAGES } from '../../shared/ui.messages';
+import { CaseDocumentsPane } from '../case-documents-pane/case-documents-pane';
+import { CaseFormDataPane } from '../case-form-data-pane/case-form-data-pane';
+import { CaseReviewActionsPane } from '../case-review-actions-pane/case-review-actions-pane';
 import {
   isCaseId,
   normalizeOptionalReviewComment,
@@ -30,67 +34,91 @@ import {
   CASES_REVIEW_MESSAGES,
   caseStatusLabel,
   noReviewActionsMessage,
-  rejectCommentHint,
-  rejectCommentMaxLengthMessage,
 } from '../cases.messages';
 import {
   CaseDetail,
   CaseDocument,
   CaseReviewActions,
-  RejectFormControls,
-  REVIEW_COMMENT_MAX_LENGTH,
+  RejectCommentModel,
 } from '../cases.models';
+import { rejectCommentSchema } from '../cases.reject-schema';
 import { CasesService } from '../cases.service';
 
 /**
- * Case review detail: form data, documents + download, start / approve / reject (KYC-063).
- * Status rules via pure `resolveReviewActions`; HTTP in CasesService only.
+ * Smart case review route (KYC-063 product + KYC-065 structure):
+ * `rxResource` read path, Signal Form reject comment, presentational panes.
  */
 @Component({
   selector: 'app-case-review',
   imports: [
     DatePipe,
-    ReactiveFormsModule,
     RouterLink,
     MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatProgressSpinnerModule,
+    CaseFormDataPane,
+    CaseDocumentsPane,
+    CaseReviewActionsPane,
   ],
   templateUrl: './case-review.html',
   styleUrl: './case-review.css',
 })
-export class CaseReview implements OnInit {
+export class CaseReview {
   private readonly casesService: CasesService = inject(CasesService);
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
-  private readonly fb: FormBuilder = inject(FormBuilder);
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
-  private readonly loadRequests: Subject<string> = new Subject<string>();
+  private readonly routeCaseId: string | undefined = readRouteCaseId(this.route);
 
-  protected caseId: string = '';
+  protected readonly caseId: string = this.routeCaseId ?? '';
 
-  protected readonly copy = CASES_REVIEW_MESSAGES;
-  protected readonly sharedCopy = UI_MESSAGES;
-  protected readonly commentMaxLength: number = REVIEW_COMMENT_MAX_LENGTH;
-  protected readonly rejectHint: string = rejectCommentHint();
-  protected readonly rejectMaxLengthError: string = rejectCommentMaxLengthMessage();
+  protected readonly copy: typeof CASES_REVIEW_MESSAGES = CASES_REVIEW_MESSAGES;
+  protected readonly sharedCopy: typeof UI_MESSAGES = UI_MESSAGES;
 
-  protected readonly detail: WritableSignal<CaseDetail | null> = signal(null);
-  protected readonly loading: WritableSignal<boolean> = signal(false);
-  protected readonly loadError: WritableSignal<string | null> = signal(null);
+  private readonly caseIdParam: WritableSignal<string | undefined> = signal(this.routeCaseId);
+  private readonly linkError: WritableSignal<string | null> = signal(
+    this.routeCaseId ? null : CASES_REVIEW_MESSAGES.invalidCaseLink,
+  );
+
+  protected readonly caseResource: ResourceRef<CaseDetail | undefined> = rxResource({
+    // `undefined` params idle the resource (Angular runtime); typings omit the sentinel.
+    params: (): string | undefined => this.caseIdParam(),
+    stream: (loader: ResourceLoaderParams<string>): Observable<CaseDetail> =>
+      this.casesService.getById(loader.params),
+  } as RxResourceOptions<CaseDetail, string>);
+
+  protected readonly rejectModel: WritableSignal<RejectCommentModel> = signal({ comment: '' });
+  protected readonly rejectForm: FieldTree<RejectCommentModel> = form(
+    this.rejectModel,
+    rejectCommentSchema,
+  );
+
+  protected readonly approveComment: WritableSignal<string> = signal('');
   protected readonly actionError: WritableSignal<string | null> = signal(null);
   protected readonly actionBusy: WritableSignal<boolean> = signal(false);
   protected readonly downloadError: WritableSignal<string | null> = signal(null);
   protected readonly downloadingId: WritableSignal<string | null> = signal(null);
 
-  protected readonly rejectForm: FormGroup<RejectFormControls> = this.fb.nonNullable.group({
-    comment: ['', [Validators.required, Validators.maxLength(REVIEW_COMMENT_MAX_LENGTH)]],
+  protected readonly detail: Signal<CaseDetail | null> = computed((): CaseDetail | null => {
+    // Never call `.value()` while the resource is in error — it throws ResourceValueError
+    // and breaks the template (header binds `detail()` outside the loadError branch).
+    if (!this.caseResource.hasValue()) {
+      return null;
+    }
+    return this.caseResource.value() ?? null;
   });
 
-  protected readonly approveComment: WritableSignal<string> = signal('');
+  protected readonly loading: Signal<boolean> = computed((): boolean => this.caseResource.isLoading());
 
-  protected readonly actions = computed((): CaseReviewActions => {
+  protected readonly loadError: Signal<string | null> = computed((): string | null => {
+    const link: string | null = this.linkError();
+    if (link) {
+      return link;
+    }
+    const err: Error | undefined = this.caseResource.error();
+    return err ? toCasesLoadError(err).message : null;
+  });
+
+  protected readonly actions: Signal<CaseReviewActions> = computed((): CaseReviewActions => {
     const current: CaseDetail | null = this.detail();
     if (!current) {
       return { canStartReview: false, canApprove: false, canReject: false };
@@ -98,56 +126,19 @@ export class CaseReview implements OnInit {
     return resolveReviewActions(current.status);
   });
 
-  protected readonly statusLabel = computed((): string => {
+  protected readonly statusLabel: Signal<string> = computed((): string => {
     const current: CaseDetail | null = this.detail();
     return current ? caseStatusLabel(current.status) : '';
   });
 
-  protected readonly noActionsMessage = computed((): string =>
+  protected readonly noActionsMessage: Signal<string> = computed((): string =>
     noReviewActionsMessage(this.statusLabel()),
   );
 
-  ngOnInit(): void {
-    this.loadRequests
-      .pipe(
-        tap((): void => {
-          this.loading.set(true);
-          this.loadError.set(null);
-          this.actionError.set(null);
-          this.downloadError.set(null);
-        }),
-        switchMap(
-          (id: string): Observable<CaseDetail> =>
-            this.casesService.getById(id).pipe(
-              catchError((err: unknown): Observable<never> => {
-                this.loading.set(false);
-                this.detail.set(null);
-                this.loadError.set(toCasesLoadError(err).message);
-                return EMPTY;
-              }),
-            ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((page: CaseDetail): void => {
-        this.detail.set(page);
-        this.loading.set(false);
-      });
-
-    const idParam: string | null = this.route.snapshot.paramMap.get('caseId');
-    if (!idParam || !isCaseId(idParam)) {
-      this.loadError.set(CASES_REVIEW_MESSAGES.invalidCaseLink);
-      return;
-    }
-    this.caseId = idParam;
-    this.loadRequests.next(idParam);
-  }
-
   protected reload(): void {
-    if (!this.caseId) {
-      return;
-    }
-    this.loadRequests.next(this.caseId);
+    this.actionError.set(null);
+    this.downloadError.set(null);
+    this.caseResource.reload();
   }
 
   protected startReview(): void {
@@ -175,8 +166,8 @@ export class CaseReview implements OnInit {
     if (!this.actions().canReject || this.actionBusy()) {
       return;
     }
-    this.rejectForm.markAllAsTouched();
-    const normalized = normalizeRejectComment(this.rejectForm.controls.comment.getRawValue());
+    this.rejectForm.comment().markAsTouched();
+    const normalized = normalizeRejectComment(this.rejectModel().comment);
     if (!normalized.ok) {
       this.actionError.set(normalized.message);
       return;
@@ -184,13 +175,6 @@ export class CaseReview implements OnInit {
     this.runAction(
       (): Observable<unknown> => this.casesService.reject(this.caseId, normalized.comment),
     );
-  }
-
-  protected onApproveCommentInput(event: Event): void {
-    const target: EventTarget | null = event.target;
-    if (target instanceof HTMLTextAreaElement) {
-      this.approveComment.set(target.value);
-    }
   }
 
   protected download(doc: CaseDocument): void {
@@ -223,7 +207,8 @@ export class CaseReview implements OnInit {
       .subscribe({
         next: (): void => {
           this.actionBusy.set(false);
-          this.rejectForm.reset({ comment: '' });
+          // Clears value + touched/dirty so required error UI does not linger after submit.
+          this.rejectForm.comment().reset('');
           this.approveComment.set('');
           this.reload();
         },
@@ -233,6 +218,14 @@ export class CaseReview implements OnInit {
         },
       });
   }
+}
+
+function readRouteCaseId(route: ActivatedRoute): string | undefined {
+  const idParam: string | null = route.snapshot.paramMap.get('caseId');
+  if (!idParam || !isCaseId(idParam)) {
+    return undefined;
+  }
+  return idParam;
 }
 
 /** Browser-only side effect: save a blob as a file download. */

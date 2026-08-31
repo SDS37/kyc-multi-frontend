@@ -22,7 +22,7 @@ export class AdminShell implements OnInit {
 
   private readonly sessionState: WritableSignal<ShellSession | null> = signal(null);
 
-  protected readonly copy = SHELL_MESSAGES;
+  protected readonly copy: typeof SHELL_MESSAGES = SHELL_MESSAGES;
 
   protected readonly session = computed((): ShellSession | null => this.sessionState());
 

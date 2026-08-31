@@ -1,0 +1,94 @@
+<section class="pane pane--actions" aria-labelledby="actions-heading">
+  <h2 id="actions-heading" class="pane__title">{{ copy.actionsHeading }}</h2>
+
+  @if (actionError(); as actError) {
+    <div class="pane__alert" role="alert">
+      <p>{{ actError }}</p>
+    </div>
+  }
+
+  @if (actions().canStartReview) {
+    <p class="pane__lede">{{ copy.startReviewLede }}</p>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="startReview.emit()"
+      [disabled]="actionBusy()"
+    >
+      {{ copy.startReview }}
+    </button>
+  }
+
+  @if (actions().canApprove || actions().canReject) {
+    <div class="pane__decide">
+      <mat-form-field appearance="outline" class="pane__field" subscriptSizing="dynamic">
+        <mat-label>{{ copy.approveCommentLabel }}</mat-label>
+        <textarea
+          matInput
+          rows="2"
+          [attr.maxlength]="commentMaxLength"
+          [value]="approveComment()"
+          (input)="onApproveCommentInput($event)"
+          aria-describedby="approve-comment-hint"
+        ></textarea>
+        <mat-hint id="approve-comment-hint">{{ copy.approveCommentHint }}</mat-hint>
+      </mat-form-field>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="approve.emit()"
+        [disabled]="actionBusy() || !actions().canApprove"
+      >
+        {{ copy.approve }}
+      </button>
+
+      <!-- novalidate: [formField] mirrors schema `required` onto the control; without this the
+           browser blocks submit and Reject never reaches CaseReview. -->
+      <form class="pane__reject" novalidate (submit)="$event.preventDefault(); reject.emit()">
+        @let commentField = rejectCommentField();
+        <mat-form-field appearance="outline" class="pane__field" subscriptSizing="dynamic">
+          <mat-label>{{ copy.rejectCommentLabel }}</mat-label>
+          <textarea
+            matInput
+            rows="3"
+            [formField]="commentField"
+            [attr.aria-invalid]="commentField().invalid() && commentField().touched()"
+            [attr.aria-describedby]="
+              commentField().invalid() && commentField().touched()
+                ? 'reject-comment-error'
+                : 'reject-comment-hint'
+            "
+          ></textarea>
+          <mat-hint id="reject-comment-hint">{{ rejectHint }}</mat-hint>
+          @if (commentField().touched() && commentField().invalid()) {
+            @if (commentField().getError('required'); as reqErr) {
+              <mat-error id="reject-comment-error">{{
+                reqErr.message || copy.rejectCommentRequired
+              }}</mat-error>
+            } @else if (commentField().getError('maxLength'); as maxErr) {
+              <mat-error id="reject-comment-error">{{
+                maxErr.message || rejectMaxLengthError
+              }}</mat-error>
+            }
+          }
+        </mat-form-field>
+
+        <button
+          mat-stroked-button
+          color="warn"
+          type="submit"
+          [disabled]="actionBusy() || !actions().canReject"
+        >
+          {{ copy.reject }}
+        </button>
+      </form>
+    </div>
+  }
+
+  @if (!actions().canStartReview && !actions().canApprove && !actions().canReject) {
+    <p class="pane__muted" role="status">{{ noActionsMessage() }}</p>
+  }
+</section>

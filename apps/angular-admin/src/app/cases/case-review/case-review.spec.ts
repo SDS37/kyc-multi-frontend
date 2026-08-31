@@ -1,5 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { APP_CONFIG } from '../../config/app-config';
@@ -51,7 +52,7 @@ describe('CaseReview', () => {
     tokens.clearSession();
   });
 
-  function flushDetail(status: string = 'SUBMITTED'): void {
+  async function flushDetail(status: string = 'SUBMITTED'): Promise<void> {
     httpTesting.expectOne(graphqlUrl).flush({
       data: {
         case: {
@@ -88,12 +89,13 @@ describe('CaseReview', () => {
         },
       },
     });
+    await fixture.whenStable();
     fixture.detectChanges();
   }
 
-  it('shows form data and documents for a submitted case', (): void => {
+  it('shows form data and documents for a submitted case', async (): Promise<void> => {
     expect(fixture.nativeElement.textContent).toContain('Loading case');
-    flushDetail('SUBMITTED');
+    await flushDetail('SUBMITTED');
 
     const text: string = fixture.nativeElement.textContent as string;
     expect(text).toContain('Acme onboarding');
@@ -103,27 +105,44 @@ describe('CaseReview', () => {
     expect(text).not.toContain('Approve');
   });
 
-  it('shows approve and reject when in review', (): void => {
-    flushDetail('IN_REVIEW');
+  it('shows approve and reject when in review', async (): Promise<void> => {
+    await flushDetail('IN_REVIEW');
     const text: string = fixture.nativeElement.textContent as string;
     expect(text).toContain('Approve');
     expect(text).toContain('Reject');
     expect(text).toContain('Reject comment (required)');
   });
 
-  it('requires a reject comment before calling the API', (): void => {
-    flushDetail('IN_REVIEW');
+  it('requires a reject comment before calling the API', async (): Promise<void> => {
+    await flushDetail('IN_REVIEW');
     fixture.componentInstance['reject']();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
-      'A comment is required',
-    );
+    const alertText: string =
+      (fixture.nativeElement.querySelector('[role="alert"]')?.textContent as string | undefined) ??
+      (fixture.nativeElement.textContent as string);
+    expect(alertText).toContain('A comment is required');
     httpTesting.expectNone(graphqlUrl);
   });
 
-  it('starts review then reloads detail', (): void => {
-    flushDetail('SUBMITTED');
+  it('shows an error when the case is not found', async (): Promise<void> => {
+    expect(fixture.nativeElement.textContent).toContain('Loading case');
+    httpTesting.expectOne(graphqlUrl).flush({
+      errors: [{ message: 'Case was not found.', extensions: { code: 'NOT_FOUND' } }],
+      data: null,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alertText: string =
+      (fixture.nativeElement.querySelector('[role="alert"]')?.textContent as string | undefined) ??
+      '';
+    expect(alertText).toContain('Case was not found');
+    expect(fixture.nativeElement.textContent).not.toContain('Loading case');
+  });
+
+  it('starts review then reloads detail', async (): Promise<void> => {
+    await flushDetail('SUBMITTED');
     fixture.componentInstance['startReview']();
 
     httpTesting.expectOne(graphqlUrl).flush({
@@ -135,7 +154,8 @@ describe('CaseReview', () => {
         },
       },
     });
-    flushDetail('IN_REVIEW');
+    TestBed.inject(ApplicationRef).tick();
+    await flushDetail('IN_REVIEW');
     expect(fixture.nativeElement.textContent).toContain('Approve');
   });
 });

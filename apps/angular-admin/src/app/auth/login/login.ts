@@ -41,7 +41,7 @@ export class Login {
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
-  protected readonly copy = LOGIN_MESSAGES;
+  protected readonly copy: typeof LOGIN_MESSAGES = LOGIN_MESSAGES;
   protected readonly brand: string = UI_MESSAGES.brand;
 
   protected readonly submitting: WritableSignal<boolean> = signal(false);

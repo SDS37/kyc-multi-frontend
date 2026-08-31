@@ -244,12 +244,12 @@ flowchart TB
   ShellOutlet --> CaseList["CaseList<br/><code>app-case-list</code><br/>OnPush<br/>signals: items, filter, loading, …"]
   ShellOutlet --> CaseReview["CaseReview<br/><code>app-case-review</code><br/>OnPush<br/>signals: detail, actions, …"]
 
-  CaseReview -.->|"optional later"| Presentational["Presentational children<br/><code>input()</code> / <code>output()</code> only"]
+  CaseReview -.-> Presentational["Presentational panes<br/><code>input()</code> / <code>output()</code><br/>form-data / documents / actions"]
 
   classDef dirty fill:#dbeafe,stroke:#2563eb,color:#0f172a
   classDef idle fill:#f1f5f9,stroke:#64748b,color:#0f172a
   class CaseList,CaseReview dirty
-  class App,Login,Outlet,Shell,ShellOutlet idle
+  class App,Login,Outlet,Shell,ShellOutlet,Presentational idle
 ```
 
 **Isolation example:** `CaseList` does `items.set(page.items)` after a GraphQL load.
@@ -258,8 +258,8 @@ flowchart TB
 |---|---|---|
 | `CaseList` | Yes | It read/wrote signals the template binds to |
 | `AdminShell` | No (for list data) | Child signal writes do not dirty the shell |
-| `CaseReview` | Only when mounted on `/cases/:id` and its signals change | Lazy child route — separate subtree |
-| Presentational child (later) | Only if its `input()` values changed | OnPush + new input references |
+| `CaseReview` | Only when mounted on `/cases/:id` and its signals / `rxResource` change | Lazy child route — separate subtree |
+| Presentational panes | Only if their `input()` values changed | OnPush + new input references |
 | `App` | No need to re-check the whole app for list data | Outlet host is not dirtied by the list’s signal write |
 | `Login` | Not in the tree on `/cases` | Lazy route — not mounted |
 

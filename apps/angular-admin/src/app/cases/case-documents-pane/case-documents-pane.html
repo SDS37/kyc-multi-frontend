@@ -1,0 +1,39 @@
+<section class="pane" aria-labelledby="docs-heading">
+  <h2 id="docs-heading" class="pane__title">{{ copy.docsHeading }}</h2>
+  @if (downloadError(); as dlError) {
+    <div class="pane__alert" role="alert">
+      <p>{{ dlError }}</p>
+    </div>
+  }
+  @if (documents().length === 0) {
+    <p class="pane__muted" role="status">{{ copy.docsEmpty }}</p>
+  } @else {
+    <ul class="pane__docs">
+      @for (doc of documents(); track doc.id) {
+        <li class="pane__doc">
+          <div class="pane__doc-info">
+            <span class="pane__doc-name">{{ doc.fileName }}</span>
+            <span class="pane__doc-meta">
+              {{ doc.sizeLabel }} · {{ doc.contentType }} ·
+              {{ doc.uploadedAt | date: 'medium' }}
+            </span>
+          </div>
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="onDownload(doc)"
+            [disabled]="downloadingId() !== null"
+            [attr.aria-busy]="downloadingId() === doc.id"
+            [attr.aria-label]="doc.downloadAriaLabel"
+          >
+            @if (downloadingId() === doc.id) {
+              {{ copy.downloading }}
+            } @else {
+              {{ copy.download }}
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

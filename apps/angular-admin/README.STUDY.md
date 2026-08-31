@@ -13,7 +13,7 @@ Tenant Admin / Reviewer product (ADR-004). KYC-063 adds **case review** (form da
 | Path | Role |
 |---|---|
 | `src/app/auth/` | `auth.models`, `auth.messages`, `auth.mappers` (pure), `TokenStorage`, interceptor, `LoginService`, guards, login page |
-| `src/app/cases/` | `cases.models`, `cases.messages`, `cases.mappers` (pure), `CasesService`, case list + case review UI |
+| `src/app/cases/` | `cases.models`, `cases.messages`, `cases.mappers`, `cases.reject-schema`, `CasesService`, list + review + presentational panes |
 | `src/app/layout/` | Authenticated `AdminShell` + `shell.messages` |
 | `src/app/config/` | `config.models` (`AppConfig`), `APP_CONFIG` token |
 | `src/app/shared/` | Cross-feature models / `ui.messages` (brand, shared actions) |
@@ -85,15 +85,16 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 
 ## Today vs target
 
-| Target | Today (KYC-064) |
+| Target | Today (KYC-065) |
 |---|---|
 | Runnable Angular 22+ app | Yes |
 | Env GraphQL + auth interceptor | Yes |
 | Material + `@kyc/design-tokens` theme | Yes |
-| Login + guards | Yes |
+| Login + guards | Yes (Reactive Forms) |
 | Case list + status filter | Yes |
-| Case review | Yes (063) |
+| Case review product | Yes (063) |
 | Shell chrome (tenant/user, Cases nav, logout) | Yes (064) |
+| Review `rxResource` + Signal Form + panes | Yes (065) |
 | Angular shell composing remotes | Not required for MVP |
 
 ## What to skip
