@@ -4,15 +4,18 @@ using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Kyc.Api.Application.Identity;
 
 public sealed partial class RegisterTenantService(
     AppDbContext db,
-    IPasswordHasher<User> passwordHasher)
+    IPasswordHasher<User> passwordHasher,
+    IOptions<RegistrationOptions> registrationOptions)
 {
     private const int MaxPasswordLength = PasswordPolicy.MaxLength;
+    public const string RegistrationDisabledMessage = "Public tenant registration is disabled.";
 
     [GeneratedRegex("^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)]
     private static partial Regex SlugPattern();
@@ -21,6 +24,11 @@ public sealed partial class RegisterTenantService(
         RegisterTenantRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (!registrationOptions.Value.AllowPublicRegistration)
+        {
+            return (null, [RegistrationDisabledMessage]);
+        }
+
         var errors = Validate(request);
         if (errors.Count > 0)
         {

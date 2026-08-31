@@ -100,17 +100,8 @@
   text-decoration: underline;
 }
 
-.cases__row {
-  cursor: pointer;
-}
-
 .cases__row:hover {
   background: var(--kyc-color-surface);
-}
-
-.cases__row:focus-visible {
-  outline: var(--kyc-focus-ring);
-  outline-offset: -2px;
 }
 
 .cases__status {

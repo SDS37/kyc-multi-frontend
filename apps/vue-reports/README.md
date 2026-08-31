@@ -18,4 +18,4 @@ npm install
 npm run dev
 ```
 
-Expected URL: `http://localhost:5173`.
+Expected URL: `http://localhost:5174` (avoid colliding with React customer on `5173`).

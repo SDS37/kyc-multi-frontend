@@ -4,6 +4,7 @@ using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
+using Kyc.Api.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kyc.Api.Application.Cases;
@@ -32,14 +33,14 @@ public sealed class StartCaseReviewService(
             return (null, Array.Empty<string>(), true, null, null);
         }
 
-        // Stale-token guard + FK safety for ReviewedBy.
-        var reviewerExists = await db.Users
-            .AsNoTracking()
-            .AnyAsync(
-                u => u.Id == reviewerUserId && u.TenantId == tenantId,
-                cancellationToken);
-
-        if (!reviewerExists)
+        var allowed = await CallerAuthorization.EnsureUserWithRolesAsync(
+            db,
+            tenantId.Value,
+            reviewerUserId.Value,
+            currentUser.Role,
+            [UserRole.Reviewer, UserRole.TenantAdmin],
+            cancellationToken);
+        if (!allowed)
         {
             return (null, Array.Empty<string>(), true, null, null);
         }

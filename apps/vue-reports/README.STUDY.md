@@ -31,7 +31,7 @@ flowchart LR
     Vue -->|"JWT Reviewer or TenantAdmin"| Q
 ```
 
-Expected URL: `http://localhost:5173` (Vite default in README). CORS: KYC-091.
+Expected URL: `http://localhost:5174` (avoid colliding with React customer on `5173`). CORS: KYC-091 (add `5174` when Vue ships).
 
 ## Federation
 
@@ -39,7 +39,7 @@ Not a remote in MVP (ADR-005). Week 7 might load this from an Angular shell; unt
 
 ## Today vs target
 
-API list/detail exist — a Vue table could be built tomorrow against the playground token. The folder is empty because Week 6 is the scheduled UI. Local CORS already includes `http://localhost:5173`. Security headers stay W6.
+API list/detail exist — a Vue table could be built tomorrow against the playground token. The folder is empty because Week 6 is the scheduled UI. Prefer port `5174` so it does not collide with React on `5173`. Security headers stay W6.
 
 ## What to skip
 

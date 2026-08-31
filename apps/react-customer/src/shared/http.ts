@@ -11,7 +11,7 @@ export interface ApiAuthOptions {
 /**
  * Typed GraphQL POST helper (KYC-070).
  * Attaches Authorization when a session token exists unless skipAuth is set.
- * Clears the session on HTTP 401.
+ * Clears the session on HTTP 401 or GraphQL AUTH_NOT_AUTHENTICATED.
  */
 export async function graphqlRequest<TData>(
   query: string,
@@ -42,7 +42,9 @@ export async function graphqlRequest<TData>(
   }
 
   const raw: unknown = await response.json();
-  return parseGraphqlResponse<TData>(raw);
+  const parsed: GraphqlResponse<TData> = parseGraphqlResponse<TData>(raw);
+  clearSessionOnGraphqlAuthFailure(parsed.errors);
+  return parsed;
 }
 
 /** REST helper under apiBaseUrl with the same JWT attachment rules. */
@@ -70,6 +72,18 @@ export async function apiFetch(
 
 function clearSessionOnUnauthorized(response: Response): void {
   if (response.status === 401) {
+    tokenStorage.clearSession();
+  }
+}
+
+function clearSessionOnGraphqlAuthFailure(errors: GraphqlError[] | undefined): void {
+  if (!errors?.length) {
+    return;
+  }
+  const expired: boolean = errors.some(
+    (err: GraphqlError): boolean => err.extensions?.code === 'AUTH_NOT_AUTHENTICATED',
+  );
+  if (expired) {
     tokenStorage.clearSession();
   }
 }

@@ -4,6 +4,7 @@ using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
+using Kyc.Api.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kyc.Api.Application.Cases;
@@ -32,14 +33,14 @@ public sealed class UpdateDraftCaseService(
             return (null, Array.Empty<string>(), true, null, null);
         }
 
-        // Same stale-token guard as create: JWT subject must still exist in this tenant.
-        var customerExists = await db.Users
-            .AsNoTracking()
-            .AnyAsync(
-                u => u.Id == customerUserId && u.TenantId == tenantId,
-                cancellationToken);
-
-        if (!customerExists)
+        var allowed = await CallerAuthorization.EnsureUserWithRolesAsync(
+            db,
+            tenantId.Value,
+            customerUserId.Value,
+            currentUser.Role,
+            [UserRole.Customer],
+            cancellationToken);
+        if (!allowed)
         {
             return (null, Array.Empty<string>(), true, null, null);
         }

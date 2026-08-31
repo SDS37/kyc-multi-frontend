@@ -15,9 +15,11 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,10 +76,15 @@ builder.WebHost.ConfigureKestrel(options =>
 var objectStorageSection = builder.Configuration.GetSection(ObjectStorageOptions.SectionName);
 builder.Services.Configure<ObjectStorageOptions>(objectStorageSection);
 var objectStorageOptions = objectStorageSection.Get<ObjectStorageOptions>() ?? new ObjectStorageOptions();
-if (string.IsNullOrWhiteSpace(objectStorageOptions.Provider) ||
-    string.Equals(objectStorageOptions.Provider, "InMemory", StringComparison.OrdinalIgnoreCase))
+if (string.IsNullOrWhiteSpace(objectStorageOptions.Provider))
 {
-    // Tests, design-time (`dotnet ef`), and hosts that have not configured MinIO yet.
+    throw new InvalidOperationException(
+        "ObjectStorage:Provider is required. Use Minio for local/prod hosts or InMemory for tests. " +
+        "Copy appsettings.Development.json.example or set ObjectStorage__Provider.");
+}
+
+if (string.Equals(objectStorageOptions.Provider, "InMemory", StringComparison.OrdinalIgnoreCase))
+{
     builder.Services.AddSingleton<IObjectStorage, InMemoryObjectStorage>();
 }
 else if (string.Equals(objectStorageOptions.Provider, "Minio", StringComparison.OrdinalIgnoreCase))
@@ -168,6 +175,8 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.Configure<RegistrationOptions>(
+    builder.Configuration.GetSection(RegistrationOptions.SectionName));
 builder.Services.AddScoped<RegisterTenantService>();
 builder.Services.AddScoped<LoginService>();
 builder.Services.AddScoped<CreateDraftCaseService>();
@@ -194,6 +203,20 @@ builder.Services
     .ModifyRequestOptions(options =>
         options.IncludeExceptionDetails = builder.Environment.IsDevelopment());
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -210,6 +233,7 @@ if (corsOrigins.Length > 0)
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseRequestTimeouts();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
@@ -226,6 +250,7 @@ app.MapHealthChecks("/ready", new HealthCheckOptions
 // field auth (Query/Mutation [Authorize] + [AllowAnonymous]) enforces deny-by-default.
 app.MapGraphQL("/graphql")
     .AllowAnonymous()
+    .RequireRateLimiting("auth")
     .WithOptions(options =>
     {
         var development = app.Environment.IsDevelopment();
@@ -252,6 +277,7 @@ app.MapPost("/api/register-tenant", async (
 })
 .WithName("RegisterTenant")
 .AllowAnonymous()
+.RequireRateLimiting("auth")
 .DisableAntiforgery();
 
 app.MapPost("/api/login", async (
@@ -276,6 +302,7 @@ app.MapPost("/api/login", async (
 })
 .WithName("Login")
 .AllowAnonymous()
+.RequireRateLimiting("auth")
 .DisableAntiforgery();
 
 // Document upload (KYC-040) — multipart bytes on REST; metadata via GraphQL case detail.

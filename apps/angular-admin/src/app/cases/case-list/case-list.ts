@@ -14,7 +14,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { EMPTY, Observable, Subject, catchError, switchMap, tap } from 'rxjs';
 import { UI_MESSAGES } from '../../shared/ui.messages';
 import { parseStatusFilterValue, toCasesLoadError } from '../cases.mappers';
@@ -48,7 +48,6 @@ import { CasesService } from '../cases.service';
 })
 export class CaseList implements OnInit {
   private readonly casesService: CasesService = inject(CasesService);
-  private readonly router: Router = inject(Router);
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
   private readonly reloadRequests: Subject<void> = new Subject<void>();
@@ -126,9 +125,5 @@ export class CaseList implements OnInit {
 
   protected reload(): void {
     this.reloadRequests.next();
-  }
-
-  protected openCase(row: CaseListItem): void {
-    void this.router.navigate(['/cases', row.id]);
   }
 }

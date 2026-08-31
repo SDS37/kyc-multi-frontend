@@ -43,5 +43,8 @@
     "SecretKey": "changeme1",
     "BucketName": "kyc-documents",
     "ForcePathStyle": true
+  },
+  "Registration": {
+    "AllowPublicRegistration": true
   }
 }

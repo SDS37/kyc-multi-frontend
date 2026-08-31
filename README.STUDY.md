@@ -56,9 +56,9 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 
 | Target ([architecture](docs/architecture.md), [ADRs](docs/architecture-decision-records.md)) | Today on `main` |
 |---|---|
-| Three UIs + GraphQL API | API is real; **Angular admin foundation** (KYC-060); React/Vue still placeholders |
+| Three UIs + GraphQL API | API is real; **Angular admin** (KYC-060–065) and **React customer** (KYC-070–072); Vue still a placeholder |
 | Modular monolith (Identity, Cases, Documents, Audit) | **Layer folders** inside one .NET project; Documents use-cases exist |
-| CQRS + MediatR | Application **services** called from GraphQL / REST upload |
+| CQRS + MediatR | Application **services** called from GraphQL / REST upload (MediatR is target only) |
 | GraphQL as the only public API | Cases are GraphQL; **upload is dedicated REST**; login/register still have temporary REST twins |
 | MinIO for KYC files | Compose + API `IObjectStorage` / MinIO (InMemory in tests) |
 
@@ -73,7 +73,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 5. Follow **one mutation** through [Kyc.Api](apps/api/Kyc.Api/README.STUDY.md) → [GraphQL](apps/api/Kyc.Api/GraphQL/README.STUDY.md) → [Application](apps/api/Kyc.Api/Application/README.STUDY.md) → [Domain](apps/api/Kyc.Api/Domain/README.STUDY.md) → [Data](apps/api/Kyc.Api/Data/README.STUDY.md). Then skim [Documents](apps/api/Kyc.Api/Application/Documents/README.STUDY.md) for the REST upload path.
 6. [Tests](apps/api/Kyc.Api.Tests/README.STUDY.md) — especially tenant isolation. This is the sentence isolation conversations hang on.
 7. [Workflows](.github/workflows/README.STUDY.md) — what `api-ci` / `angular-ci` prove.
-8. Frontends: [angular-admin](apps/angular-admin/README.STUDY.md) (KYC-060 scaffold), then placeholders [react-customer](apps/react-customer/README.STUDY.md), [vue-reports](apps/vue-reports/README.STUDY.md).
+8. Frontends: [angular-admin](apps/angular-admin/README.STUDY.md), [react-customer](apps/react-customer/README.STUDY.md), then placeholder [vue-reports](apps/vue-reports/README.STUDY.md).
 
 ## What to skip
 

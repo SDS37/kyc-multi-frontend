@@ -7,6 +7,7 @@ using Kyc.Api.Application.Tenancy;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
+using Kyc.Api.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kyc.Api.Application.Cases;
@@ -41,17 +42,23 @@ public sealed class CreateDraftCaseService(
             return (null, Array.Empty<string>(), true);
         }
 
-        // Ensure the JWT subject is a real user in this tenant (FK + tenant consistency).
+        var allowed = await CallerAuthorization.EnsureUserWithRolesAsync(
+            db,
+            tenantId.Value,
+            customerUserId.Value,
+            currentUser.Role,
+            [UserRole.Customer],
+            cancellationToken);
+        if (!allowed)
+        {
+            return (null, Array.Empty<string>(), true);
+        }
+
         var customerEmail = await db.Users
             .AsNoTracking()
             .Where(u => u.Id == customerUserId && u.TenantId == tenantId)
             .Select(u => u.Email)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (customerEmail is null)
-        {
-            return (null, Array.Empty<string>(), true);
-        }
+            .FirstAsync(cancellationToken);
 
         var now = DateTimeOffset.UtcNow;
         var formData = CaseDraftValidation.NormalizeFormData(request.FormData);

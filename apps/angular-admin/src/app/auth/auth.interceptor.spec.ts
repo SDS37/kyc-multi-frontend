@@ -72,4 +72,36 @@ describe('authInterceptor', () => {
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
   });
+
+  it('clears the session on HTTP 401', (): void => {
+    tokens.setAccessToken('test-jwt');
+    http.get(graphqlUrl).subscribe({
+      error: (): void => undefined,
+    });
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
+    req.flush('unauthorized', { status: 401, statusText: 'Unauthorized' });
+    expect(tokens.getAccessToken()).toBeNull();
+  });
+
+  it('clears the session on GraphQL AUTH_NOT_AUTHENTICATED', (): void => {
+    tokens.setAccessToken('test-jwt');
+    http.post(graphqlUrl, { query: '{ me { id } }' }).subscribe();
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
+    req.flush({
+      data: null,
+      errors: [{ message: 'The current user is not authorized to access this resource.', extensions: { code: 'AUTH_NOT_AUTHENTICATED' } }],
+    });
+    expect(tokens.getAccessToken()).toBeNull();
+  });
+
+  it('keeps the session on unrelated GraphQL errors', (): void => {
+    tokens.setAccessToken('test-jwt');
+    http.post(graphqlUrl, { query: '{ cases { items { id } } }' }).subscribe();
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
+    req.flush({
+      data: null,
+      errors: [{ message: 'boom', extensions: { code: 'VALIDATION' } }],
+    });
+    expect(tokens.getAccessToken()).toBe('test-jwt');
+  });
 });

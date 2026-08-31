@@ -5,11 +5,13 @@ on:
   pull_request:
     paths:
       - "apps/angular-admin/**"
+      - "packages/design-tokens/**"
       - ".github/workflows/angular-ci.yml"
   push:
     branches: [main]
     paths:
       - "apps/angular-admin/**"
+      - "packages/design-tokens/**"
       - ".github/workflows/angular-ci.yml"
 
 concurrency:

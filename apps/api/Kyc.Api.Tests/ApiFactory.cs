@@ -43,6 +43,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Jwt:ExpiresMinutes", "60");
         builder.UseSetting("ObjectStorage:Provider", "InMemory");
         builder.UseSetting("ObjectStorage:BucketName", "kyc-documents");
+        builder.UseSetting("Registration:AllowPublicRegistration", "true");
 
         builder.ConfigureTestServices(services =>
         {
