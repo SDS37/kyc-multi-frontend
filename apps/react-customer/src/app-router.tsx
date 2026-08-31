@@ -1,10 +1,11 @@
 import { createBrowserRouter, Navigate, type DataRouter } from 'react-router';
 import { LoginPage } from './auth/login-page/login-page';
 import { RequireAuth, RequireGuest } from './auth/route-guards';
-import { CasesPlaceholder } from './cases/cases-placeholder/cases-placeholder';
+import { CaseDraftPlaceholder } from './cases/case-draft-placeholder/case-draft-placeholder';
+import { CaseList } from './cases/case-list/case-list';
 import { CustomerShell } from './layout/customer-shell';
 
-/** App route table (KYC-071). Login outside shell; cases stub until KYC-072. */
+/** App route table (KYC-072). Login outside shell; my cases under auth. */
 export const appRouter: DataRouter = createBrowserRouter([
   {
     path: '/login',
@@ -28,7 +29,11 @@ export const appRouter: DataRouter = createBrowserRouter([
       },
       {
         path: 'cases',
-        element: <CasesPlaceholder />,
+        element: <CaseList />,
+      },
+      {
+        path: 'cases/:caseId',
+        element: <CaseDraftPlaceholder />,
       },
     ],
   },

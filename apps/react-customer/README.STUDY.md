@@ -1,37 +1,26 @@
 # Study: `apps/react-customer`
 
-Study tour of this folder. Official README: [README.md](README.md).
-
-**Aligned with:** KYC-070 foundation + KYC-071 login on `feat/kyc-071-react-login`.
+**Aligned with:** KYC-070–072 on `feat/kyc-072-react-my-cases`.
 
 ## Purpose
 
-Customer portal (Week 5, KYC-070–074): sign in, create a KYC case, fill FormData, upload documents, submit, watch status. Same JWT and GraphQL schema as Angular admin; different product surface.
+Customer portal: sign in, list own cases, create drafts (FormData edit/submit = KYC-073+).
 
-## Foundation + login map
+## Map
 
 | Concern | Where |
 |---|---|
-| Router / guards | `src/app-router.tsx`, `src/auth/route-guards.tsx` |
-| Login UI | `src/auth/login-page/` (Angular-parity `--kyc-*` layout) |
-| Auth contract | `src/auth/auth.models.ts`, `auth.mappers.ts`, `login-api.ts` |
-| Shell | `src/layout/customer-shell.tsx` |
-| Cases stub | `src/cases/cases-placeholder/` until KYC-072 |
-| Standards | [frontend-code-standards — React](../../docs/frontend-code-standards.md#react-appsreact-customer) |
+| List + create | `src/cases/case-list/` |
+| GraphQL | `src/cases/cases-api.ts` (`cases`, `createDraftCase`) |
+| Pure parse | `src/cases/cases.mappers.ts` |
+| Guards | `src/auth/route-guards.tsx` |
 
-## Demo credentials
+## Angular differences
 
-`registerTenant` creates **TenantAdmin** only (`acme` / `admin@acme.example` / `ChangeMe1`). Login works for any role once the user exists. Customer-only APIs need a Customer user provisioned outside this app (no public signup).
-
-## What to skip
-
-- Approve/reject UI (Angular)
-- Apollo / Redux until a story needs them
-- Public Customer signup
+Admin list is a review queue (includes `customerEmail`, no create). Customer list drops email, adds **New case** → `createDraftCase` → `/cases/:id`.
 
 ## Links
 
 - [README.md](README.md)
-- [react.dev](https://react.dev/)
-- [ADR-005](../../docs/architecture-decision-records.md)
-- [Angular login](../angular-admin/src/app/auth/login/)
+- [Issue #33](https://github.com/SDS37/kyc-multi-frontend/issues/33)
+- [Angular case-list](../angular-admin/src/app/cases/case-list/)

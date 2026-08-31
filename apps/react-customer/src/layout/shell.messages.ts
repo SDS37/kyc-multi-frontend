@@ -1,18 +1,21 @@
 import { UI_MESSAGES } from '../shared/ui.messages';
 
-/** Authenticated shell chrome (KYC-071; mirrors Angular KYC-064). */
-export const SHELL_MESSAGES = {
+/** Authenticated shell chrome (KYC-071+). */
+export interface ShellMessages {
+  readonly brand: string;
+  readonly casesNav: string;
+  readonly primaryNavAria: string;
+  readonly signOut: string;
+  readonly tenantIdTitlePrefix: string;
+}
+
+export const SHELL_MESSAGES: ShellMessages = {
   brand: UI_MESSAGES.brand,
   casesNav: 'My cases',
   primaryNavAria: 'Primary',
   signOut: UI_MESSAGES.signOut,
   tenantIdTitlePrefix: 'Tenant id: ',
-  casesPlaceholderTitle: 'My cases',
-  casesPlaceholderLede:
-    'Your customer cases will appear here in the next story. You are signed in.',
-} as const;
-
-export type ShellMessages = typeof SHELL_MESSAGES;
+};
 
 /** Pure: title attribute for the tenant chip. */
 export function tenantIdTitle(tenantId: string): string {
