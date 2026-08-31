@@ -1,4 +1,3 @@
-import { FormControl } from '@angular/forms';
 import { GraphqlError } from '../shared/graphql.models';
 
 /** GraphQL `CaseStatus` enum values (Hot Chocolate names). */
@@ -109,9 +108,9 @@ export interface CaseReviewActions {
   canReject: boolean;
 }
 
-/** Reject form control map (Reactive Forms; single required comment). */
-export interface RejectFormControls {
-  comment: FormControl<string>;
+/** Reject comment model for Signal Forms (KYC-065). */
+export interface RejectCommentModel {
+  comment: string;
 }
 
 /** User-facing case list / detail load failure. */

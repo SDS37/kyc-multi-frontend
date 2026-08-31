@@ -27,68 +27,25 @@
         <a routerLink="/cases" class="review__back-link">{{ copy.backToCasesShort }}</a>
       }
     </div>
-  } @else if (loading()) {
+  } @else if (loading() && !detail()) {
     <div class="review__loading" role="status" aria-live="polite">
       <mat-spinner diameter="36" [attr.aria-label]="copy.loadingAria" />
       <span>{{ copy.loading }}</span>
     </div>
   } @else if (detail(); as caseDetail) {
     <div class="review__grid">
-      <section class="review__section" aria-labelledby="form-heading">
-        <h2 id="form-heading" class="review__section-title">{{ copy.formHeading }}</h2>
-        @if (caseDetail.formFields.length === 0) {
-          <p class="review__muted" role="status">{{ copy.formEmpty }}</p>
-        } @else {
-          <dl class="review__dl">
-            @for (field of caseDetail.formFields; track field.key) {
-              <div class="review__dl-row">
-                <dt>{{ field.label }}</dt>
-                <dd>{{ field.value || sharedCopy.emptyValue }}</dd>
-              </div>
-            }
-          </dl>
-        }
-      </section>
+      <div class="review__section">
+        <app-case-form-data-pane [formFields]="caseDetail.formFields" />
+      </div>
 
-      <section class="review__section" aria-labelledby="docs-heading">
-        <h2 id="docs-heading" class="review__section-title">{{ copy.docsHeading }}</h2>
-        @if (downloadError(); as dlError) {
-          <div class="review__alert review__alert--inline" role="alert">
-            <p>{{ dlError }}</p>
-          </div>
-        }
-        @if (caseDetail.documents.length === 0) {
-          <p class="review__muted" role="status">{{ copy.docsEmpty }}</p>
-        } @else {
-          <ul class="review__docs">
-            @for (doc of caseDetail.documents; track doc.id) {
-              <li class="review__doc">
-                <div class="review__doc-info">
-                  <span class="review__doc-name">{{ doc.fileName }}</span>
-                  <span class="review__doc-meta">
-                    {{ doc.sizeLabel }} · {{ doc.contentType }} ·
-                    {{ doc.uploadedAt | date: 'medium' }}
-                  </span>
-                </div>
-                <button
-                  mat-stroked-button
-                  type="button"
-                  (click)="download(doc)"
-                  [disabled]="downloadingId() !== null"
-                  [attr.aria-busy]="downloadingId() === doc.id"
-                  [attr.aria-label]="doc.downloadAriaLabel"
-                >
-                  @if (downloadingId() === doc.id) {
-                    {{ copy.downloading }}
-                  } @else {
-                    {{ copy.download }}
-                  }
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+      <div class="review__section">
+        <app-case-documents-pane
+          [documents]="caseDetail.documents"
+          [downloadError]="downloadError()"
+          [downloadingId]="downloadingId()"
+          (download)="download($event)"
+        />
+      </div>
 
       @if (caseDetail.comments.length > 0 || caseDetail.reviewComment) {
         <section class="review__section" aria-labelledby="comments-heading">
@@ -110,94 +67,19 @@
         </section>
       }
 
-      <section class="review__section review__actions" aria-labelledby="actions-heading">
-        <h2 id="actions-heading" class="review__section-title">{{ copy.actionsHeading }}</h2>
-
-        @if (actionError(); as actError) {
-          <div class="review__alert review__alert--inline" role="alert">
-            <p>{{ actError }}</p>
-          </div>
-        }
-
-        @if (actions().canStartReview) {
-          <p class="review__lede">{{ copy.startReviewLede }}</p>
-          <button
-            mat-flat-button
-            color="primary"
-            type="button"
-            (click)="startReview()"
-            [disabled]="actionBusy()"
-          >
-            {{ copy.startReview }}
-          </button>
-        }
-
-        @if (actions().canApprove || actions().canReject) {
-          <div class="review__decide">
-            <mat-form-field appearance="outline" class="review__field" subscriptSizing="dynamic">
-              <mat-label>{{ copy.approveCommentLabel }}</mat-label>
-              <textarea
-                matInput
-                rows="2"
-                [attr.maxlength]="commentMaxLength"
-                [value]="approveComment()"
-                (input)="onApproveCommentInput($event)"
-                aria-describedby="approve-comment-hint"
-              ></textarea>
-              <mat-hint id="approve-comment-hint">{{ copy.approveCommentHint }}</mat-hint>
-            </mat-form-field>
-
-            <button
-              mat-flat-button
-              color="primary"
-              type="button"
-              (click)="approve()"
-              [disabled]="actionBusy() || !actions().canApprove"
-            >
-              {{ copy.approve }}
-            </button>
-
-            <form class="review__reject" [formGroup]="rejectForm" (ngSubmit)="reject()" novalidate>
-              <mat-form-field appearance="outline" class="review__field" subscriptSizing="dynamic">
-                <mat-label>{{ copy.rejectCommentLabel }}</mat-label>
-                <textarea
-                  matInput
-                  rows="3"
-                  formControlName="comment"
-                  [attr.maxlength]="commentMaxLength"
-                  [attr.aria-invalid]="
-                    rejectForm.controls.comment.invalid && rejectForm.controls.comment.touched
-                  "
-                  [attr.aria-describedby]="
-                    rejectForm.controls.comment.invalid && rejectForm.controls.comment.touched
-                      ? 'reject-comment-error'
-                      : 'reject-comment-hint'
-                  "
-                ></textarea>
-                <mat-hint id="reject-comment-hint">{{ rejectHint }}</mat-hint>
-                @if (rejectForm.controls.comment.hasError('required')) {
-                  <mat-error id="reject-comment-error">{{ copy.rejectCommentRequired }}</mat-error>
-                } @else if (rejectForm.controls.comment.hasError('maxlength')) {
-                  <mat-error id="reject-comment-error">{{ rejectMaxLengthError }}</mat-error>
-                }
-              </mat-form-field>
-
-              <button
-                mat-stroked-button
-                color="warn"
-                type="submit"
-                [disabled]="actionBusy() || !actions().canReject"
-              >
-                {{ copy.reject }}
-              </button>
-            </form>
-          </div>
-        }
-
-        @if (!actions().canStartReview && !actions().canApprove && !actions().canReject) {
-          <p class="review__muted" role="status">{{ noActionsMessage() }}</p>
-        }
-      </section>
+      <div class="review__section review__actions">
+        <app-case-review-actions-pane
+          [actions]="actions()"
+          [actionError]="actionError()"
+          [actionBusy]="actionBusy()"
+          [noActionsMessage]="noActionsMessage()"
+          [rejectCommentField]="rejectForm.comment"
+          [(approveComment)]="approveComment"
+          (startReview)="startReview()"
+          (approve)="approve()"
+          (reject)="reject()"
+        />
+      </div>
     </div>
   }
 </main>

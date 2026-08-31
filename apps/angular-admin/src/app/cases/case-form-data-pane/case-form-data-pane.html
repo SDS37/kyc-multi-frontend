@@ -1,0 +1,15 @@
+<section class="pane" aria-labelledby="form-heading">
+  <h2 id="form-heading" class="pane__title">{{ copy.formHeading }}</h2>
+  @if (formFields().length === 0) {
+    <p class="pane__muted" role="status">{{ copy.formEmpty }}</p>
+  } @else {
+    <dl class="pane__dl">
+      @for (field of formFields(); track field.key) {
+        <div class="pane__dl-row">
+          <dt>{{ field.label }}</dt>
+          <dd>{{ field.value || sharedCopy.emptyValue }}</dd>
+        </div>
+      }
+    </dl>
+  }
+</section>
