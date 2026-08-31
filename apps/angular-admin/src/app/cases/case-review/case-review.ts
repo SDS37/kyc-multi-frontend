@@ -195,7 +195,8 @@ export class CaseReview {
       .subscribe({
         next: (): void => {
           this.actionBusy.set(false);
-          this.rejectModel.set({ comment: '' });
+          // Clears value + touched/dirty so required error UI does not linger after submit.
+          this.rejectForm.comment().reset('');
           this.approveComment.set('');
           this.reload();
         },
