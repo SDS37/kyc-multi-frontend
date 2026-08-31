@@ -1,0 +1,43 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--kyc-space-4);
+  margin-bottom: var(--kyc-space-4);
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kyc-space-1);
+  width: min(100%, 16rem);
+}
+
+.filterLabel {
+  font-size: var(--kyc-text-sm);
+  font-weight: 600;
+  color: var(--kyc-color-text);
+}
+
+.filter select {
+  min-height: 2.5rem;
+  padding: var(--kyc-space-2) var(--kyc-space-3);
+  border: 1px solid var(--kyc-color-border);
+  border-radius: var(--kyc-radius-md);
+  background: var(--kyc-color-surface-raised);
+  color: var(--kyc-color-text);
+  font: inherit;
+}
+
+.filter select:focus-visible {
+  outline: none;
+  box-shadow: var(--kyc-focus-ring);
+  border-color: var(--kyc-color-focus);
+}
+
+.count {
+  margin: 0;
+  font-size: var(--kyc-text-sm);
+  color: var(--kyc-color-text-muted);
+}

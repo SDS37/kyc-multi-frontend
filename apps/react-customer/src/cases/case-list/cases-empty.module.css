@@ -1,0 +1,8 @@
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--kyc-space-3);
+  margin: var(--kyc-space-6) 0;
+  color: var(--kyc-color-text-muted);
+  font-size: var(--kyc-text-sm);
+}

@@ -1,14 +1,14 @@
 # React Customer
 
-React **19+** customer portal (`apps/react-customer`). Foundation: KYC-070. Login: KYC-071.
+React **19+** customer portal (`apps/react-customer`). KYC-070 foundation · KYC-071 login · KYC-072 my cases.
 
-**How to write this app:** [Frontend code standards](../../docs/frontend-code-standards.md) (shared rules + [React section](../../docs/frontend-code-standards.md#react-appsreact-customer) aligned with [react.dev](https://react.dev)). Shared colors/spacing: [UX design tokens](../../docs/ux-design-tokens.md) / `@kyc/design-tokens` — same `--kyc-*` tokens as Angular admin. Prefer [functional style](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends); keep an explicit [component tree](../../docs/frontend-code-standards.md#component-tree-all-frontends).
+**How to write this app:** [Frontend code standards](../../docs/frontend-code-standards.md) (shared rules + [React section](../../docs/frontend-code-standards.md#react-appsreact-customer)). Shared `--kyc-*` tokens match Angular admin ([ux-design-tokens.md](../../docs/ux-design-tokens.md)).
 
 ## Prerequisites
 
 - Node.js **20.19+** (22 recommended; see `.nvmrc`)
-- API running locally at `http://localhost:5295` (see [apps/api/README.md](../api/README.md))
-- CORS already allows `http://localhost:5173`
+- API at `http://localhost:5295`
+- CORS allows `http://localhost:5173`
 
 ## Run
 
@@ -18,43 +18,43 @@ npm install
 npm start
 ```
 
-App: `http://localhost:5173` → redirects guests to `/login`  
-GraphQL (dev): `http://localhost:5295/graphql` (override via `.env` from `.env.example`)
-
-```bash
-npm test       # Vitest
-npm run test:ci
-npm run build
-```
+App: `http://localhost:5173` → `/login` (guests) or `/cases` (signed in)
 
 ## Demo login
 
-Same GraphQL `login` contract as Angular. Register a tenant first (creates **TenantAdmin**):
+`registerTenant` creates **TenantAdmin**. Sign in works for any role; **`createDraftCase` requires Customer**.
 
 ```json
 { "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1", "tenantName": "Acme" }
 ```
 
-Then sign in with `acme` / `admin@acme.example` / `ChangeMe1`.  
-There is no public Customer signup yet — Customer-role users need a manual DB provision for Customer-only mutations (KYC-072+).
+Provision a Customer user in the DB for create-draft E2E (no public signup yet).
 
-## Component tree (KYC-071)
+## Security notes
+
+- List/create use JWT `Authorization` — never `skipAuth`
+- Own-cases filter is **API-side**; client never sends `customerUserId` / `tenantId`
+- Create input is **title only** (ADR-007)
+
+## Component tree (KYC-072)
 
 ```mermaid
 flowchart TB
   Main["main.tsx"] --> App["App"]
-  App --> Router["RouterProvider"]
-  Router --> Login["/login LoginPage<br/>guest"]
-  Router --> Shell["CustomerShell<br/>auth"]
-  Shell --> Cases["/cases CasesPlaceholder<br/>until KYC-072"]
+  App --> Login["/login"]
+  App --> Shell["CustomerShell"]
+  Shell --> Cases["/cases CaseList smart"]
+  Shell --> Draft["/cases/:id placeholder<br/>KYC-073"]
+  Cases --> Toolbar["CasesToolbar"]
+  Cases --> Table["CaseListTable"]
+  Cases --> Dialog["CreateDraftDialog"]
+  Cases --> Status["Loading / Empty / LoadError"]
 ```
-
-## What this app delivers so far
 
 | Piece | Location |
 |---|---|
-| Login (Angular-parity layout + tokens) | `src/auth/login-page/` |
-| Auth models / mappers / messages | `src/auth/` |
-| Guards | `src/auth/route-guards.tsx` |
-| Shell + sign out | `src/layout/` |
-| My cases stub | `src/cases/cases-placeholder/` |
+| Login | `src/auth/login-page/` |
+| My cases smart screen | `src/cases/case-list/case-list.tsx` |
+| Presentational list UI | `cases-toolbar`, `case-list-table`, `create-draft-dialog`, loading/empty/error |
+| Cases API / mappers | `src/cases/cases-api.ts`, `cases.mappers.ts` |
+| Draft placeholder | `src/cases/case-draft-placeholder/` |

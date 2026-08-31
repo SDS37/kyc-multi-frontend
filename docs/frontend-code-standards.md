@@ -436,18 +436,24 @@ Follow official [react.dev](https://react.dev) ([Learn](https://react.dev/learn)
 
 ### React component tree (required)
 
-Foundation tree shipped through KYC-071:
+Foundation tree shipped through KYC-072:
 
 ```mermaid
 flowchart TB
-  Main["main.tsx<br/>createRoot"] --> App["App<br/>RouterProvider"]
-  App --> Login["/login LoginPage<br/>guest"]
-  App --> Shell["CustomerShell<br/>auth + Outlet"]
-  Shell --> Cases["/cases CasesPlaceholder<br/>until KYC-072"]
+  Main["main.tsx"] --> App["App"]
+  App --> Login["/login LoginPage"]
+  App --> Shell["CustomerShell"]
+  Shell --> Cases["/cases CaseList smart"]
+  Shell --> Draft["/cases/:id placeholder<br/>until KYC-073"]
+  Cases --> Toolbar["CasesToolbar"]
+  Cases --> Table["CaseListTable"]
+  Cases --> Dialog["CreateDraftDialog"]
+  Cases --> Status["Loading / Empty / LoadError"]
 
   classDef now fill:#f1f5f9,stroke:#64748b,color:#0f172a
-  classDef next fill:#dbeafe,stroke:#2563eb,color:#0f172a
-  class Main,App,Login,Shell,Cases now
+  classDef leaf fill:#ecfdf5,stroke:#0f6e56,color:#0f172a
+  class Main,App,Login,Shell,Cases,Draft now
+  class Toolbar,Table,Dialog,Status leaf
 ```
 
 | Node | Owns | Must not |

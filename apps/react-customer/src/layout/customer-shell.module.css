@@ -124,11 +124,6 @@
 
 .content {
   flex: 1 1 auto;
-  padding: var(--kyc-page-gutter);
-  max-width: 56rem;
-  width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
 }
 
 @media (max-width: 640px) {

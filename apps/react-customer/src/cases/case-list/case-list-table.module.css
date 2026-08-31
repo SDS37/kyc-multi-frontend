@@ -1,0 +1,82 @@
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--kyc-color-border);
+  border-radius: var(--kyc-radius-md);
+  background: var(--kyc-color-surface-raised);
+  box-shadow: var(--kyc-shadow-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--kyc-text-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--kyc-space-3) var(--kyc-space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--kyc-color-border);
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--kyc-color-text-muted);
+  background: var(--kyc-color-surface);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.link {
+  color: var(--kyc-color-brand);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover,
+.link:focus-visible {
+  text-decoration: underline;
+}
+
+.row:hover {
+  background: var(--kyc-color-surface);
+}
+
+.status {
+  display: inline-block;
+  padding: var(--kyc-space-1) var(--kyc-space-2);
+  border-radius: var(--kyc-radius-sm);
+  font-size: var(--kyc-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--kyc-color-surface);
+  color: var(--kyc-color-text);
+  border: 1px solid var(--kyc-color-border);
+}
+
+.status[data-status='SUBMITTED'],
+.status[data-status='IN_REVIEW'] {
+  background: var(--kyc-color-warning-bg);
+  color: var(--kyc-color-warning);
+  border-color: transparent;
+}
+
+.status[data-status='APPROVED'] {
+  background: var(--kyc-color-success-bg);
+  color: var(--kyc-color-success);
+  border-color: transparent;
+}
+
+.status[data-status='REJECTED'] {
+  background: var(--kyc-color-danger-bg);
+  color: var(--kyc-color-danger);
+  border-color: transparent;
+}
+
+@media (max-width: 640px) {
+  .tableWrap {
+    border-radius: var(--kyc-radius-sm);
+  }
+}
