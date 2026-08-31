@@ -2,9 +2,16 @@ import {
   type ChangeEvent,
   type FormEvent,
   type ReactElement,
+  type RefObject,
+  useRef,
   useState,
 } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import {
+  useNavigate,
+  useSearchParams,
+  type NavigateFunction,
+  type SetURLSearchParams,
+} from 'react-router';
 import { UI_MESSAGES } from '../../shared/ui.messages';
 import {
   hasLoginFieldErrors,
@@ -24,8 +31,9 @@ import styles from './login-page.module.css';
 export function LoginPage(): ReactElement {
   const copy: LoginMessages = LOGIN_MESSAGES;
   const brand: string = UI_MESSAGES.brand;
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const navigate: NavigateFunction = useNavigate();
+  const [searchParams]: [URLSearchParams, SetURLSearchParams] = useSearchParams();
+  const submittingLock: RefObject<boolean> = useRef(false);
 
   const [tenantSlug, setTenantSlug] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -46,10 +54,11 @@ export function LoginPage(): ReactElement {
     setTouched(true);
 
     const credentials: LoginCredentials = { tenantSlug, email, password };
-    if (hasLoginFieldErrors(validateLoginForm(credentials)) || submitting) {
+    if (hasLoginFieldErrors(validateLoginForm(credentials)) || submittingLock.current) {
       return;
     }
 
+    submittingLock.current = true;
     setSubmitting(true);
     try {
       await login(credentials);
@@ -57,6 +66,7 @@ export function LoginPage(): ReactElement {
       const returnUrl: string | null = searchParams.get('returnUrl');
       void navigate(resolvePostLoginUrl(returnUrl), { replace: true });
     } catch (err: unknown) {
+      submittingLock.current = false;
       setSubmitting(false);
       setFormError(toLoginFailedError(err).message);
     }
@@ -168,7 +178,11 @@ export function LoginPage(): ReactElement {
           >
             {submitting ? (
               <>
-                <span className={styles['spinner']} aria-label={copy.submittingAria} />
+                <span
+                  className={styles['spinner']}
+                  role="status"
+                  aria-label={copy.submittingAria}
+                />
                 <span>{copy.submitting}</span>
               </>
             ) : (

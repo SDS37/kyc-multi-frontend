@@ -13,9 +13,13 @@ export interface LoginSuccess {
 }
 
 /** JWT `role` claim values issued by the API. */
-export const APP_ROLES = ['TenantAdmin', 'Reviewer', 'Customer'] as const;
+export type AppRole = 'TenantAdmin' | 'Reviewer' | 'Customer';
 
-export type AppRole = (typeof APP_ROLES)[number];
+export const APP_ROLES: readonly AppRole[] = [
+  'TenantAdmin',
+  'Reviewer',
+  'Customer',
+];
 
 export function isAppRole(value: string): value is AppRole {
   return (APP_ROLES as readonly string[]).includes(value);

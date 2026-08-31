@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
-import { appRoleLabel, toShellSession } from '../auth/auth.mappers';
+import { NavLink, Outlet, useNavigate, type NavigateFunction } from 'react-router';
+import { appRoleLabel } from '../auth/auth.mappers';
 import type { ShellSession } from '../auth/auth.models';
+import { getValidShellSession } from '../auth/session';
 import { tokenStorage } from '../auth/token-storage';
 import { SHELL_MESSAGES, type ShellMessages, tenantIdTitle } from './shell.messages';
 import styles from './customer-shell.module.css';
@@ -12,11 +13,8 @@ import styles from './customer-shell.module.css';
  */
 export function CustomerShell(): ReactElement {
   const copy: ShellMessages = SHELL_MESSAGES;
-  const navigate = useNavigate();
-  const session: ShellSession | null = toShellSession(
-    tokenStorage.getAccessToken(),
-    tokenStorage.getTenantSlug(),
-  );
+  const navigate: NavigateFunction = useNavigate();
+  const session: ShellSession | null = getValidShellSession();
 
   const tenantLabel: string =
     session?.tenantSlug?.trim() || session?.tenantId || '';

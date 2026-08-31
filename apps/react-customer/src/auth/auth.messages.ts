@@ -1,7 +1,27 @@
 import type { AppRole } from './auth.models';
 
 /** Login page + auth failure copy (KYC-071; same contract as Angular KYC-061). */
-export const LOGIN_MESSAGES = {
+export interface LoginMessages {
+  readonly title: string;
+  readonly lede: string;
+  readonly tenantSlugLabel: string;
+  readonly emailLabel: string;
+  readonly passwordLabel: string;
+  readonly submit: string;
+  readonly submitting: string;
+  readonly submittingAria: string;
+  readonly tenantSlugRequired: string;
+  readonly tenantSlugMaxLength: string;
+  readonly emailRequired: string;
+  readonly emailMaxLength: string;
+  readonly emailInvalid: string;
+  readonly passwordRequired: string;
+  readonly passwordMaxLength: string;
+  readonly signInFailed: string;
+  readonly networkFailed: string;
+}
+
+export const LOGIN_MESSAGES: LoginMessages = {
   title: 'Sign in',
   lede: 'Use your tenant slug, work email, and password.',
   tenantSlugLabel: 'Tenant slug',
@@ -19,9 +39,7 @@ export const LOGIN_MESSAGES = {
   passwordMaxLength: 'Password must be at most 128 characters.',
   signInFailed: 'Sign-in failed. Check your details and try again.',
   networkFailed: 'Unable to reach the sign-in service. Try again in a moment.',
-} as const;
-
-export type LoginMessages = typeof LOGIN_MESSAGES;
+};
 
 /** Shell role labels (display only). */
 export const APP_ROLE_LABELS: Readonly<Record<AppRole, string>> = {
