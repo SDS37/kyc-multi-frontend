@@ -10,7 +10,8 @@ Customer portal: sign in, list own cases, create drafts (FormData edit/submit = 
 
 | Concern | Where |
 |---|---|
-| List + create | `src/cases/case-list/` |
+| Smart list screen | `src/cases/case-list/case-list.tsx` |
+| Presentational leaves | toolbar, table, create dialog, loading/empty/error |
 | GraphQL | `src/cases/cases-api.ts` (`cases`, `createDraftCase`) |
 | Pure parse | `src/cases/cases.mappers.ts` |
 | Guards | `src/auth/route-guards.tsx` |

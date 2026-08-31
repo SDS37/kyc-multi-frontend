@@ -1,0 +1,23 @@
+.loading {
+  display: flex;
+  align-items: center;
+  gap: var(--kyc-space-3);
+  margin: var(--kyc-space-6) 0;
+  color: var(--kyc-color-text-muted);
+  font-size: var(--kyc-text-sm);
+}
+
+.spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--kyc-color-border);
+  border-top-color: var(--kyc-color-brand);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

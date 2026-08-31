@@ -443,11 +443,17 @@ flowchart TB
   Main["main.tsx"] --> App["App"]
   App --> Login["/login LoginPage"]
   App --> Shell["CustomerShell"]
-  Shell --> Cases["/cases CaseList"]
+  Shell --> Cases["/cases CaseList smart"]
   Shell --> Draft["/cases/:id placeholder<br/>until KYC-073"]
+  Cases --> Toolbar["CasesToolbar"]
+  Cases --> Table["CaseListTable"]
+  Cases --> Dialog["CreateDraftDialog"]
+  Cases --> Status["Loading / Empty / LoadError"]
 
   classDef now fill:#f1f5f9,stroke:#64748b,color:#0f172a
+  classDef leaf fill:#ecfdf5,stroke:#0f6e56,color:#0f172a
   class Main,App,Login,Shell,Cases,Draft now
+  class Toolbar,Table,Dialog,Status leaf
 ```
 
 | Node | Owns | Must not |

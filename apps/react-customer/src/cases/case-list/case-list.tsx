@@ -1,5 +1,4 @@
 import {
-  type ChangeEvent,
   type FormEvent,
   type ReactElement,
   type RefObject,
@@ -8,37 +7,35 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Link, useNavigate, type NavigateFunction } from 'react-router';
-import { UI_MESSAGES } from '../../shared/ui.messages';
+import { useNavigate, type NavigateFunction } from 'react-router';
 import { createDraftCase, listCases } from '../cases-api';
 import {
-  parseStatusFilterValue,
   toCasesLoadError,
   toCreateDraftError,
   validateCreateDraftTitle,
 } from '../cases.mappers';
 import {
-  CASE_STATUS_LABELS,
   CASES_LIST_MESSAGES,
   type CasesListMessages,
   casesCountLabel,
   casesEmptyForStatusLabel,
 } from '../cases.messages';
 import {
-  CASE_STATUSES,
-  CREATE_DRAFT_TITLE_MAX_LENGTH,
   type CaseListItem,
   type CaseListPage,
   type CaseStatus,
   type CreatedDraftCase,
 } from '../cases.models';
+import { CaseListTable } from './case-list-table';
 import styles from './case-list.module.css';
-
-const FOCUSABLE_SELECTOR: string =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+import { CasesEmpty } from './cases-empty';
+import { CasesLoadError } from './cases-load-error';
+import { CasesLoading } from './cases-loading';
+import { CasesToolbar } from './cases-toolbar';
+import { CreateDraftDialog } from './create-draft-dialog';
 
 /**
- * Customer my-cases list + create draft (KYC-072).
+ * Smart screen: customer my-cases list + create draft (KYC-072).
  * Own-only filtering is enforced by the API JWT — client never sends user ids.
  */
 export function CaseList(): ReactElement {
@@ -47,10 +44,6 @@ export function CaseList(): ReactElement {
   const loadSeq: RefObject<number> = useRef(0);
   const createLock: RefObject<boolean> = useRef(false);
   const creatingRef: RefObject<boolean> = useRef(false);
-  const dialogRef: RefObject<HTMLDivElement | null> = useRef<HTMLDivElement | null>(null);
-  const titleInputRef: RefObject<HTMLInputElement | null> = useRef<HTMLInputElement | null>(
-    null,
-  );
 
   const [statusFilter, setStatusFilter] = useState<CaseStatus | null>(null);
   const [items, setItems] = useState<readonly CaseListItem[]>([]);
@@ -92,94 +85,16 @@ export function CaseList(): ReactElement {
     void loadCases(statusFilter);
   }, [loadCases, statusFilter]);
 
-  useEffect((): (() => void) | void => {
-    if (!createOpen) {
-      return;
-    }
-
-    const previousOverflow: string = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const previouslyFocused: HTMLElement | null =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-    const focusTimer: number = window.setTimeout((): void => {
-      titleInputRef.current?.focus();
-    }, 0);
-
-    function onKeyDown(event: globalThis.KeyboardEvent): void {
-      if (event.key === 'Escape') {
-        if (creatingRef.current) {
-          return;
-        }
-        event.preventDefault();
-        setCreateOpen(false);
-        return;
-      }
-
-      if (event.key !== 'Tab') {
-        return;
-      }
-
-      const dialog: HTMLDivElement | null = dialogRef.current;
-      if (!dialog) {
-        return;
-      }
-
-      const focusable: HTMLElement[] = Array.from(
-        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-      ).filter((el: HTMLElement): boolean => !el.hasAttribute('disabled'));
-
-      if (focusable.length === 0) {
-        event.preventDefault();
-        return;
-      }
-
-      const first: HTMLElement | undefined = focusable[0];
-      const last: HTMLElement | undefined = focusable[focusable.length - 1];
-      if (!first || !last) {
-        return;
-      }
-
-      const active: Element | null = document.activeElement;
-      if (event.shiftKey) {
-        if (active === first || !dialog.contains(active)) {
-          event.preventDefault();
-          last.focus();
-        }
-      } else if (active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown);
-
-    return (): void => {
-      window.clearTimeout(focusTimer);
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus();
-    };
-  }, [createOpen]);
-
   const isEmpty: boolean = !loading && loadError === null && items.length === 0;
-  const countLabel: string = casesCountLabel(totalCount);
+  const countText: string | null = loading
+    ? copy.loading
+    : loadError !== null
+      ? null
+      : casesCountLabel(totalCount);
   const emptyMessage: string = statusFilter
     ? casesEmptyForStatusLabel(statusFilter)
     : copy.emptyAll;
   const createTitleError: string | null = validateCreateDraftTitle(createTitle);
-
-  function onStatusChange(event: ChangeEvent<HTMLSelectElement>): void {
-    const raw: string = event.target.value;
-    const parsed: CaseStatus | null | undefined = parseStatusFilterValue(
-      raw === '' ? null : raw,
-    );
-    if (parsed === undefined) {
-      return;
-    }
-    setStatusFilter(parsed);
-  }
 
   function openCreateDialog(): void {
     setCreateTitle('');
@@ -188,12 +103,12 @@ export function CaseList(): ReactElement {
     setCreateOpen(true);
   }
 
-  function closeCreateDialog(): void {
+  const closeCreateDialog = useCallback((): void => {
     if (creatingRef.current) {
       return;
     }
     setCreateOpen(false);
-  }
+  }, []);
 
   async function onCreateSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -235,154 +150,38 @@ export function CaseList(): ReactElement {
         </button>
       </header>
 
-      <section className={styles['toolbar']} aria-labelledby="cases-heading">
-        <label className={styles['filter']}>
-          <span className={styles['filterLabel']}>{copy.statusFilterLabel}</span>
-          <select
-            value={statusFilter ?? ''}
-            onChange={onStatusChange}
-            aria-label={copy.statusFilterAria}
-          >
-            <option value="">{copy.allStatuses}</option>
-            {CASE_STATUSES.map((status: CaseStatus) => (
-              <option key={status} value={status}>
-                {CASE_STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <p className={styles['count']} aria-live="polite">
-          {loading ? copy.loading : loadError !== null ? null : countLabel}
-        </p>
-      </section>
+      <CasesToolbar
+        statusFilter={statusFilter}
+        countText={countText}
+        onStatusChange={setStatusFilter}
+      />
 
       {loadError !== null ? (
-        <div className={styles['alert']} role="alert">
-          <p>{loadError}</p>
-          <button
-            type="button"
-            className={styles['retry']}
-            onClick={(): void => {
-              void loadCases(statusFilter);
-            }}
-          >
-            {UI_MESSAGES.tryAgain}
-          </button>
-        </div>
+        <CasesLoadError
+          message={loadError}
+          onRetry={(): void => {
+            void loadCases(statusFilter);
+          }}
+        />
       ) : loading ? (
-        <div className={styles['loading']} role="status" aria-live="polite">
-          <span className={styles['spinner']} aria-label={copy.loadingAria} />
-          <span>{copy.loading}</span>
-        </div>
+        <CasesLoading />
       ) : isEmpty ? (
-        <p className={styles['empty']} role="status">
-          {emptyMessage}
-        </p>
+        <CasesEmpty message={emptyMessage} />
       ) : (
-        <div className={styles['tableWrap']}>
-          <table className={styles['table']} aria-labelledby="cases-heading">
-            <thead>
-              <tr>
-                <th scope="col">{copy.columnTitle}</th>
-                <th scope="col">{copy.columnStatus}</th>
-                <th scope="col">{copy.columnUpdated}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((row: CaseListItem) => (
-                <tr key={row.id} className={styles['row']}>
-                  <td>
-                    <Link
-                      className={styles['link']}
-                      to={`/cases/${row.id}`}
-                      aria-label={row.openAriaLabel}
-                    >
-                      {row.title}
-                    </Link>
-                  </td>
-                  <td>
-                    <span className={styles['status']} data-status={row.status}>
-                      {row.statusLabel}
-                    </span>
-                  </td>
-                  <td>{row.updatedAtLabel}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <CaseListTable items={items} labelledBy="cases-heading" />
       )}
 
       {createOpen ? (
-        <div
-          className={styles['dialogBackdrop']}
-          role="presentation"
-          onClick={closeCreateDialog}
-        >
-          <div
-            ref={dialogRef}
-            className={styles['dialog']}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-draft-title"
-            onClick={(event): void => {
-              event.stopPropagation();
-            }}
-          >
-            <h2 id="create-draft-title" className={styles['dialogTitle']}>
-              {copy.createDialogTitle}
-            </h2>
-            <form className={styles['dialogForm']} onSubmit={onCreateSubmit} noValidate>
-              {createError !== null ? (
-                <p className={styles['dialogAlert']} role="alert">
-                  {createError}
-                </p>
-              ) : null}
-              <label className={styles['dialogField']}>
-                <span>{copy.createTitleLabel}</span>
-                <input
-                  ref={titleInputRef}
-                  value={createTitle}
-                  maxLength={CREATE_DRAFT_TITLE_MAX_LENGTH}
-                  autoComplete="off"
-                  aria-invalid={createTouched && createTitleError !== null}
-                  aria-describedby={
-                    createTouched && createTitleError !== null
-                      ? 'create-title-error'
-                      : undefined
-                  }
-                  onChange={(event: ChangeEvent<HTMLInputElement>): void => {
-                    setCreateTitle(event.target.value);
-                  }}
-                />
-                {createTouched && createTitleError !== null ? (
-                  <span id="create-title-error" className={styles['fieldError']}>
-                    {createTitleError}
-                  </span>
-                ) : null}
-              </label>
-              <div className={styles['dialogActions']}>
-                <button
-                  type="button"
-                  className={styles['dialogSecondary']}
-                  onClick={closeCreateDialog}
-                  disabled={creating}
-                >
-                  {copy.createCancel}
-                </button>
-                <button
-                  type="submit"
-                  className={styles['dialogPrimary']}
-                  disabled={creating}
-                  aria-busy={creating}
-                >
-                  {creating ? copy.createSubmitting : copy.createSubmit}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateDraftDialog
+          title={createTitle}
+          titleError={createTitleError}
+          touched={createTouched}
+          creating={creating}
+          formError={createError}
+          onTitleChange={setCreateTitle}
+          onClose={closeCreateDialog}
+          onSubmit={onCreateSubmit}
+        />
       ) : null}
     </main>
   );

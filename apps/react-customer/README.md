@@ -43,13 +43,18 @@ flowchart TB
   Main["main.tsx"] --> App["App"]
   App --> Login["/login"]
   App --> Shell["CustomerShell"]
-  Shell --> Cases["/cases CaseList"]
+  Shell --> Cases["/cases CaseList smart"]
   Shell --> Draft["/cases/:id placeholder<br/>KYC-073"]
+  Cases --> Toolbar["CasesToolbar"]
+  Cases --> Table["CaseListTable"]
+  Cases --> Dialog["CreateDraftDialog"]
+  Cases --> Status["Loading / Empty / LoadError"]
 ```
 
 | Piece | Location |
 |---|---|
 | Login | `src/auth/login-page/` |
-| My cases list + create | `src/cases/case-list/` |
+| My cases smart screen | `src/cases/case-list/case-list.tsx` |
+| Presentational list UI | `cases-toolbar`, `case-list-table`, `create-draft-dialog`, loading/empty/error |
 | Cases API / mappers | `src/cases/cases-api.ts`, `cases.mappers.ts` |
 | Draft placeholder | `src/cases/case-draft-placeholder/` |
