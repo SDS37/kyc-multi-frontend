@@ -1,15 +1,15 @@
 <div class="shell">
   <header class="shell__header">
     <div class="shell__brand-block">
-      <p class="shell__brand">KYC Admin</p>
-      <nav class="shell__nav" aria-label="Primary">
+      <p class="shell__brand">{{ copy.brand }}</p>
+      <nav class="shell__nav" [attr.aria-label]="copy.primaryNavAria">
         <a
           routerLink="/cases"
           routerLinkActive="shell__nav-link--active"
           class="shell__nav-link"
           [routerLinkActiveOptions]="{ exact: false }"
         >
-          Cases
+          {{ copy.casesNav }}
         </a>
       </nav>
     </div>
@@ -17,7 +17,7 @@
     <div class="shell__session">
       @if (session(); as current) {
         <div class="shell__who" aria-live="polite">
-          <span class="shell__tenant" [attr.title]="'Tenant id: ' + current.tenantId">
+          <span class="shell__tenant" [attr.title]="tenantTitle()">
             {{ tenantLabel() }}
           </span>
           <span class="shell__sep" aria-hidden="true">·</span>
@@ -25,7 +25,7 @@
           <span class="shell__role">{{ roleLabel() }}</span>
         </div>
       }
-      <button mat-stroked-button type="button" (click)="signOut()">Sign out</button>
+      <button mat-stroked-button type="button" (click)="signOut()">{{ copy.signOut }}</button>
     </div>
   </header>
 

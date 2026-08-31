@@ -12,20 +12,8 @@ export const CASE_STATUSES = [
 
 export type CaseStatus = (typeof CASE_STATUSES)[number];
 
-export const CASE_STATUS_LABELS: Readonly<Record<CaseStatus, string>> = {
-  DRAFT: 'Draft',
-  SUBMITTED: 'Submitted',
-  IN_REVIEW: 'In review',
-  APPROVED: 'Approved',
-  REJECTED: 'Rejected',
-};
-
 export function isCaseStatus(value: string): value is CaseStatus {
   return (CASE_STATUSES as readonly string[]).includes(value);
-}
-
-export function caseStatusLabel(status: CaseStatus): string {
-  return CASE_STATUS_LABELS[status];
 }
 
 /** Max length for approve/reject review comments (API validation). */
@@ -41,20 +29,16 @@ export const CASE_FORM_FIELD_KEYS = [
 
 export type CaseFormFieldKey = (typeof CASE_FORM_FIELD_KEYS)[number];
 
-export const CASE_FORM_FIELD_LABELS: Readonly<Record<CaseFormFieldKey, string>> = {
-  fullName: 'Full name',
-  dateOfBirth: 'Date of birth',
-  nationality: 'Nationality',
-  address: 'Address',
-};
-
 /** One row from GraphQL `cases.items` (KYC-036 / KYC-062). */
 export interface CaseListItem {
   id: string;
   title: string;
   status: CaseStatus;
+  /** Precomputed for the template (no per-row method calls). */
+  statusLabel: string;
   customerEmail: string;
   updatedAt: string;
+  openAriaLabel: string;
 }
 
 /** Paginated `cases` query result. */
@@ -85,8 +69,11 @@ export interface CaseDocument {
   fileName: string;
   contentType: string;
   sizeBytes: number;
+  /** Precomputed for the template (no `formatSize` method calls). */
+  sizeLabel: string;
   uploadedAt: string;
   uploadedBy: string;
+  downloadAriaLabel: string;
 }
 
 /** Review comment entry from `case.comments`. */

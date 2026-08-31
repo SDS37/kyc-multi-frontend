@@ -27,6 +27,8 @@ This file is not a copy of angular.dev or of the Angular Architects blog.
 | **Functional style** | Prefer FP **at every app level**, expressed as pure **functions** (mappers, derived state, transforms). Side effects only at I/O edges. See below. |
 | Accessibility | WCAG 2.2 AA intent + WAI-ARIA across Angular/React/Vue (same `aria-*` platform). Labels, focus visible (`--kyc-focus-ring`), errors not by color alone — details in [ux-design-tokens.md](ux-design-tokens.md) |
 | **Hard TypeScript** | **Strict TS from the first file** in every UI app — see below. No “loose then tighten later.” |
+| **Templates** | Do **not** call component methods from bindings for derived display — see [Templates: no expensive function calls](#templates-no-expensive-function-calls). |
+| **UI copy** | No hard-coded user-facing English in templates — use `*.messages.ts` catalogs (localization readiness). See [UI copy and localization](#ui-copy-and-localization). |
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
 | Commits | [Conventional Commits](commits.md) with scopes like `angular`, `react`, `vue`, `docs` |
 | CI | Angular admin: GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`) when `apps/angular-admin/**` changes |
@@ -67,7 +69,7 @@ This is **not** a mandate for `fp-ts` or rewriting Angular as a functional frame
 | **Shared / `*.mappers.ts`** | Pure functions: normalize, parse GraphQL → DTO, error map, labels, URL/filter parse | HTTP, router, storage inside “helpers” |
 | **Services** | Compose pure functions in `map`; I/O only via HttpClient / `tap` / storage APIs | Dense callbacks that parse **and** write tokens / navigate |
 | **Components** | Signals + `computed` / pure helpers for derived UI; immutable `set` / `update` | In-place mutation; business parsing copied into the class |
-| **Templates** | Bind signals / simple calls | Heavy branching or formatting logic |
+| **Templates** | Bind signals / fields / message constants — **not** method calls that recompute display | Heavy branching, formatting methods, or string assembly in the template |
 | **Collections** | `filter` / `map` / `flatMap` / `reduce` that return new values | `for` / `forEach` that `.push` into an outer array (same job, less clear) |
 | **Immutability** | New arrays/objects (`[...xs]`, `{ ...o }`, `toSorted` / copy-then-sort); signal `set`/`update` with new values | `.push` / `.splice` / in-place `.sort()` / mutating fields on shared objects |
 
@@ -117,7 +119,64 @@ for (const key of CASE_FORM_FIELD_KEYS) {
 
 `for…of` is still OK when you need early `break` or non-transform control flow. Prefer `filter`/`map`/`reduce` for “list in → list out.” Do **not** treat `forEach` as more functional than `for` — both are imperative when they mutate. Avoid `.push` as the default way to build lists.
 
-Enforce this for the **whole** frontend surface (`angular-admin` now; React/Vue when scaffolded). Feature layout still helps: `*.models.ts` (shapes) + `*.mappers.ts` (pure functions) + `*.service.ts` (I/O) + components (wiring + signals).
+Enforce this for the **whole** frontend surface (`angular-admin` now; React/Vue when scaffolded). Feature layout still helps: `*.models.ts` (shapes) + `*.mappers.ts` (pure functions) + `*.messages.ts` (user-facing copy) + `*.service.ts` (I/O) + components (wiring + signals).
+
+### Templates: no expensive function calls
+
+Templates re-evaluate bindings whenever the component is checked (OnPush still checks on signal/`input`/event dirtiness). A **method call** in `{{ … }}` or `[attr…]` runs again on every check — including for every row in an `@for` / `*matCellDef`.
+
+| Bind this | Not this |
+|---|---|
+| Signal / `computed` reads: `{{ statusLabel() }}`, `{{ loading() }}` | `{{ formatSize(doc.sizeBytes) }}` (component method) |
+| Precomputed fields on the DTO / view model: `{{ doc.sizeLabel }}`, `{{ row.statusLabel }}` | Per-row helpers: `{{ statusLabel(row.status) }}` |
+| Message constants: `{{ copy.pageTitle }}` | Inline English literals in the template |
+| Event handlers: `(click)="reload()"` (runs once per click — fine) | N/A |
+| Framework form APIs: `control.hasError('required')` (acceptable) | Custom business formatting methods |
+
+**Signals are allowed and preferred.** Calling `computed` / `signal` with `()` is cheap: Angular tracks the dependency; the function body runs only when inputs change — not “on every paint” in the old Eager sense.
+
+**Do the work once, upstream:**
+
+```typescript
+// ❌ BAD — method re-runs for every row on every CD check
+protected formatSize(bytes: number): string {
+  return formatByteSize(bytes);
+}
+// template: {{ formatSize(doc.sizeBytes) }}
+
+// ✅ GOOD — mapper (or computed) attaches display fields once
+return { …doc, sizeLabel: formatByteSize(doc.sizeBytes) };
+// template: {{ doc.sizeLabel }}
+```
+
+Pure **pipes** are a fallback when a display transform cannot live on the model; prefer enriching the DTO in `*.mappers.ts` so the template stays dumb.
+
+### UI copy and localization
+
+**Why not hard-code English in templates?** User-facing strings are a product surface. Literals scattered in HTML make localization (and copy edits) a hunt across every screen. Reviewers cannot see the full English catalog; translators cannot get a file.
+
+**Strategy for this repo (MVP tempo):**
+
+1. **Now — message catalogs (`*.messages.ts`)**  
+   - Feature copy: `auth.messages.ts`, `cases.messages.ts`, `shell.messages.ts`  
+   - Shared chrome: `shared/ui.messages.ts` (brand, shared actions)  
+   - Static strings: `as const` objects  
+   - Parameterized strings: **pure functions** in the same file — call them from mappers / `computed` / event handlers, **never** from templates  
+   - Domain enum labels (`CASE_STATUS_LABELS`, role labels) live in the feature messages file (types stay in `*.models.ts`)
+
+2. **Not now — full i18n runtime**  
+   Do **not** add Angular `$localize` / XLF extract, `ngx-translate`, or locale switching for MVP. Those tools are right when a second locale is a product requirement; they add extract/build/workflow cost on every string change and would slow W4 velocity.
+
+3. **Later — swap catalogs for real locales without rewriting screens**  
+   Keep **stable message keys** (`casesUi.pageTitle`, `loginUi.signIn`). A future story can load `en.json` / `sv.json` (or `$localize`) behind the same keys. Templates already bind `copy.pageTitle` — they should not need a second rewrite.
+
+| Approach | Tempo | Localization-ready? |
+|---|---|---|
+| Literals in HTML | Fastest short-term | No |
+| `*.messages.ts` catalogs (this standard) | Small constant cost | Yes — keys + one English source |
+| Angular i18n / ngx-translate now | High ongoing cost | Yes — overkill until multi-locale ships |
+
+**Rule:** no new user-facing English in templates or as ad-hoc component string fields. Put it in `*.messages.ts`. API/GraphQL error *codes* stay in mappers; map codes → messages catalog text at the edge.
 
 ## Angular (`apps/angular-admin`)
 
@@ -140,6 +199,7 @@ Follow the official [Angular Style Guide](https://angular.dev/style-guide) and r
 - Organize by **feature area**, not by type folders (`components/`, `services/`)
 - One primary concept per file (one component / directive / service unless a small cohesive pair)
 - **`*.models.ts` everywhere (app-wide):** every feature keeps DTOs, form control maps, domain errors, and feature GraphQL wire bodies in a models file — e.g. `auth/auth.models.ts`, `cases/cases.models.ts`, `config/config.models.ts`. Cross-feature wire bits (e.g. `GraphqlError`) live under `shared/*.models.ts`. Injectable services and components **import** models; they do **not** declare exported interfaces/types inline.
+- **`*.messages.ts` for user-facing copy (app-wide):** English (and later locales) live in catalogs — e.g. `cases/cases.messages.ts`, `auth/auth.messages.ts`, `shared/ui.messages.ts`. Templates bind catalog fields; parameterized helpers stay pure and are called from mappers/`computed`, not from templates. See [UI copy and localization](#ui-copy-and-localization).
 - **`*.mappers.ts` for pure functions (app-wide):** normalize, parse GraphQL → DTO, map errors, parse filters/URLs. FP is expected at **all** app levels (see table above); mappers are the main home for shared pure functions. Services own HTTP/`tap` side effects. See [Functional style / purity](#functional-style--purity-all-frontends).
 
 ### Angular Architects practices (filtered for this app)
@@ -262,7 +322,9 @@ If an Angular Architects article and an ADR disagree, the ADR wins. If it disagr
 - Prefer `[class]` / `[style]` bindings over `ngClass` / `ngStyle`
 - Name event handlers for the **action** (`saveCase()`), not the DOM event (`handleClick()`)
 - Keep lifecycle hooks thin; implement the lifecycle interfaces (`OnInit`, etc.) when used
-- Avoid heavy logic in templates — move complexity into the class (e.g. `computed`)
+- Avoid heavy logic in templates — move complexity into the class (e.g. `computed`) or mappers
+- Do not call component methods from `{{ }}` / property bindings for derived display (see [Templates: no expensive function calls](#templates-no-expensive-function-calls))
+- Bind UI copy from `*.messages.ts`, not string literals (see [UI copy and localization](#ui-copy-and-localization))
 - Wire RxJS / first-load requests in `ngOnInit` (or later hooks), not in `constructor()`
 - Any long-lived or fire-and-forget HTTP `.subscribe` in a component must use `takeUntilDestroyed(this.destroyRef)` (or an equivalent `DestroyRef` teardown) so callbacks do not touch signals after destroy
 
@@ -352,6 +414,9 @@ Suggested post-MVP shape (sketch only — implement when the pain is real):
 - Prefer `for` / `forEach` + `.push` for list transforms when `filter` / `map` / `reduce` would do (see Functional style / purity → Collections)
 - Mutate arrays/objects in place (`.push`, `.splice`, in-place `.sort`, assigning fields on shared DTOs) — prefer immutable copies (see Functional style / purity → Immutability)
 - Put component business logic or RxJS subscriptions in `constructor()` — use `ngOnInit` / lifecycle + `inject()` fields instead
+- Call component methods from templates for derived display (formatting, labels, pluralization) — use `computed`, mapper-enriched fields, or message helpers upstream
+- Hard-code user-facing English in templates — use `*.messages.ts` catalogs
+- Add Angular `$localize` / ngx-translate / locale switching during MVP unless a product story requires a second locale
 - Import another feature’s internals (e.g. `cases` → `auth.mappers` / login form). Use `shared/` or the allowed auth infrastructure listed above
 - Put GraphQL/`HttpClient` in presentational (`-card` / pane) components
 - Use `httpResource` for GraphQL; use Sheriff, tsarch, Nx, or Module Federation “because Angular Architects”

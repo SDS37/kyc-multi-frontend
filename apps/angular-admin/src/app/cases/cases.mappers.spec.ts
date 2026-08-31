@@ -150,6 +150,8 @@ describe('cases.mappers', () => {
 
     expect(detail.formFields[0]?.value).toBe('Ada');
     expect(detail.documents).toHaveLength(1);
+    expect(detail.documents[0]?.sizeLabel).toBe('1.2 KB');
+    expect(detail.documents[0]?.downloadAriaLabel).toBe('Download id.pdf');
   });
 
   it('normalizeRejectComment requires non-empty trimmed text', (): void => {

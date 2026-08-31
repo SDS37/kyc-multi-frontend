@@ -13,8 +13,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { resolvePostLoginUrl, toLoginFailedError } from '../auth.mappers';
+import { LOGIN_MESSAGES } from '../auth.messages';
 import { LoginFormControls } from '../auth.models';
 import { LoginService } from '../login.service';
+import { UI_MESSAGES } from '../../shared/ui.messages';
 
 /**
  * Admin / reviewer sign-in (KYC-061).
@@ -38,6 +40,9 @@ export class Login {
   private readonly router: Router = inject(Router);
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
+
+  protected readonly copy = LOGIN_MESSAGES;
+  protected readonly brand: string = UI_MESSAGES.brand;
 
   protected readonly submitting: WritableSignal<boolean> = signal(false);
   protected readonly formError: WritableSignal<string | null> = signal(null);

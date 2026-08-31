@@ -12,10 +12,11 @@ Tenant Admin / Reviewer product (ADR-004). KYC-063 adds **case review** (form da
 
 | Path | Role |
 |---|---|
-| `src/app/auth/` | `auth.models`, `auth.mappers` (pure), `TokenStorage`, interceptor, `LoginService`, guards, login page |
-| `src/app/cases/` | `cases.models`, `cases.mappers` (pure), `CasesService`, case list + case review UI |
+| `src/app/auth/` | `auth.models`, `auth.messages`, `auth.mappers` (pure), `TokenStorage`, interceptor, `LoginService`, guards, login page |
+| `src/app/cases/` | `cases.models`, `cases.messages`, `cases.mappers` (pure), `CasesService`, case list + case review UI |
+| `src/app/layout/` | Authenticated `AdminShell` + `shell.messages` |
 | `src/app/config/` | `config.models` (`AppConfig`), `APP_CONFIG` token |
-| `src/app/shared/` | Cross-feature models (e.g. `graphql.models`) |
+| `src/app/shared/` | Cross-feature models / `ui.messages` (brand, shared actions) |
 | `src/environments/` | Dev/prod API + GraphQL URLs (file replacement) |
 | `src/material-theme.scss` | Material M3 `mat.theme` + `$overrides` → `--kyc-*` |
 

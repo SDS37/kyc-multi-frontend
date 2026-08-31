@@ -1,8 +1,16 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { GraphqlError } from '../shared/graphql.models';
 import {
-  CASE_FORM_FIELD_KEYS,
   CASE_FORM_FIELD_LABELS,
+  CASES_REVIEW_MESSAGES,
+  caseStatusLabel,
+  downloadDocumentAriaLabel,
+  openCaseAriaLabel,
+  rejectCommentMaxLengthMessage,
+  unexpectedCaseStatusMessage,
+} from './cases.messages';
+import {
+  CASE_FORM_FIELD_KEYS,
   CaseActionError,
   CaseComment,
   CaseDetail,
@@ -46,30 +54,32 @@ export function parseCasesPage(
   const gqlError: GraphqlError | undefined = body.errors?.[0];
   if (gqlError) {
     throw new CasesLoadError(
-      gqlError.message?.trim() || 'Unable to load cases. Try again.',
+      gqlError.message?.trim() || CASES_REVIEW_MESSAGES.listLoadFailed,
       gqlError.extensions?.code,
     );
   }
 
   const page = body.data?.cases;
   if (!page || !Array.isArray(page.items)) {
-    throw new CasesLoadError('Unable to load cases. Try again.');
+    throw new CasesLoadError(CASES_REVIEW_MESSAGES.listLoadFailed);
   }
 
   const items: CaseListItem[] = page.items.map(
     (raw): CaseListItem => {
       if (!raw?.id || !raw.title || !raw.customerEmail || !raw.updatedAt || !raw.status) {
-        throw new CasesLoadError('Case list response was incomplete.');
+        throw new CasesLoadError(CASES_REVIEW_MESSAGES.listIncomplete);
       }
       if (!isCaseStatus(raw.status)) {
-        throw new CasesLoadError(`Unexpected case status: ${raw.status}`);
+        throw new CasesLoadError(unexpectedCaseStatusMessage(raw.status));
       }
       return {
         id: raw.id,
         title: raw.title,
         status: raw.status,
+        statusLabel: caseStatusLabel(raw.status),
         customerEmail: raw.customerEmail,
         updatedAt: raw.updatedAt,
+        openAriaLabel: openCaseAriaLabel(raw.title),
       };
     },
   );
@@ -99,12 +109,9 @@ export function toCasesLoadError(err: unknown): CasesLoadError {
     return err;
   }
   if (err instanceof HttpErrorResponse) {
-    return new CasesLoadError(
-      'Unable to reach the cases service. Try again in a moment.',
-      'NETWORK',
-    );
+    return new CasesLoadError(CASES_REVIEW_MESSAGES.listNetworkFailed, 'NETWORK');
   }
-  return new CasesLoadError('Unable to load cases. Try again.');
+  return new CasesLoadError(CASES_REVIEW_MESSAGES.listLoadFailed);
 }
 
 /** Pure: which review buttons apply for a case status (API DOMAIN rules). */
@@ -127,11 +134,11 @@ export function parseCaseFormData(formDataRaw: string): readonly CaseFormField[]
   try {
     parsed = JSON.parse(trimmed) as unknown;
   } catch {
-    return [{ key: 'formData', label: 'Form data', value: trimmed }];
+    return [{ key: 'formData', label: CASES_REVIEW_MESSAGES.formDataFallbackLabel, value: trimmed }];
   }
 
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    return [{ key: 'formData', label: 'Form data', value: trimmed }];
+    return [{ key: 'formData', label: CASES_REVIEW_MESSAGES.formDataFallbackLabel, value: trimmed }];
   }
 
   const record: Record<string, unknown> = parsed as Record<string, unknown>;
@@ -169,7 +176,7 @@ export function parseCaseDetail(body: GraphqlCaseDetailBody): CaseDetail {
   const gqlError: GraphqlError | undefined = body.errors?.[0];
   if (gqlError) {
     throw new CasesLoadError(
-      gqlError.message?.trim() || 'Unable to load this case. Try again.',
+      gqlError.message?.trim() || CASES_REVIEW_MESSAGES.loadFailed,
       gqlError.extensions?.code,
     );
   }
@@ -177,20 +184,20 @@ export function parseCaseDetail(body: GraphqlCaseDetailBody): CaseDetail {
   const envelope = body.data?.case;
   const raw = envelope?.case;
   if (!raw?.id || !raw.title || !raw.status || !raw.customerEmail || !raw.customerUserId) {
-    throw new CasesLoadError('Case detail response was incomplete.');
+    throw new CasesLoadError(CASES_REVIEW_MESSAGES.loadIncomplete);
   }
   if (!raw.createdAt || !raw.updatedAt || raw.formData === undefined || raw.formData === null) {
-    throw new CasesLoadError('Case detail response was incomplete.');
+    throw new CasesLoadError(CASES_REVIEW_MESSAGES.loadIncomplete);
   }
   if (!isCaseStatus(raw.status)) {
-    throw new CasesLoadError(`Unexpected case status: ${raw.status}`);
+    throw new CasesLoadError(unexpectedCaseStatusMessage(raw.status));
   }
 
   const comments: CaseComment[] = (envelope?.comments ?? [])
     .filter((c): c is NonNullable<typeof c> => c != null)
     .map((c): CaseComment => {
       if (!c.text || !c.createdAt || !c.authorUserId) {
-        throw new CasesLoadError('Case comments response was incomplete.');
+        throw new CasesLoadError(CASES_REVIEW_MESSAGES.commentsIncomplete);
       }
       return {
         text: c.text,
@@ -211,15 +218,17 @@ export function parseCaseDetail(body: GraphqlCaseDetailBody): CaseDetail {
         !d.uploadedAt ||
         !d.uploadedBy
       ) {
-        throw new CasesLoadError('Case documents response was incomplete.');
+        throw new CasesLoadError(CASES_REVIEW_MESSAGES.documentsIncomplete);
       }
       return {
         id: d.id,
         fileName: d.fileName,
         contentType: d.contentType,
         sizeBytes: d.sizeBytes,
+        sizeLabel: formatByteSize(d.sizeBytes),
         uploadedAt: d.uploadedAt,
         uploadedBy: d.uploadedBy,
+        downloadAriaLabel: downloadDocumentAriaLabel(d.fileName),
       };
     });
 
@@ -274,12 +283,12 @@ export function normalizeRejectComment(
 ): { ok: true; comment: string } | { ok: false; message: string } {
   const comment: string = raw.trim();
   if (!comment) {
-    return { ok: false, message: 'A comment is required to reject a case.' };
+    return { ok: false, message: CASES_REVIEW_MESSAGES.rejectCommentRequiredAction };
   }
   if (comment.length > REVIEW_COMMENT_MAX_LENGTH) {
     return {
       ok: false,
-      message: `Comment must be at most ${REVIEW_COMMENT_MAX_LENGTH} characters.`,
+      message: rejectCommentMaxLengthMessage(),
     };
   }
   return { ok: true, comment };
@@ -296,7 +305,7 @@ export function normalizeOptionalReviewComment(
   if (comment.length > REVIEW_COMMENT_MAX_LENGTH) {
     return {
       ok: false,
-      message: `Comment must be at most ${REVIEW_COMMENT_MAX_LENGTH} characters.`,
+      message: rejectCommentMaxLengthMessage(),
     };
   }
   return { ok: true, comment };
@@ -312,14 +321,14 @@ export function parseCaseActionStatus(
   const gqlError: GraphqlError | undefined = body.errors?.[0];
   if (gqlError) {
     throw new CaseActionError(
-      gqlError.message?.trim() || 'Unable to complete that action. Try again.',
+      gqlError.message?.trim() || CASES_REVIEW_MESSAGES.actionFailed,
       gqlError.extensions?.code,
     );
   }
 
   const payload = body.data?.[kind];
   if (!payload?.status || !isCaseStatus(payload.status)) {
-    throw new CaseActionError('Action response was incomplete.');
+    throw new CaseActionError(CASES_REVIEW_MESSAGES.actionIncomplete);
   }
   return payload.status;
 }
@@ -330,12 +339,9 @@ export function toCaseActionError(err: unknown): CaseActionError {
     return err;
   }
   if (err instanceof HttpErrorResponse) {
-    return new CaseActionError(
-      'Unable to reach the cases service. Try again in a moment.',
-      'NETWORK',
-    );
+    return new CaseActionError(CASES_REVIEW_MESSAGES.actionNetworkFailed, 'NETWORK');
   }
-  return new CaseActionError('Unable to complete that action. Try again.');
+  return new CaseActionError(CASES_REVIEW_MESSAGES.actionFailed);
 }
 
 /** Pure: map download failures. */
@@ -345,20 +351,14 @@ export function toCaseDownloadError(err: unknown): CaseDownloadError {
   }
   if (err instanceof HttpErrorResponse) {
     if (err.status === 404) {
-      return new CaseDownloadError('Document was not found.', 'NOT_FOUND');
+      return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadNotFound, 'NOT_FOUND');
     }
     if (err.status === 0) {
-      return new CaseDownloadError(
-        'Unable to reach the download service. Try again in a moment.',
-        'NETWORK',
-      );
+      return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadNetworkFailed, 'NETWORK');
     }
-    return new CaseDownloadError(
-      'Unable to download this document. Try again.',
-      'NETWORK',
-    );
+    return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadFailed, 'NETWORK');
   }
-  return new CaseDownloadError('Unable to download this document. Try again.');
+  return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadFailed);
 }
 
 function formatFormFieldValue(value: unknown): string {

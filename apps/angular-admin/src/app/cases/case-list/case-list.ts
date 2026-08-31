@@ -16,15 +16,15 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { Router, RouterLink } from '@angular/router';
 import { EMPTY, Observable, Subject, catchError, switchMap, tap } from 'rxjs';
+import { UI_MESSAGES } from '../../shared/ui.messages';
 import { parseStatusFilterValue, toCasesLoadError } from '../cases.mappers';
 import {
-  CASE_STATUSES,
   CASE_STATUS_LABELS,
-  CaseListItem,
-  CaseListPage,
-  CaseStatus,
-  caseStatusLabel,
-} from '../cases.models';
+  CASES_LIST_MESSAGES,
+  casesCountLabel,
+  casesEmptyForStatusLabel,
+} from '../cases.messages';
+import { CASE_STATUSES, CaseListItem, CaseListPage, CaseStatus } from '../cases.models';
 import { CasesService } from '../cases.service';
 
 /**
@@ -53,7 +53,8 @@ export class CaseList implements OnInit {
 
   private readonly reloadRequests: Subject<void> = new Subject<void>();
 
-  protected readonly pageTitle: string = 'Cases';
+  protected readonly copy = CASES_LIST_MESSAGES;
+  protected readonly sharedCopy = UI_MESSAGES;
   protected readonly statusOptions: readonly CaseStatus[] = CASE_STATUSES;
   protected readonly statusLabels: Readonly<Record<CaseStatus, string>> = CASE_STATUS_LABELS;
   protected readonly displayedColumns: readonly string[] = [
@@ -72,6 +73,13 @@ export class CaseList implements OnInit {
   protected readonly isEmpty = computed(
     (): boolean => !this.loading() && this.loadError() === null && this.items().length === 0,
   );
+
+  protected readonly countLabel = computed((): string => casesCountLabel(this.totalCount()));
+
+  protected readonly emptyMessage = computed((): string => {
+    const status: CaseStatus | null = this.statusFilter();
+    return status ? casesEmptyForStatusLabel(status) : CASES_LIST_MESSAGES.emptyAll;
+  });
 
   ngOnInit(): void {
     this.reloadRequests
@@ -101,10 +109,6 @@ export class CaseList implements OnInit {
       });
 
     this.reload();
-  }
-
-  protected statusLabel(status: CaseStatus): string {
-    return caseStatusLabel(status);
   }
 
   protected filterStatus(status: CaseStatus | null): void {

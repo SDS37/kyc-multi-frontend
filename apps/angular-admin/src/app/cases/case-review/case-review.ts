@@ -16,8 +16,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EMPTY, Observable, Subject, catchError, switchMap, tap } from 'rxjs';
+import { UI_MESSAGES } from '../../shared/ui.messages';
 import {
-  formatByteSize,
   isCaseId,
   normalizeOptionalReviewComment,
   normalizeRejectComment,
@@ -27,12 +27,18 @@ import {
   toCasesLoadError,
 } from '../cases.mappers';
 import {
+  CASES_REVIEW_MESSAGES,
+  caseStatusLabel,
+  noReviewActionsMessage,
+  rejectCommentHint,
+  rejectCommentMaxLengthMessage,
+} from '../cases.messages';
+import {
   CaseDetail,
   CaseDocument,
   CaseReviewActions,
   RejectFormControls,
   REVIEW_COMMENT_MAX_LENGTH,
-  caseStatusLabel,
 } from '../cases.models';
 import { CasesService } from '../cases.service';
 
@@ -64,7 +70,11 @@ export class CaseReview implements OnInit {
 
   protected caseId: string = '';
 
+  protected readonly copy = CASES_REVIEW_MESSAGES;
+  protected readonly sharedCopy = UI_MESSAGES;
   protected readonly commentMaxLength: number = REVIEW_COMMENT_MAX_LENGTH;
+  protected readonly rejectHint: string = rejectCommentHint();
+  protected readonly rejectMaxLengthError: string = rejectCommentMaxLengthMessage();
 
   protected readonly detail: WritableSignal<CaseDetail | null> = signal(null);
   protected readonly loading: WritableSignal<boolean> = signal(false);
@@ -92,6 +102,10 @@ export class CaseReview implements OnInit {
     const current: CaseDetail | null = this.detail();
     return current ? caseStatusLabel(current.status) : '';
   });
+
+  protected readonly noActionsMessage = computed((): string =>
+    noReviewActionsMessage(this.statusLabel()),
+  );
 
   ngOnInit(): void {
     this.loadRequests
@@ -122,15 +136,11 @@ export class CaseReview implements OnInit {
 
     const idParam: string | null = this.route.snapshot.paramMap.get('caseId');
     if (!idParam || !isCaseId(idParam)) {
-      this.loadError.set('This case link is not valid.');
+      this.loadError.set(CASES_REVIEW_MESSAGES.invalidCaseLink);
       return;
     }
     this.caseId = idParam;
     this.loadRequests.next(idParam);
-  }
-
-  protected formatSize(sizeBytes: number): string {
-    return formatByteSize(sizeBytes);
   }
 
   protected reload(): void {

@@ -2,7 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { GraphqlError } from '../shared/graphql.models';
 import {
   AccessTokenClaims,
-  AppRole,
   GraphqlLoginBody,
   LoginCredentials,
   LoginFailedError,
@@ -10,6 +9,9 @@ import {
   ShellSession,
   isAppRole,
 } from './auth.models';
+import { LOGIN_MESSAGES } from './auth.messages';
+
+export { appRoleLabel } from './auth.messages';
 
 const DEFAULT_POST_LOGIN_URL: string = '/cases';
 
@@ -27,14 +29,14 @@ export function parseLoginSuccess(body: GraphqlLoginBody): LoginSuccess {
   const gqlError: GraphqlError | undefined = body.errors?.[0];
   if (gqlError) {
     throw new LoginFailedError(
-      gqlError.message?.trim() || 'Sign-in failed. Check your details and try again.',
+      gqlError.message?.trim() || LOGIN_MESSAGES.signInFailed,
       gqlError.extensions?.code,
     );
   }
 
   const login: LoginSuccess | null | undefined = body.data?.login;
   if (!login?.accessToken) {
-    throw new LoginFailedError('Sign-in failed. Check your details and try again.');
+    throw new LoginFailedError(LOGIN_MESSAGES.signInFailed);
   }
 
   return login;
@@ -54,24 +56,9 @@ export function toLoginFailedError(err: unknown): LoginFailedError {
     return err;
   }
   if (err instanceof HttpErrorResponse) {
-    return new LoginFailedError(
-      'Unable to reach the sign-in service. Try again in a moment.',
-      'NETWORK',
-    );
+    return new LoginFailedError(LOGIN_MESSAGES.networkFailed, 'NETWORK');
   }
-  return new LoginFailedError('Sign-in failed. Check your details and try again.');
-}
-
-/** Pure: human-readable role label for the shell. */
-export function appRoleLabel(role: AppRole): string {
-  switch (role) {
-    case 'TenantAdmin':
-      return 'Tenant admin';
-    case 'Reviewer':
-      return 'Reviewer';
-    case 'Customer':
-      return 'Customer';
-  }
+  return new LoginFailedError(LOGIN_MESSAGES.signInFailed);
 }
 
 /**
