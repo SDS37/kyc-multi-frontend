@@ -1,0 +1,61 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--kyc-color-accent) 18%, transparent), transparent),
+    var(--kyc-color-surface, #f6f4ef);
+  color: var(--kyc-color-text, #1c1917);
+  font-family: var(--kyc-font-sans, 'Source Sans 3', 'Segoe UI', sans-serif);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--kyc-space-4, 1rem);
+  padding: var(--kyc-space-4, 1rem) var(--kyc-space-6, 1.5rem);
+  border-bottom: 1px solid color-mix(in srgb, var(--kyc-color-text, #1c1917) 12%, transparent);
+  background: color-mix(in srgb, var(--kyc-color-surface, #fff) 88%, transparent);
+}
+
+.brand {
+  margin: 0;
+  font-family: var(--kyc-font-display, 'Fraunces', Georgia, serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: flex;
+  gap: var(--kyc-space-3, 0.75rem);
+  flex: 1;
+}
+
+.navItem {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.meta {
+  margin-left: auto;
+}
+
+.session,
+.sessionMuted {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.sessionMuted {
+  opacity: 0.7;
+}
+
+.main {
+  flex: 1;
+  padding: var(--kyc-space-6, 1.5rem);
+  max-width: 56rem;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}

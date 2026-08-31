@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** KYC-060 + `angular-ci` on the Angular foundation branch.
+**Aligned with:** KYC-060 (`angular-ci`) + KYC-070 (`react-ci`).
 
 ## Purpose
 
-This folder is **automated proof on GitHub**, not local DX. Workflows answer: “Did this PR break the API or the Angular admin app?”
+This folder is **automated proof on GitHub**, not local DX. Workflows answer: “Did this PR break the API, Angular admin, or React customer app?”
 
 They do **not** deploy, do not run Compose from `infrastructure/`, and do not run Playwright/E2E yet.
 
@@ -18,11 +18,11 @@ GitHub Actions looks for YAML under `.github/workflows/`. Path filters mean a RE
 |---|---|
 | `api-ci.yml` | On PR + push to `main` (path-filtered): restore, vuln list (warn), build, test (+ Postgres slice) |
 | `angular-ci.yml` | On PR + push to `main` (path-filtered): `npm ci`, `npm run build`, `npm run test:ci` |
+| `react-ci.yml` | On PR + push to `main` (path-filtered on `apps/react-customer` + design-tokens): same npm pipeline |
 
-## Angular analog
+## UI CI analog
 
-`api-ci` ≈ `dotnet test` + real Postgres service. `angular-ci` ≈ `ng test --watch=false` + `ng build`. SHA-pinned actions (`actions/checkout@11d59…`, `actions/setup-node@49933…`) match “pin your npm dependencies” — supply-chain hygiene (same idea as KYC-108). `permissions: contents: read` is least privilege so the job cannot push.
-
+`api-ci` ≈ `dotnet test` + real Postgres service. `angular-ci` / `react-ci` ≈ install → build → `test:ci` with Node from each app’s `.nvmrc`. SHA-pinned actions (`actions/checkout@11d59…`, `actions/setup-node@49933…`) match “pin your npm dependencies” — supply-chain hygiene (same idea as KYC-108). `permissions: contents: read` is least privilege so the job cannot push.
 ## What each job does
 
 ```mermaid
@@ -48,6 +48,15 @@ flowchart TB
     X2[npm run test:ci]
     T2 --> N --> CI --> B2 --> X2
   end
+
+  subgraph react [react-ci]
+    T3[Path filter apps/react-customer]
+    N3["setup-node from .nvmrc"]
+    CI3[npm ci]
+    B3[npm run build]
+    X3[npm run test:ci]
+    T3 --> N3 --> CI3 --> B3 --> X3
+  end
 ```
 
 `KYC_TEST_POSTGRES` is set only in `api-ci`, so `[PostgresFact]` tests **run** there and **skip** on a laptop without that variable.
@@ -68,7 +77,7 @@ Local `dotnet test` without Compose still proves SQLite isolation tests. CI adds
 
 ## Today vs target
 
-React/Vue CI when those apps exist. Keep API isolation tests in `api-ci` — do not move tenant proof to e2e only.
+Vue CI when `apps/vue-reports` lands (KYC-080). Keep API isolation tests in `api-ci` — do not move tenant proof to e2e only.
 
 ## What to skip
 
@@ -79,8 +88,10 @@ React/Vue CI when those apps exist. Keep API isolation tests in `api-ci` — do 
 
 - [api-ci.yml](api-ci.yml)
 - [angular-ci.yml](angular-ci.yml)
+- [react-ci.yml](react-ci.yml)
 - [Tests STUDY](../../apps/api/Kyc.Api.Tests/README.STUDY.md)
 - [Angular admin README](../../apps/angular-admin/README.md)
+- [React customer README](../../apps/react-customer/README.md)
 - [global.json](../../global.json) SDK pin
 - [GitHub Actions](https://docs.github.com/en/actions)
 - [Pinning actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions)
