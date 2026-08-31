@@ -436,19 +436,18 @@ Follow official [react.dev](https://react.dev) ([Learn](https://react.dev/learn)
 
 ### React component tree (required)
 
-Foundation tree shipped in KYC-070 (login + cases mount under the shell later):
+Foundation tree shipped through KYC-071:
 
 ```mermaid
 flowchart TB
   Main["main.tsx<br/>createRoot"] --> App["App<br/>RouterProvider"]
-  App --> Shell["CustomerShell<br/>Outlet"]
-  Shell --> Home["HomePlaceholder"]
-  Shell --> Cases["Future: login / my cases<br/>KYC-071+"]
+  App --> Login["/login LoginPage<br/>guest"]
+  App --> Shell["CustomerShell<br/>auth + Outlet"]
+  Shell --> Cases["/cases CasesPlaceholder<br/>until KYC-072"]
 
   classDef now fill:#f1f5f9,stroke:#64748b,color:#0f172a
   classDef next fill:#dbeafe,stroke:#2563eb,color:#0f172a
-  class Main,App,Shell,Home now
-  class Cases next
+  class Main,App,Login,Shell,Cases now
 ```
 
 | Node | Owns | Must not |

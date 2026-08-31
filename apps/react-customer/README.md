@@ -1,8 +1,8 @@
 # React Customer
 
-React **19+** customer portal (`apps/react-customer`). Foundation: KYC-070.
+React **19+** customer portal (`apps/react-customer`). Foundation: KYC-070. Login: KYC-071.
 
-**How to write this app:** [Frontend code standards](../../docs/frontend-code-standards.md) (shared rules + [React section](../../docs/frontend-code-standards.md#react-appsreact-customer) aligned with [react.dev](https://react.dev)). Shared colors/spacing: [UX design tokens](../../docs/ux-design-tokens.md) / `@kyc/design-tokens`. Prefer [functional style](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends); keep an explicit [component tree](../../docs/frontend-code-standards.md#component-tree-all-frontends).
+**How to write this app:** [Frontend code standards](../../docs/frontend-code-standards.md) (shared rules + [React section](../../docs/frontend-code-standards.md#react-appsreact-customer) aligned with [react.dev](https://react.dev)). Shared colors/spacing: [UX design tokens](../../docs/ux-design-tokens.md) / `@kyc/design-tokens` — same `--kyc-*` tokens as Angular admin. Prefer [functional style](../../docs/frontend-code-standards.md#functional-style--purity-all-frontends); keep an explicit [component tree](../../docs/frontend-code-standards.md#component-tree-all-frontends).
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ npm install
 npm start
 ```
 
-App: `http://localhost:5173`  
+App: `http://localhost:5173` → redirects guests to `/login`  
 GraphQL (dev): `http://localhost:5295/graphql` (override via `.env` from `.env.example`)
 
 ```bash
@@ -27,36 +27,34 @@ npm run test:ci
 npm run build
 ```
 
-PRs that touch `apps/react-customer` (or `.github/workflows/react-ci.yml`) run GitHub Actions `react-ci`.
+## Demo login
 
-## What KYC-070 delivers
+Same GraphQL `login` contract as Angular. Register a tenant first (creates **TenantAdmin**):
 
-| Piece | Location |
-|---|---|
-| Vite + React 19 + hard TypeScript | `package.json`, `tsconfig.app.json` |
-| Routing | `src/app-router.tsx` (`createBrowserRouter`) |
-| GraphQL / REST helpers with JWT | `src/shared/http.ts` |
-| Token / session storage | `src/auth/token-storage.ts` |
-| Env config | `src/config/`, `.env.example` |
-| Design tokens | `src/styles.css` imports `@kyc/design-tokens/tokens.css` |
-| Shell + home placeholder | `src/layout/`, `src/routes/` |
+```json
+{ "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1", "tenantName": "Acme" }
+```
 
-## Intended responsibilities (W5)
+Then sign in with `acme` / `admin@acme.example` / `ChangeMe1`.  
+There is no public Customer signup yet — Customer-role users need a manual DB provision for Customer-only mutations (KYC-072+).
 
-- Customer login (KYC-071)
-- My cases / draft create-edit (KYC-072–073)
-- Document upload + submit (KYC-074)
-
-Reviewer approve/reject stays in Angular admin.
-
-## Component tree (foundation)
+## Component tree (KYC-071)
 
 ```mermaid
 flowchart TB
   Main["main.tsx"] --> App["App"]
   App --> Router["RouterProvider"]
-  Router --> Shell["CustomerShell"]
-  Shell --> Home["HomePlaceholder"]
+  Router --> Login["/login LoginPage<br/>guest"]
+  Router --> Shell["CustomerShell<br/>auth"]
+  Shell --> Cases["/cases CasesPlaceholder<br/>until KYC-072"]
 ```
 
-Login and case screens mount under the shell in later stories.
+## What this app delivers so far
+
+| Piece | Location |
+|---|---|
+| Login (Angular-parity layout + tokens) | `src/auth/login-page/` |
+| Auth models / mappers / messages | `src/auth/` |
+| Guards | `src/auth/route-guards.tsx` |
+| Shell + sign out | `src/layout/` |
+| My cases stub | `src/cases/cases-placeholder/` |

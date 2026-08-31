@@ -1,17 +1,39 @@
-import { createBrowserRouter, type DataRouter } from 'react-router';
+import { createBrowserRouter, Navigate, type DataRouter } from 'react-router';
+import { LoginPage } from './auth/login-page/login-page';
+import { RequireAuth, RequireGuest } from './auth/route-guards';
+import { CasesPlaceholder } from './cases/cases-placeholder/cases-placeholder';
 import { CustomerShell } from './layout/customer-shell';
-import { HomePlaceholder } from './routes/home-placeholder';
 
-/** App route table (KYC-070). Login + cases land in later stories. */
+/** App route table (KYC-071). Login outside shell; cases stub until KYC-072. */
 export const appRouter: DataRouter = createBrowserRouter([
   {
+    path: '/login',
+    element: (
+      <RequireGuest>
+        <LoginPage />
+      </RequireGuest>
+    ),
+  },
+  {
     path: '/',
-    element: <CustomerShell />,
+    element: (
+      <RequireAuth>
+        <CustomerShell />
+      </RequireAuth>
+    ),
     children: [
       {
         index: true,
-        element: <HomePlaceholder />,
+        element: <Navigate to="/cases" replace />,
+      },
+      {
+        path: 'cases',
+        element: <CasesPlaceholder />,
       },
     ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/cases" replace />,
   },
 ]);

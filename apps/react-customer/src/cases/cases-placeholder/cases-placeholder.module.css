@@ -1,0 +1,18 @@
+.panel {
+  max-width: var(--kyc-content-max);
+}
+
+.title {
+  margin: 0 0 var(--kyc-space-2);
+  font-size: var(--kyc-text-xl);
+  font-weight: 600;
+  line-height: var(--kyc-leading-tight);
+  color: var(--kyc-color-text);
+}
+
+.lede {
+  margin: 0;
+  color: var(--kyc-color-text-muted);
+  font-size: var(--kyc-text-sm);
+  line-height: var(--kyc-leading-normal);
+}

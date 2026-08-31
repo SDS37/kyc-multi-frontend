@@ -2,53 +2,36 @@
 
 Study tour of this folder. Official README: [README.md](README.md).
 
-**Aligned with:** KYC-070 foundation on `feat/kyc-070-react-foundation`.
+**Aligned with:** KYC-070 foundation + KYC-071 login on `feat/kyc-071-react-login`.
 
 ## Purpose
 
-Customer portal (Week 5, KYC-070–074): create a KYC case, fill FormData, upload documents, submit, watch status. Different framework on purpose (portfolio + GraphQL-as-shared-contract). Same JWT and schema as Angular admin.
+Customer portal (Week 5, KYC-070–074): sign in, create a KYC case, fill FormData, upload documents, submit, watch status. Same JWT and GraphQL schema as Angular admin; different product surface.
 
-## Why a separate app
-
-ADR-004/005: three stacks, one API. Isolation of **tenants** is a backend property; isolation of **apps** is a product/portfolio property.
-
-## Foundation map
+## Foundation + login map
 
 | Concern | Where |
 |---|---|
-| Router | `src/app-router.tsx` |
+| Router / guards | `src/app-router.tsx`, `src/auth/route-guards.tsx` |
+| Login UI | `src/auth/login-page/` (Angular-parity `--kyc-*` layout) |
+| Auth contract | `src/auth/auth.models.ts`, `auth.mappers.ts`, `login-api.ts` |
 | Shell | `src/layout/customer-shell.tsx` |
-| Config | `src/config/app-config.ts` |
-| Token | `src/auth/token-storage.ts` |
-| GraphQL fetch | `src/shared/http.ts` (`graphqlRequest`, `apiFetch`) |
-| Messages | `src/shared/ui.messages.ts` |
+| Cases stub | `src/cases/cases-placeholder/` until KYC-072 |
 | Standards | [frontend-code-standards — React](../../docs/frontend-code-standards.md#react-appsreact-customer) |
 
-## What it will consume (product stories)
+## Demo credentials
 
-| Need | API |
-|---|---|
-| Login | GraphQL `login` (tenant slug + email + password) |
-| Create / edit draft | `createDraftCase` / `updateDraftCase` — Customer only |
-| Submit | `submitCase` |
-| List / detail | `cases` / `case(id)` |
-| Upload | REST `POST /api/cases/{id}/documents` |
-
-Do not send `customerUserId` or `tenantId` on create (ADR-007).
-
-## Angular-expert trap
-
-Do not share a TypeScript library of GraphQL documents across Angular and React for MVP. ADR-005 accepts duplicated login/token handling.
+`registerTenant` creates **TenantAdmin** only (`acme` / `admin@acme.example` / `ChangeMe1`). Login works for any role once the user exists. Customer-only APIs need a Customer user provisioned outside this app (no public signup).
 
 ## What to skip
 
 - Approve/reject UI (Angular)
 - Apollo / Redux until a story needs them
-- Public Customer signup until identity product clarifies provisioning
+- Public Customer signup
 
 ## Links
 
 - [README.md](README.md)
 - [react.dev](https://react.dev/)
 - [ADR-005](../../docs/architecture-decision-records.md)
-- [Cases STUDY](../api/Kyc.Api/Application/Cases/README.STUDY.md)
+- [Angular login](../angular-admin/src/app/auth/login/)
