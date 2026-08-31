@@ -12,14 +12,14 @@ Committed markdown here is the **contract with yourself and reviewers**: what th
 
 | File | Open it when | Do not use it for |
 |---|---|---|
-| [architecture.md](architecture.md) | You need C4 / request / lifecycle diagrams or target vs today | Exact `dotnet` commands |
+| [architecture.md](architecture.md) | You need C4 / request / lifecycle diagrams, frontend composition (apps → shells → API), or target vs today | Exact `dotnet` commands; per-pane UI trees (those live in app READMEs) |
 | [architecture-decision-records.md](architecture-decision-records.md) | Someone asks “why GraphQL / why not microservices / why tenant in JWT” | Implementation details of a service |
 | [roadmap.md](roadmap.md) | Sequencing: W1 identity, W2 GraphQL+cases, W3 documents… | Claiming Redis is in use today (MinIO **is** used for uploads) |
 | [business-requirements.md](business-requirements.md) | Product scope, roles, KYC meaning | Code structure |
 | [DoD.md](DoD.md) | MVP exit criteria (isolation tested, three UIs on one API) | Week-by-week tasks |
 | [commits.md](commits.md) | Commit message format | Design |
 | [dotnet-code-standards.md](dotnet-code-standards.md) | How to write C# in `apps/api` (layers, errors, tenancy, tests) | Why GraphQL / JWT (ADRs); exact `dotnet` commands |
-| [frontend-code-standards.md](frontend-code-standards.md) | How to write UI apps; **Angular** follows angular.dev plus a filtered [Angular Architects](https://www.angulararchitects.io/en/) slice | API runbook; their Agentic UI / Sheriff / MF talks; React/Vue details until those foundations land |
+| [frontend-code-standards.md](frontend-code-standards.md) | How to write UI apps (Hard TS, smart vs presentational **rules**); Angular follows angular.dev plus a filtered [Angular Architects](https://www.angulararchitects.io/en/) slice | Living component-tree mermaids (app READMEs); API runbook; their Agentic UI / Sheriff / MF talks |
 | [ux-design-tokens.md](ux-design-tokens.md) | Shared color/spacing tokens + a11y baseline for all UIs (MF-safe) | Framework component APIs |
 | [guides/dotnet-api-for-frontend-engineers.md](guides/dotnet-api-for-frontend-engineers.md) | First .NET orientation (csproj vs package.json) | Current field list — it can lag; prefer [apps/api/README.md](../apps/api/README.md) |
 

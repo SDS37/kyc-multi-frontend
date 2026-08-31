@@ -38,6 +38,35 @@ PRs that touch `apps/angular-admin` (or `.github/workflows/angular-ci.yml`) run 
 | Presentational panes | `case-form-data-pane/`, `case-documents-pane/`, `case-review-actions-pane/` (`input`/`output` only) |
 | Login unchanged | Still Reactive Forms (KYC-061) |
 
+## Component tree
+
+Living render tree for this app (update when routes change). Smart vs presentational **rules:** [frontend-code-standards](../../docs/frontend-code-standards.md#component-tree-all-frontends). System composition: [architecture.md §3](../../docs/architecture.md#3-frontend-composition).
+
+```mermaid
+flowchart TB
+  subgraph root["Change-detection root"]
+    App["App<br/><code>app-root</code><br/>OnPush"]
+  end
+
+  App --> Outlet["RouterOutlet"]
+
+  Outlet --> Login["Login<br/><code>app-login</code><br/>OnPush<br/>signals: submitting, formError"]
+  Outlet --> Shell["AdminShell<br/><code>app-admin-shell</code><br/>OnPush<br/>signals: session"]
+
+  Shell --> ShellOutlet["child RouterOutlet"]
+  ShellOutlet --> CaseList["CaseList<br/><code>app-case-list</code><br/>OnPush<br/>signals: items, filter, loading, …"]
+  ShellOutlet --> CaseReview["CaseReview<br/><code>app-case-review</code><br/>OnPush<br/>signals: detail, actions, …"]
+
+  CaseReview -.-> Presentational["Presentational panes<br/><code>input()</code> / <code>output()</code><br/>form-data / documents / actions"]
+
+  classDef dirty fill:#dbeafe,stroke:#2563eb,color:#0f172a
+  classDef idle fill:#f1f5f9,stroke:#64748b,color:#0f172a
+  class CaseList,CaseReview dirty
+  class App,Login,Outlet,Shell,ShellOutlet,Presentational idle
+```
+
+OnPush isolation notes stay in [frontend-code-standards — OnPush](../../docs/frontend-code-standards.md#onpush-and-the-angular-component-tree).
+
 ## What KYC-064 delivers
 
 | Piece | Location |

@@ -38,6 +38,8 @@ Provision a Customer user in the DB for create-draft E2E (no public signup yet).
 
 ## Component tree (KYC-072)
 
+Living render tree for this app (update when routes change). Smart vs presentational **rules:** [frontend-code-standards](../../docs/frontend-code-standards.md#component-tree-all-frontends). System composition: [architecture.md §3](../../docs/architecture.md#3-frontend-composition).
+
 ```mermaid
 flowchart TB
   Main["main.tsx"] --> App["App"]

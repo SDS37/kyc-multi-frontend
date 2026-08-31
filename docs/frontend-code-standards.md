@@ -55,7 +55,7 @@ Every UI app **must** keep an explicit mental (and documented) **component / ren
 | Boundaries | Shell / layout hosts outlets or `<Outlet />` / `<RouterView />`; feature screens mount under them |
 | Data flow | Downward props / inputs; upward events / callbacks / outputs — not secret service calls from leaves |
 | Lazy routes | Unmounted routes are **not** in the tree — do not assume global listeners for every screen |
-| Documentation | Foundation READMEs / this file keep a current mermaid (or equivalent) tree; update it when routes land |
+| Documentation | **Living trees** live in each app README (update when routes land). **System composition** (apps → shell → feature routes → API) lives in [architecture.md §3](architecture.md#3-frontend-composition). This file only defines the smart / presentational **rules**. |
 
 **Shared building-block access (no Sheriff required for MVP):**
 
@@ -70,7 +70,9 @@ smart route / screen
 - Presentational components do not import feature API modules or token storage.
 - App root / shell may compose any feature (host exception).
 
-Framework-specific trees (OnPush, React reconciliation, Vue reactivity) live under each framework section — the **obligation to draw and respect the tree** is shared.
+Framework-specific CD / reconciliation notes live under each framework section. **Detailed mermaid inventories** belong in app READMEs — not here — so this file does not become a second architecture doc.
+
+See also: [architecture.md — Frontend composition](architecture.md#3-frontend-composition).
 
 ### Hard TypeScript (all frontends)
 
@@ -214,30 +216,7 @@ Their useful thesis for us: **structure the app so illegal dependencies cannot b
 
 Angular 22 components default to **OnPush**. That means a component is checked when something it cares about changes (signal read, `input()` / bound `@Input`, template event, explicit mark) — **not** whenever any ancestor runs change detection. Pair that with **immutable signal updates** so OnPush actually sees the change. This is the Angular realization of the shared [Component tree](#component-tree-all-frontends) rule.
 
-Current `angular-admin` tree (lazy routes; authenticated pages nest under `AdminShell`):
-
-```mermaid
-flowchart TB
-  subgraph root["Change-detection root"]
-    App["App<br/><code>app-root</code><br/>OnPush"]
-  end
-
-  App --> Outlet["RouterOutlet"]
-
-  Outlet --> Login["Login<br/><code>app-login</code><br/>OnPush<br/>signals: submitting, formError"]
-  Outlet --> Shell["AdminShell<br/><code>app-admin-shell</code><br/>OnPush<br/>signals: session"]
-
-  Shell --> ShellOutlet["child RouterOutlet"]
-  ShellOutlet --> CaseList["CaseList<br/><code>app-case-list</code><br/>OnPush<br/>signals: items, filter, loading, …"]
-  ShellOutlet --> CaseReview["CaseReview<br/><code>app-case-review</code><br/>OnPush<br/>signals: detail, actions, …"]
-
-  CaseReview -.-> Presentational["Presentational panes<br/><code>input()</code> / <code>output()</code><br/>form-data / documents / actions"]
-
-  classDef dirty fill:#dbeafe,stroke:#2563eb,color:#0f172a
-  classDef idle fill:#f1f5f9,stroke:#64748b,color:#0f172a
-  class CaseList,CaseReview dirty
-  class App,Login,Outlet,Shell,ShellOutlet,Presentational idle
-```
+**Current tree diagram:** [apps/angular-admin/README.md](../apps/angular-admin/README.md#component-tree) (source of truth — update there when routes change).
 
 **Isolation example:** `CaseList` does `items.set(page.items)` after a GraphQL load.
 
@@ -260,7 +239,6 @@ Rules that keep isolation real:
 - Update signals with **new** values (`set` / `update`); do not mutate arrays/objects in place
 - Presentational pieces take `input()` / `output()` — parents pass new object/array references when data changes
 - Do **not** switch a screen to `ChangeDetectionStrategy.Eager` to “make CD work”; fix the signal/input update instead
-
 #### Building-block access (lightweight, no Sheriff)
 
 ```
@@ -434,36 +412,18 @@ Follow official [react.dev](https://react.dev) ([Learn](https://react.dev/learn)
 - Prefer **named function components**; explicit prop types (`type LoginPageProps = …` or `interface`)
 - `*.models.ts` / `*.mappers.ts` / `*.messages.ts` / `*Api.ts` (or `*.service.ts`) — API modules do not own UI state
 
-### React component tree (required)
+### React component tree
 
-Foundation tree shipped through KYC-072:
-
-```mermaid
-flowchart TB
-  Main["main.tsx"] --> App["App"]
-  App --> Login["/login LoginPage"]
-  App --> Shell["CustomerShell"]
-  Shell --> Cases["/cases CaseList smart"]
-  Shell --> Draft["/cases/:id placeholder<br/>until KYC-073"]
-  Cases --> Toolbar["CasesToolbar"]
-  Cases --> Table["CaseListTable"]
-  Cases --> Dialog["CreateDraftDialog"]
-  Cases --> Status["Loading / Empty / LoadError"]
-
-  classDef now fill:#f1f5f9,stroke:#64748b,color:#0f172a
-  classDef leaf fill:#ecfdf5,stroke:#0f6e56,color:#0f172a
-  class Main,App,Login,Shell,Cases,Draft now
-  class Toolbar,Table,Dialog,Status leaf
-```
+**Living tree (required):** keep the current mermaid in [apps/react-customer/README.md](../apps/react-customer/README.md#component-tree-kyc-072) and update it when routes ship. System composition: [architecture.md §3](architecture.md#3-frontend-composition). Smart vs presentational rules: [Component tree (all frontends)](#component-tree-all-frontends).
 
 | Node | Owns | Must not |
 |---|---|---|
 | `App` | Router, providers | Feature GraphQL calls |
 | Shell / layout | Nav chrome, outlet | Parse GraphQL bodies |
 | Screen (smart) | Load/mutate via `*Api`, local UI state | Duplicate token reads across leaves |
-| Presentational | Props in / callbacks out | `fetch`, token storage, router side effects buried in leaves |
+| Presentational | Props in / callbacks out | `fetch`, token storage, feature API modules |
 
-Keep the tree updated in the React README when routes ship. Prefer **immutable** props/state so React’s bail-out and future Compiler wins stay real. CSS modules under `noPropertyAccessFromIndexSignature`: access classes with `styles['name']` (or a typed module map).
+Prefer **immutable** props/state so React’s bail-out and future Compiler wins stay real. CSS modules under `noPropertyAccessFromIndexSignature`: access classes with `styles['name']` (or a typed module map).
 ### Data, auth, and config
 
 - GraphQL: typed `fetch` (or thin wrapper) `POST` to `import.meta.env` / config `graphqlUrl` — **no Apollo required** for MVP (same as Angular)
@@ -510,18 +470,19 @@ Apply the **Shared** section in full (Hard TypeScript, feature folders, mappers/
 | Vue | **Latest stable** Vue 3.x |
 | Docs authority | [vuejs.org](https://vuejs.org) |
 | Scaffold | Vite + `vue-ts` (or current official equivalent) |
-| Tree | Document `<RouterView>` / layout / report screens the same way React/Angular document theirs |
+| Tree | Document shell / screens in the **app README** (same ownership as Angular/React); follow shared smart / presentational rules |
 | Tokens | Import `@kyc/design-tokens/tokens.css` at app start |
 
 Detailed Vue subsection lands with KYC-080 (mirror this React section’s depth).
 
 ## Links
 
+- [Architecture — frontend composition](architecture.md#3-frontend-composition) (system diagram; living trees stay in app READMEs)
 - [UX design tokens & accessibility](ux-design-tokens.md)
 - [angular.dev](https://angular.dev) / [Style Guide](https://angular.dev/style-guide)
 - [react.dev](https://react.dev) / [Learn](https://react.dev/learn)
 - [vuejs.org](https://vuejs.org)
 - Angular Architects (patterns only): [site](https://www.angulararchitects.io/en/), [blog](https://www.angulararchitects.io/en/blog/)
 - [ADR-004](architecture-decision-records.md) (Angular admin), [ADR-005](architecture-decision-records.md) (separate apps), [ADR-007](architecture-decision-records.md) (tenant in JWT)
-- Apps: [angular-admin](../apps/angular-admin/README.md), [react-customer](../apps/react-customer/README.md), [vue-reports](../apps/vue-reports/README.md)
+- Living trees: [angular-admin](../apps/angular-admin/README.md#component-tree), [react-customer](../apps/react-customer/README.md#component-tree-kyc-072), [vue-reports](../apps/vue-reports/README.md)
 - Tokens package: [packages/design-tokens](../packages/design-tokens/)

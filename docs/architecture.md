@@ -69,9 +69,53 @@ flowchart TB
     API --> Redis
 ```
 
-## 3. Frontend Composition (target after Module Federation spike)
+## 3. Frontend Composition
 
-MVP ships three separate apps. The diagram below is the intended shell composition if the Week 7 federation spike succeeds (ADR-005).
+MVP ships three **independent** apps against the same API (ADR-005). Living per-app render trees (panes, dialogs) stay in each app README — this section is system shape only.
+
+### MVP — independent apps
+
+Each app is its own SPA. Coarse shape only — **not** per-pane leaf inventories:
+
+```mermaid
+flowchart TB
+  subgraph Angular["apps/angular-admin"]
+    ALogin["/login"]
+    AShell["AdminShell"]
+    AShell --> ACases["/cases"]
+    AShell --> AReview["/cases/:id"]
+  end
+
+  subgraph React["apps/react-customer"]
+    RLogin["/login"]
+    RShell["CustomerShell"]
+    RShell --> RCases["/cases"]
+    RShell --> RDraft["/cases/:id"]
+  end
+
+  subgraph Vue["apps/vue-reports — KYC-080"]
+    VShell["Reports shell / screens"]
+  end
+
+  API["GraphQL + JWT API"]
+  Angular --> API
+  React --> API
+  Vue --> API
+```
+
+| Layer | Owns | Documented where |
+|---|---|---|
+| System (this diagram) | Apps, shells, feature routes, API edge | **This file** |
+| Smart vs presentational rules | Screens wire I/O; leaves take props only | [frontend-code-standards.md](frontend-code-standards.md) |
+| Living render tree per app | Exact nodes (panes, dialogs, tables) | Each app README — update when routes land |
+
+- [angular-admin README](../apps/angular-admin/README.md#component-tree) — component tree  
+- [react-customer README](../apps/react-customer/README.md#component-tree-kyc-072) — component tree  
+- [vue-reports README](../apps/vue-reports/README.md) — when KYC-080 lands  
+
+### Target after Module Federation spike (Week 7)
+
+The diagram below is the intended shell composition **if** the Week 7 federation spike succeeds (ADR-005). It is not required for the first release.
 
 ```mermaid
 flowchart TB
