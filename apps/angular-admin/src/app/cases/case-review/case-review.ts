@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   ResourceLoaderParams,
+  ResourceRef,
+  Signal,
   WritableSignal,
   computed,
   inject,
@@ -10,7 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
 import type { RxResourceOptions } from '@angular/core/rxjs-interop';
-import { form } from '@angular/forms/signals';
+import { FieldTree, form } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -69,15 +71,15 @@ export class CaseReview {
 
   protected readonly caseId: string = this.routeCaseId ?? '';
 
-  protected readonly copy = CASES_REVIEW_MESSAGES;
-  protected readonly sharedCopy = UI_MESSAGES;
+  protected readonly copy: typeof CASES_REVIEW_MESSAGES = CASES_REVIEW_MESSAGES;
+  protected readonly sharedCopy: typeof UI_MESSAGES = UI_MESSAGES;
 
   private readonly caseIdParam: WritableSignal<string | undefined> = signal(this.routeCaseId);
   private readonly linkError: WritableSignal<string | null> = signal(
     this.routeCaseId ? null : CASES_REVIEW_MESSAGES.invalidCaseLink,
   );
 
-  protected readonly caseResource = rxResource({
+  protected readonly caseResource: ResourceRef<CaseDetail | undefined> = rxResource({
     // `undefined` params idle the resource (Angular runtime); typings omit the sentinel.
     params: (): string | undefined => this.caseIdParam(),
     stream: (loader: ResourceLoaderParams<string>): Observable<CaseDetail> =>
@@ -85,7 +87,10 @@ export class CaseReview {
   } as RxResourceOptions<CaseDetail, string>);
 
   protected readonly rejectModel: WritableSignal<RejectCommentModel> = signal({ comment: '' });
-  protected readonly rejectForm = form(this.rejectModel, rejectCommentSchema);
+  protected readonly rejectForm: FieldTree<RejectCommentModel> = form(
+    this.rejectModel,
+    rejectCommentSchema,
+  );
 
   protected readonly approveComment: WritableSignal<string> = signal('');
   protected readonly actionError: WritableSignal<string | null> = signal(null);
@@ -93,7 +98,7 @@ export class CaseReview {
   protected readonly downloadError: WritableSignal<string | null> = signal(null);
   protected readonly downloadingId: WritableSignal<string | null> = signal(null);
 
-  protected readonly detail = computed((): CaseDetail | null => {
+  protected readonly detail: Signal<CaseDetail | null> = computed((): CaseDetail | null => {
     // Never call `.value()` while the resource is in error — it throws ResourceValueError
     // and breaks the template (header binds `detail()` outside the loadError branch).
     if (!this.caseResource.hasValue()) {
@@ -102,9 +107,9 @@ export class CaseReview {
     return this.caseResource.value() ?? null;
   });
 
-  protected readonly loading = computed((): boolean => this.caseResource.isLoading());
+  protected readonly loading: Signal<boolean> = computed((): boolean => this.caseResource.isLoading());
 
-  protected readonly loadError = computed((): string | null => {
+  protected readonly loadError: Signal<string | null> = computed((): string | null => {
     const link: string | null = this.linkError();
     if (link) {
       return link;
@@ -113,7 +118,7 @@ export class CaseReview {
     return err ? toCasesLoadError(err).message : null;
   });
 
-  protected readonly actions = computed((): CaseReviewActions => {
+  protected readonly actions: Signal<CaseReviewActions> = computed((): CaseReviewActions => {
     const current: CaseDetail | null = this.detail();
     if (!current) {
       return { canStartReview: false, canApprove: false, canReject: false };
@@ -121,12 +126,12 @@ export class CaseReview {
     return resolveReviewActions(current.status);
   });
 
-  protected readonly statusLabel = computed((): string => {
+  protected readonly statusLabel: Signal<string> = computed((): string => {
     const current: CaseDetail | null = this.detail();
     return current ? caseStatusLabel(current.status) : '';
   });
 
-  protected readonly noActionsMessage = computed((): string =>
+  protected readonly noActionsMessage: Signal<string> = computed((): string =>
     noReviewActionsMessage(this.statusLabel()),
   );
 

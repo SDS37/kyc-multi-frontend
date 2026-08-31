@@ -15,6 +15,6 @@ import { CaseFormField } from '../cases.models';
 export class CaseFormDataPane {
   readonly formFields = input.required<readonly CaseFormField[]>();
 
-  protected readonly copy = CASES_REVIEW_MESSAGES;
-  protected readonly sharedCopy = UI_MESSAGES;
+  protected readonly copy: typeof CASES_REVIEW_MESSAGES = CASES_REVIEW_MESSAGES;
+  protected readonly sharedCopy: typeof UI_MESSAGES = UI_MESSAGES;
 }

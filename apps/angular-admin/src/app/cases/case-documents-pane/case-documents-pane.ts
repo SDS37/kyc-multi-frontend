@@ -21,7 +21,7 @@ export class CaseDocumentsPane {
 
   readonly download = output<CaseDocument>();
 
-  protected readonly copy = CASES_REVIEW_MESSAGES;
+  protected readonly copy: typeof CASES_REVIEW_MESSAGES = CASES_REVIEW_MESSAGES;
 
   protected onDownload(doc: CaseDocument): void {
     this.download.emit(doc);

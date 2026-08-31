@@ -32,7 +32,7 @@ export class CaseReviewActionsPane {
   readonly approve = output<void>();
   readonly reject = output<void>();
 
-  protected readonly copy = CASES_REVIEW_MESSAGES;
+  protected readonly copy: typeof CASES_REVIEW_MESSAGES = CASES_REVIEW_MESSAGES;
   protected readonly commentMaxLength: number = REVIEW_COMMENT_MAX_LENGTH;
   protected readonly rejectHint: string = rejectCommentHint();
   protected readonly rejectMaxLengthError: string = rejectCommentMaxLengthMessage();
