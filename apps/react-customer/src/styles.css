@@ -1,0 +1,33 @@
+@import '@kyc/design-tokens/tokens.css';
+
+:root {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--kyc-color-surface, #f6f4ef);
+  color: var(--kyc-color-text, #1c1917);
+  font-family: var(--kyc-font-sans, 'Source Sans 3', 'Segoe UI', sans-serif);
+}
+
+:focus-visible {
+  outline: 2px solid var(--kyc-focus-ring, #0f766e);
+  outline-offset: 2px;
+}
+
+a {
+  color: inherit;
+}

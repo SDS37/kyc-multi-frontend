@@ -62,8 +62,8 @@ Yes — the project is intended to reach the full target (GraphQL, CQRS modular 
 ```
 kyc-multi-frontend/
 ├── apps/
-│   ├── angular-admin/     # Angular 22+ admin/reviewer (KYC-060 foundation)
-│   ├── react-customer/    # React customer portal (not scaffolded yet)
+│   ├── angular-admin/     # Angular 22+ admin/reviewer (KYC-060+)
+│   ├── react-customer/    # React 19+ customer portal (KYC-070 foundation)
 │   ├── vue-reports/       # Vue reports portal (not scaffolded yet)
 │   └── api/               # .NET API + tests (GraphQL + document REST)
 ├── packages/
@@ -73,7 +73,7 @@ kyc-multi-frontend/
 ├── infrastructure/
 │   ├── docker-compose.yml
 │   └── .env.example
-├── .github/               # GitHub Actions (API CI)
+├── .github/               # GitHub Actions (api-ci, angular-ci, react-ci)
 ├── .config/               # Local .NET tools (dotnet-ef)
 ├── global.json            # .NET SDK pin
 ├── .editorconfig

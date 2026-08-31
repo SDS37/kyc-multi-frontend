@@ -4,36 +4,73 @@ Conventions for UI apps under `apps/` (Angular admin, React customer, Vue report
 
 **Not this file:** API runbook ([apps/api/README.md](../apps/api/README.md)), .NET C# rules ([dotnet-code-standards.md](dotnet-code-standards.md)), or *why* three separate apps / GraphQL exist ([architecture-decision-records.md](architecture-decision-records.md)). If this file and an ADR disagree, the ADR wins.
 
-**Authority for Angular-specific rules** (first match wins):
+**Authority (first match wins):**
 
 1. **ADRs** — product decisions (separate apps, no MF for MVP, no AI context packs)
-2. **[angular.dev](https://angular.dev)** — APIs, Style Guide, HTTP / routing / DI
-3. **This file** — what we enforce in this repo
-4. **[Angular Architects](https://www.angulararchitects.io/en/)** (Manfred Steyer & team) — architecture *patterns* we adopt below; not their workshop stack
+2. **Official framework docs** — [angular.dev](https://angular.dev), [react.dev](https://react.dev), [vuejs.org](https://vuejs.org) for that app’s APIs and Style Guide
+3. **This file** — what we enforce in this repo (shared + per-framework sections)
+4. **Optional pattern sources** (Angular only today) — [Angular Architects](https://www.angulararchitects.io/en/) filtered below; not their workshop stack
 
-This file is not a copy of angular.dev or of the Angular Architects blog.
+This file is not a copy of any framework’s documentation site.
 
 ## Shared (all frontends)
+
+Rules in this section apply to **Angular, React, and Vue**. Framework sections only add stack-specific APIs (DI vs hooks vs Composition API, etc.).
+
+**Portable practices (adopt once, express per stack):** Hard TypeScript; feature folders; `*.models.ts` / `*.mappers.ts` / `*.messages.ts`; functional purity with side effects at I/O edges; smart screens vs presentational leaves; an explicit **component tree**; design tokens + a11y; view bindings that do not recompute heavy work in the template/JSX; JWT attached in one HTTP helper; path-filtered CI per app. What differs is *how* (signals/`inject` vs hooks vs `setup()`), not *whether*.
 
 | Topic | Rule |
 |---|---|
 | Apps | Three independent apps (ADR-005): `apps/angular-admin`, `apps/react-customer`, `apps/vue-reports` — no Module Federation for MVP |
-| API contract | GraphQL for domain reads/writes; document **download** is REST with the same JWT; do not invent extra BFF routes |
+| Versions | Each app tracks the **latest stable** major of its framework (Angular 22+, React 19+, Vue 3+) — do not pin an outdated major “because an old issue said X” |
+| API contract | GraphQL for domain reads/writes; document **download** / **upload** are REST with the same JWT; do not invent extra BFF routes |
 | Auth | Store the access token after login; send `Authorization: Bearer <token>` on authenticated API calls; never put `tenant_id` / role in client-supplied request bodies for authorized ops (ADR-007) |
 | Config | GraphQL (and REST API) base URLs come from environment / build config — not hard-coded production hosts |
-| Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map each app’s UI kit to tokens; do not fork palettes per app |
-| Angular UI kit | **Angular Material** (+ CDK) themed to `@kyc/design-tokens`. **Do not** add the Bootstrap CSS framework (or a second spacing/color system) |
-| **Models files** | Feature DTOs / form maps / domain errors in `*.models.ts` (not inside services/components). Same convention in every UI app. |
-| **Functional style** | Prefer FP **at every app level**, expressed as pure **functions** (mappers, derived state, transforms). Side effects only at I/O edges. See below. |
+| Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map each app’s UI kit to tokens; do not fork palettes per app. Import `tokens.css` at app start |
+| UI kits | One kit per app, themed to tokens. Angular → Material. React / Vue → choose a single kit (or CSS modules + tokens) in the foundation story — **do not** add Bootstrap as a second spacing/color system |
+| **Feature folders** | Organize by **feature area** (`auth/`, `cases/`, `shared/`, `config/`), not by type buckets (`components/`, `services/`, `hooks/` as top-level) |
+| **Models / mappers / messages** | `*.models.ts` (shapes), `*.mappers.ts` (pure transforms), `*.messages.ts` (UI copy), `*.service.ts` / `*Api.ts` (I/O only) — same convention in every UI app |
+| **Functional style** | Prefer FP **at every app level**, expressed as pure **functions**. Side effects only at I/O edges. See below |
+| **Smart vs presentational** | Route / screen containers wire data and navigation. Presentational leaves take props / `input()` / props-only APIs — **no** HTTP, **no** feature API modules |
+| **Component tree** | Document and respect the render tree — see [Component tree (all frontends)](#component-tree-all-frontends) |
 | Accessibility | WCAG 2.2 AA intent + WAI-ARIA across Angular/React/Vue (same `aria-*` platform). Labels, focus visible (`--kyc-focus-ring`), errors not by color alone — details in [ux-design-tokens.md](ux-design-tokens.md) |
 | **Hard TypeScript** | **Strict TS from the first file** in every UI app — see below. No “loose then tighten later.” |
-| **Templates** | Do **not** call component methods from bindings for derived display — see [Templates: no expensive function calls](#templates-no-expensive-function-calls). |
-| **UI copy** | No hard-coded user-facing English in templates — use `*.messages.ts` catalogs (localization readiness). See [UI copy and localization](#ui-copy-and-localization). |
+| **View bindings** | Do **not** call expensive functions from templates / JSX for derived display — see [View bindings: no expensive calls](#view-bindings-no-expensive-calls) |
+| **UI copy** | No hard-coded user-facing English in views — use `*.messages.ts` catalogs. See [UI copy and localization](#ui-copy-and-localization) |
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
 | Commits | [Conventional Commits](commits.md) with scopes like `angular`, `react`, `vue`, `docs` |
-| CI | Angular admin: GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`) when `apps/angular-admin/**` changes |
+| CI | Path-filtered GitHub Actions per app (`angular-ci`, `react-ci`, later `vue-ci`): `npm ci`, build, `test:ci` |
 
-Do not invent Tenant user-management UIs in W4–W6 — that API does not exist yet (`apps/angular-admin/README.md`).
+Do not invent Tenant user-management UIs in W4–W6 — that API does not exist yet.
+
+### Component tree (all frontends)
+
+Every UI app **must** keep an explicit mental (and documented) **component / render tree**: who mounts whom, which nodes are smart vs presentational, and where state lives. Without that map, features grow into a dashboard of siblings that all fetch and mutate.
+
+**Why it matters (cross-stack):**
+
+| Concern | Practice |
+|---|---|
+| Isolation | State updates should re-render / check **the subtree that owns the data**, not the whole app |
+| Boundaries | Shell / layout hosts outlets or `<Outlet />` / `<RouterView />`; feature screens mount under them |
+| Data flow | Downward props / inputs; upward events / callbacks / outputs — not secret service calls from leaves |
+| Lazy routes | Unmounted routes are **not** in the tree — do not assume global listeners for every screen |
+| Documentation | Foundation READMEs / this file keep a current mermaid (or equivalent) tree; update it when routes land |
+
+**Shared building-block access (no Sheriff required for MVP):**
+
+```
+smart route / screen
+    → presentational UI (props / input+output only)
+    → *.service.ts / *Api.ts (HTTP)
+    → *.mappers.ts / *.models.ts / *.messages.ts
+```
+
+- Only the data module talks to the API.
+- Presentational components do not import feature API modules or token storage.
+- App root / shell may compose any feature (host exception).
+
+Framework-specific trees (OnPush, React reconciliation, Vue reactivity) live under each framework section — the **obligation to draw and respect the tree** is shared.
 
 ### Hard TypeScript (all frontends)
 
@@ -41,146 +78,95 @@ Ship with a hard type-checker from day one. Scaffold and PRs must keep it that w
 
 | Do | Do not |
 |---|---|
-| `strict: true` (and framework template/DI strictness where it exists) | Turn off `strict` / `strictTemplates` to unblock a feature |
+| `strict: true` (and framework template/DI / JSX strictness where it exists) | Turn off `strict` to unblock a feature |
 | Explicit interfaces for GraphQL/HTTP bodies and domain models | `any`, untyped `object`, or “just cast it” |
 | **Explicit types on locals / fields / constants** (`const x: string = …`) | Rely on inference alone for non-trivial values (harder to read; silent widen/drift) |
 | `unknown` + narrow in `catch` / error callbacks | Empty `catch` or `catch (e: any)` |
 | Extra flags when practical: `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters` | `@ts-ignore` / `@ts-expect-error` without a short justification |
-| Typed test fixtures (`ActivatedRouteSnapshot`, `HttpTestingController`, …) | `as any` / `as never` to silence tests |
-
-Annotate variables for readability and to shrink the mistake gap — not only public APIs:
+| Typed test fixtures | `as any` / `as never` to silence tests |
 
 ```typescript
 const token: string | null = storage.getAccessToken();
 const target: string = returnUrl ?? '/cases';
-private readonly router: Router = inject(Router);
 ```
 
-New React/Vue apps must adopt the same baseline when scaffolded (KYC-070 / KYC-080) — copy Angular’s hard `compilerOptions` intent, not a softer Vite default.
+New apps copy this hard baseline — never scaffold with Vite/CRA soft defaults left on.
 
 ### Functional style / purity (all frontends)
 
-Prefer a **functional style across every level of the app** — UI, feature services, HTTP clients, and shared helpers. The unit of that style is the **pure function** (same inputs → same outputs; no hidden I/O): put transforms in named functions (often `*.mappers.ts`), keep templates/`computed` thin, and push side effects to the edges.
+Prefer a **functional style across every level of the app**. The unit of that style is the **pure function** (same inputs → same outputs; no hidden I/O): put transforms in named functions (often `*.mappers.ts`), keep views thin, and push side effects to the edges.
 
-This is **not** a mandate for `fp-ts` or rewriting Angular as a functional framework — DI, classes, RxJS, and signals stay first-class. It **is** a mandate to think functionally **everywhere**, not only inside mapper files.
+This is **not** a mandate for `fp-ts` or rewriting React/Angular as a functional framework — hooks, DI, RxJS, and signals stay first-class. It **is** a mandate to think functionally **everywhere**, not only inside mapper files.
 
 | Level | Prefer | Avoid |
 |---|---|---|
-| **Shared / `*.mappers.ts`** | Pure functions: normalize, parse GraphQL → DTO, error map, labels, URL/filter parse | HTTP, router, storage inside “helpers” |
-| **Services** | Compose pure functions in `map`; I/O only via HttpClient / `tap` / storage APIs | Dense callbacks that parse **and** write tokens / navigate |
-| **Components** | Signals + `computed` / pure helpers for derived UI; immutable `set` / `update` | In-place mutation; business parsing copied into the class |
-| **Templates** | Bind signals / fields / message constants — **not** method calls that recompute display | Heavy branching, formatting methods, or string assembly in the template |
-| **Collections** | `filter` / `map` / `flatMap` / `reduce` that return new values | `for` / `forEach` that `.push` into an outer array (same job, less clear) |
-| **Immutability** | New arrays/objects (`[...xs]`, `{ ...o }`, `toSorted` / copy-then-sort); signal `set`/`update` with new values | `.push` / `.splice` / in-place `.sort()` / mutating fields on shared objects |
+| **Shared / `*.mappers.ts`** | Pure functions: normalize, parse GraphQL → DTO, error map, labels | HTTP, router, storage inside “helpers” |
+| **API / services** | Compose pure functions after fetch; I/O only via `fetch` / HttpClient / storage | Dense callbacks that parse **and** write tokens / navigate |
+| **Screens / components** | Derived state via `computed` / `useMemo` sparingly / pure helpers; immutable updates | In-place mutation; business parsing copied into the UI |
+| **Views (templates / JSX)** | Bind state / fields / message constants — **not** method calls that recompute display | Heavy branching, formatting helpers, or string assembly in the view |
+| **Collections** | `filter` / `map` / `flatMap` / `reduce` that return new values | `for` / `forEach` that `.push` into an outer array |
+| **Immutability** | New arrays/objects (`[...xs]`, `{ ...o }`, `toSorted`) | `.push` / `.splice` / in-place `.sort()` / mutating shared objects |
 
 ```typescript
-// ✅ GOOD — pure function at the transform; side effect at the edge (any layer)
-map((body) => parseLoginSuccess(body)),
-tap((login) => tokens.setAccessToken(login.accessToken)),
+// ✅ GOOD — pure at the transform; side effect at the edge
+const detail: CaseDetail = parseCaseDetail(body);
+storage.setAccessToken(login.accessToken);
 
 // ❌ BAD — side effect buried inside a function that should stay pure
-map((body) => {
+function parseAndStore(body: LoginBody): LoginResult {
   const login = …;
-  tokens.setAccessToken(login.accessToken);
+  storage.setAccessToken(login.accessToken);
   return login;
-}),
-```
-
-Prefer **array methods over imperative loops** when transforming lists:
-
-```typescript
-// ✅ GOOD — filter + map (no mutable accumulator)
-const knownFields: CaseFormField[] = CASE_FORM_FIELD_KEYS.filter(
-  (key): boolean => key in record,
-).map(
-  (key): CaseFormField => ({
-    key,
-    label: CASE_FORM_FIELD_LABELS[key],
-    value: formatFormFieldValue(record[key]),
-  }),
-);
-
-// ❌ BAD — for / forEach + push (imperative accumulation)
-const fields: CaseFormField[] = [];
-for (const key of CASE_FORM_FIELD_KEYS) {
-  if (!(key in record)) continue;
-  fields.push({ key, label: CASE_FORM_FIELD_LABELS[key], value: … });
 }
 ```
 
-**Immutability (whole app):** treat data as replaceable, not editable in place.
+**Immutability (whole app):** treat data as replaceable, not editable in place. Prefer `filter`/`map`/`reduce` for “list in → list out.” Do **not** treat `forEach` as more functional than `for` when they mutate.
 
-| Prefer | Avoid |
-|---|---|
-| `[...items, next]` / `items.filter(…)` / `items.map(…)` | `items.push(next)` / `items.splice(…)` |
-| `[...keys].sort(…)` or `keys.toSorted(…)` | `keys.sort(…)` on an array you still share |
-| `{ ...detail, status: next }` | `detail.status = next` |
-| `signal.set(next)` / `signal.update(prev => …new…)` | Mutate the object/array already held by a signal |
+### View bindings: no expensive calls
 
-`for…of` is still OK when you need early `break` or non-transform control flow. Prefer `filter`/`map`/`reduce` for “list in → list out.” Do **not** treat `forEach` as more functional than `for` — both are imperative when they mutate. Avoid `.push` as the default way to build lists.
-
-Enforce this for the **whole** frontend surface (`angular-admin` now; React/Vue when scaffolded). Feature layout still helps: `*.models.ts` (shapes) + `*.mappers.ts` (pure functions) + `*.messages.ts` (user-facing copy) + `*.service.ts` (I/O) + components (wiring + signals).
-
-### Templates: no expensive function calls
-
-Templates re-evaluate bindings whenever the component is checked (OnPush still checks on signal/`input`/event dirtiness). A **method call** in `{{ … }}` or `[attr…]` runs again on every check — including for every row in an `@for` / `*matCellDef`.
+Templates (Angular), JSX (React), and Vue templates re-evaluate when their owner re-renders / is checked. A **helper call** in the view for derived display runs again on every pass — including for every row in a list.
 
 | Bind this | Not this |
 |---|---|
-| Signal / `computed` reads: `{{ statusLabel() }}`, `{{ loading() }}` | `{{ formatSize(doc.sizeBytes) }}` (component method) |
-| Precomputed fields on the DTO / view model: `{{ doc.sizeLabel }}`, `{{ row.statusLabel }}` | Per-row helpers: `{{ statusLabel(row.status) }}` |
-| Message constants: `{{ copy.pageTitle }}` | Inline English literals in the template |
-| Event handlers: `(click)="reload()"` (runs once per click — fine) | N/A |
-| Framework form APIs: `control.hasError('required')` (acceptable) | Custom business formatting methods |
+| Derived state already computed: signals / `useMemo` only when needed / store selectors | `{{ formatSize(doc.sizeBytes) }}` / `{formatSize(doc.sizeBytes)}` as the default |
+| Precomputed fields on the DTO / view model: `doc.sizeLabel`, `row.statusLabel` | Per-row formatters in the view |
+| Message constants: `copy.pageTitle` | Inline English literals |
+| Event handlers (run once per user action) | N/A |
 
-**Signals are allowed and preferred.** Calling `computed` / `signal` with `()` is cheap: Angular tracks the dependency; the function body runs only when inputs change — not “on every paint” in the old Eager sense.
-
-**Do the work once, upstream:**
-
-```typescript
-// ❌ BAD — method re-runs for every row on every CD check
-protected formatSize(bytes: number): string {
-  return formatByteSize(bytes);
-}
-// template: {{ formatSize(doc.sizeBytes) }}
-
-// ✅ GOOD — mapper (or computed) attaches display fields once
-return { …doc, sizeLabel: formatByteSize(doc.sizeBytes) };
-// template: {{ doc.sizeLabel }}
-```
-
-Pure **pipes** are a fallback when a display transform cannot live on the model; prefer enriching the DTO in `*.mappers.ts` so the template stays dumb.
+**Do the work once, upstream** in `*.mappers.ts` (or a thin derived-state helper), then bind the field.
 
 ### UI copy and localization
 
-**Why not hard-code English in templates?** User-facing strings are a product surface. Literals scattered in HTML make localization (and copy edits) a hunt across every screen. Reviewers cannot see the full English catalog; translators cannot get a file.
+**Why not hard-code English in views?** User-facing strings are a product surface. Literals scattered in JSX/HTML make localization (and copy edits) a hunt across every screen.
 
 **Strategy for this repo (MVP tempo):**
 
-1. **Now — message catalogs (`*.messages.ts`)**  
-   - Feature copy: `auth.messages.ts`, `cases.messages.ts`, `shell.messages.ts`  
-   - Shared chrome: `shared/ui.messages.ts` (brand, shared actions)  
-   - Static strings: `as const` objects  
-   - Parameterized strings: **pure functions** in the same file — call them from mappers / `computed` / event handlers, **never** from templates  
-   - Domain enum labels (`CASE_STATUS_LABELS`, role labels) live in the feature messages file (types stay in `*.models.ts`)
+1. **Now — message catalogs (`*.messages.ts`)** — feature + `shared/ui.messages.ts`; parameterized helpers are **pure** and called from mappers / event handlers, **never** from views  
+2. **Not now — full i18n runtime** — do not add `$localize` / `react-i18next` / `vue-i18n` until a second locale is a product requirement  
+3. **Later — swap catalogs** behind stable keys without rewriting screens  
 
-2. **Not now — full i18n runtime**  
-   Do **not** add Angular `$localize` / XLF extract, `ngx-translate`, or locale switching for MVP. Those tools are right when a second locale is a product requirement; they add extract/build/workflow cost on every string change and would slow W4 velocity.
+**Rule:** no new user-facing English in views or as ad-hoc component string fields. Put it in `*.messages.ts`. Map API/GraphQL error codes → catalog text at the edge.
 
-3. **Later — swap catalogs for real locales without rewriting screens**  
-   Keep **stable message keys** (`casesUi.pageTitle`, `loginUi.signIn`). A future story can load `en.json` / `sv.json` (or `$localize`) behind the same keys. Templates already bind `copy.pageTitle` — they should not need a second rewrite.
+### Design practices (all frontends)
 
-| Approach | Tempo | Localization-ready? |
-|---|---|---|
-| Literals in HTML | Fastest short-term | No |
-| `*.messages.ts` catalogs (this standard) | Small constant cost | Yes — keys + one English source |
-| Angular i18n / ngx-translate now | High ongoing cost | Yes — overkill until multi-locale ships |
+Shared UX rules — not framework chrome. Product screens should feel like one design system across Angular / React / Vue.
 
-**Rule:** no new user-facing English in templates or as ad-hoc component string fields. Put it in `*.messages.ts`. API/GraphQL error *codes* stay in mappers; map codes → messages catalog text at the edge.
+| Practice | Rule |
+|---|---|
+| Tokens first | Color, spacing, type, radius, focus from `--kyc-*` — see [ux-design-tokens.md](ux-design-tokens.md) |
+| One composition per primary screen | First viewport reads as one job (login, list, review), not a widget dump |
+| Brand / hierarchy | Product name is a clear header signal; do not bury brand under competing headlines on auth/home |
+| Atmosphere without kits wars | Prefer subtle surface gradients / token-based backgrounds over flat `#fff` only; still **one** kit per app |
+| Focus & errors | Visible focus ring (`--kyc-focus-ring`); errors associated with fields; not by color alone |
+| Motion | Prefer intentional, sparse motion; do not decorate every control |
+| Kit consistency | Do not mix Material + Bootstrap + ad-hoc CSS systems in one app |
+| Cards | Use bordered/raised surfaces only when they group an interaction; prefer open layout for read-only review panes |
+
+---
 
 ## Angular (`apps/angular-admin`)
 
-Follow the official [Angular Style Guide](https://angular.dev/style-guide) and related guides. When in doubt, **prefer consistency with the file and with angular.dev**.
+Follow the official [Angular Style Guide](https://angular.dev/style-guide) and related guides. When in doubt, **prefer consistency with this file and with angular.dev**. Shared rules above still apply.
 
 ### Versions and scaffold
 
@@ -220,12 +206,13 @@ Their useful thesis for us: **structure the app so illegal dependencies cannot b
 | No store-to-store; orchestrate instead | If two stores appear later, a feature service / coordinator composes them with `computed`. Stores must not inject each other. |
 | Resource API is the signal-era load path ([Angular 22](https://www.angulararchitects.io/en/blog/angular-22-the-most-important-new-features-at-a-glance/)) | For **new** signal-driven reads, prefer `rxResource` (or `resource`) that calls the existing typed `*.service.ts`. We speak **GraphQL**, so do **not** use `httpResource` for `/graphql` (it is REST-shaped). Existing `switchMap` + signals on the case list is fine until that screen is touched. |
 | Signal Forms are stable in Angular 22 | **New** forms (review reject reason, later customer drafts) use `@angular/forms/signals` (`form` + schema). Keep login on Reactive Forms until a story rewrites it — do not churn KYC-061 for fashion. Split large forms into subform components; put reusable schemas next to `*.models.ts`. |
-| `OnPush` is the Angular 22 default | Do not set `ChangeDetectionStrategy.Eager` on new components. Rely on signals / inputs. See [OnPush and the component tree](#onpush-and-the-component-tree). |
+| `OnPush` is the Angular 22 default | Do not set `ChangeDetectionStrategy.Eager` on new components. Rely on signals / inputs. See [OnPush and the Angular component tree](#onpush-and-the-angular-component-tree) and the shared [Component tree](#component-tree-all-frontends). |
+
 | Deterministic client code owns structure | Same as [Functional style](#functional-style--purity-all-frontends): parse/order/label in mappers; the UI does not invent GraphQL codes or status order. |
 
-#### OnPush and the component tree
+#### OnPush and the Angular component tree
 
-Angular 22 components default to **OnPush**. That means a component is checked when something it cares about changes (signal read, `input()` / bound `@Input`, template event, explicit mark) — **not** whenever any ancestor runs change detection. Pair that with **immutable signal updates** so OnPush actually sees the change.
+Angular 22 components default to **OnPush**. That means a component is checked when something it cares about changes (signal read, `input()` / bound `@Input`, template event, explicit mark) — **not** whenever any ancestor runs change detection. Pair that with **immutable signal updates** so OnPush actually sees the change. This is the Angular realization of the shared [Component tree](#component-tree-all-frontends) rule.
 
 Current `angular-admin` tree (lazy routes; authenticated pages nest under `AdminShell`):
 
@@ -323,7 +310,7 @@ If an Angular Architects article and an ADR disagree, the ADR wins. If it disagr
 - Name event handlers for the **action** (`saveCase()`), not the DOM event (`handleClick()`)
 - Keep lifecycle hooks thin; implement the lifecycle interfaces (`OnInit`, etc.) when used
 - Avoid heavy logic in templates — move complexity into the class (e.g. `computed`) or mappers
-- Do not call component methods from `{{ }}` / property bindings for derived display (see [Templates: no expensive function calls](#templates-no-expensive-function-calls))
+- Do not call component methods from `{{ }}` / property bindings for derived display (see [View bindings: no expensive calls](#view-bindings-no-expensive-calls))
 - Bind UI copy from `*.messages.ts`, not string literals (see [UI copy and localization](#ui-copy-and-localization))
 - Wire RxJS / first-load requests in `ngOnInit` (or later hooks), not in `constructor()`
 - Any long-lived or fire-and-forget HTTP `.subscribe` in a component must use `takeUntilDestroyed(this.destroyRef)` (or an equivalent `DestroyRef` teardown) so callbacks do not touch signals after destroy
@@ -424,17 +411,112 @@ Suggested post-MVP shape (sketch only — implement when the pain is real):
 - Set `ChangeDetectionStrategy.Eager` on new screens without a measured reason
 - Add Agentic UI / CopilotKit / A2UI from the 2026 Angular Architects talks
 
-## React and Vue (later)
+## React (`apps/react-customer`)
 
-Apply the **Shared** section (including design tokens and a11y). Framework-specific subsections will be added with KYC-070 / KYC-080 foundations, still pointing at each framework’s official docs as the authority. Import `@kyc/design-tokens/tokens.css` at app start the same way Angular does.
+Follow official [react.dev](https://react.dev) ([Learn](https://react.dev/learn), [API](https://react.dev/reference/react)). When in doubt, **prefer consistency with this file and react.dev**. Shared rules above still apply (Hard TypeScript, feature folders, mappers/messages, tokens, a11y, component tree).
+
+### Versions and scaffold
+
+| Setting | Value | Do not |
+|---|---|---|
+| React | **Latest stable** (19.2.x at KYC-070 writing) | Pin React 17/18 “for familiarity” |
+| Bundler | **Vite** + `@vitejs/plugin-react` | CRA / eject legacy toolchains |
+| Language | TypeScript with the shared hard baseline | `strict: false`, implicit `any` |
+| App entry | `src/main.tsx` → `createRoot` | Alternate entry layouts without a reason |
+| UI code | Under `src/` | Dump feature code at the app root |
+| Design tokens | Import `@kyc/design-tokens/tokens.css` in `src/styles.css` (or `main.tsx`) | Fork a second palette |
+| Dev origin | Vite default `http://localhost:5173` (API CORS already allows it) | Invent a port not on the API allow-list without updating CORS |
+
+### Naming and structure
+
+- Feature folders: `auth/`, `cases/`, `config/`, `shared/`, `layout/` — same idea as Angular
+- Co-locate screen files: `login-page.tsx`, `login-page.module.css` (or CSS modules), tests beside code
+- Prefer **named function components**; explicit prop types (`type LoginPageProps = …` or `interface`)
+- `*.models.ts` / `*.mappers.ts` / `*.messages.ts` / `*Api.ts` (or `*.service.ts`) — API modules do not own UI state
+
+### React component tree (required)
+
+Foundation tree shipped in KYC-070 (login + cases mount under the shell later):
+
+```mermaid
+flowchart TB
+  Main["main.tsx<br/>createRoot"] --> App["App<br/>RouterProvider"]
+  App --> Shell["CustomerShell<br/>Outlet"]
+  Shell --> Home["HomePlaceholder"]
+  Shell --> Cases["Future: login / my cases<br/>KYC-071+"]
+
+  classDef now fill:#f1f5f9,stroke:#64748b,color:#0f172a
+  classDef next fill:#dbeafe,stroke:#2563eb,color:#0f172a
+  class Main,App,Shell,Home now
+  class Cases next
+```
+
+| Node | Owns | Must not |
+|---|---|---|
+| `App` | Router, providers | Feature GraphQL calls |
+| Shell / layout | Nav chrome, outlet | Parse GraphQL bodies |
+| Screen (smart) | Load/mutate via `*Api`, local UI state | Duplicate token reads across leaves |
+| Presentational | Props in / callbacks out | `fetch`, token storage, router side effects buried in leaves |
+
+Keep the tree updated in the React README when routes ship. Prefer **immutable** props/state so React’s bail-out and future Compiler wins stay real. CSS modules under `noPropertyAccessFromIndexSignature`: access classes with `styles['name']` (or a typed module map).
+### Data, auth, and config
+
+- GraphQL: typed `fetch` (or thin wrapper) `POST` to `import.meta.env` / config `graphqlUrl` — **no Apollo required** for MVP (same as Angular)
+- Attach `Authorization: Bearer <token>` in one place (fetch wrapper / interceptor helper); skip auth for `login` / `registerTenant`
+- Token storage: dedicated module (`token-storage.ts`); MVP may use `sessionStorage`; do not scatter `sessionStorage.getItem` across features
+- REST document upload/download uses the same JWT and `apiBaseUrl`
+
+### Hooks and effects ([react.dev](https://react.dev/reference/react))
+
+- Prefer small hooks for reusable wiring; keep screens readable
+- `useEffect` for **synchronizing with external systems**, not for deriving state that can be calculated during render
+- Prefer React 19 features already stable when they simplify the code; do not adopt experimental APIs for the portfolio MVP
+- Follow [eslint-plugin-react-hooks](https://www.npmjs.com/package/eslint-plugin-react-hooks) rules when ESLint is enabled for this app
+- Do **not** add `useMemo` / `useCallback` by default — add when profiling or stable identity is required; respect React Compiler guidance if the Compiler is enabled later
+
+### Routing
+
+- React Router (data APIs / `createBrowserRouter` preferred) with a clear route table
+- Guard authenticated areas (loader / wrapper); send guests to login when KYC-071 lands
+- Lazy-load heavy feature routes where it keeps the foundation small
+
+### Testing and CI
+
+- Unit tests with Vitest + Testing Library (align with Angular’s Vitest choice where practical)
+- `react-ci`: `npm ci`, `npm run build`, `npm run test:ci` on `apps/react-customer/**`
+
+### What React must not do in MVP
+
+- Call MinIO or Postgres directly — only the .NET API
+- Trust client-supplied tenant id for authorization
+- Add Apollo / Relay / TanStack Query “for scale” before a story needs caching beyond fetch
+- Add Redux / Zustand global store before shared customer case state actually hurts (prefer local state + small modules)
+- Declare exported DTOs inside components instead of `*.models.ts`
+- Hard-code English in JSX — use `*.messages.ts`
+- Put `fetch` inside presentational leaves
+- Scaffold with `strict: false` or disable `noUncheckedIndexedAccess` without an ADR-level reason
+
+## Vue (`apps/vue-reports`) — stub until KYC-080
+
+Apply the **Shared** section in full (Hard TypeScript, feature folders, mappers/messages, tokens, a11y, **component tree**, view-binding rules).
+
+| Setting | Expectation at KYC-080 |
+|---|---|
+| Vue | **Latest stable** Vue 3.x |
+| Docs authority | [vuejs.org](https://vuejs.org) |
+| Scaffold | Vite + `vue-ts` (or current official equivalent) |
+| Tree | Document `<RouterView>` / layout / report screens the same way React/Angular document theirs |
+| Tokens | Import `@kyc/design-tokens/tokens.css` at app start |
+
+Detailed Vue subsection lands with KYC-080 (mirror this React section’s depth).
 
 ## Links
 
 - [UX design tokens & accessibility](ux-design-tokens.md)
-- [Angular Style Guide](https://angular.dev/style-guide)
-- [HttpClient interceptors](https://angular.dev/guide/http/interceptors)
-- [Standalone](https://angular.dev/guide/components) / routing docs on [angular.dev](https://angular.dev)
-- Angular Architects (patterns only): [site](https://www.angulararchitects.io/en/), [blog](https://www.angulararchitects.io/en/blog/), [presentations](https://www.angulararchitects.io/en/presentations/), [Angular 22 features](https://www.angulararchitects.io/en/blog/angular-22-the-most-important-new-features-at-a-glance/), [Sheriff / strategic design](https://www.angulararchitects.io/en/blog/modern-architectures-with-angular-part-1-strategic-design-with-sheriff-and-standalone-components/), [Signal Forms](https://www.angulararchitects.io/en/blog/all-about-angulars-new-signal-forms/), [Signal Store and architecture](https://www.angulararchitects.io/en/blog/the-ngrx-signal-store-and-your-architecture/), [Resource + forms + store](https://www.angulararchitects.io/en/blog/full-cycle-reativity-in-angular-signal-forms-signal-store-resources-mutation-api/)
+- [angular.dev](https://angular.dev) / [Style Guide](https://angular.dev/style-guide)
+- [react.dev](https://react.dev) / [Learn](https://react.dev/learn)
+- [vuejs.org](https://vuejs.org)
+- Angular Architects (patterns only): [site](https://www.angulararchitects.io/en/), [blog](https://www.angulararchitects.io/en/blog/)
 - [ADR-004](architecture-decision-records.md) (Angular admin), [ADR-005](architecture-decision-records.md) (separate apps), [ADR-007](architecture-decision-records.md) (tenant in JWT)
-- App slot: [apps/angular-admin/README.md](../apps/angular-admin/README.md)
+- Apps: [angular-admin](../apps/angular-admin/README.md), [react-customer](../apps/react-customer/README.md), [vue-reports](../apps/vue-reports/README.md)
 - Tokens package: [packages/design-tokens](../packages/design-tokens/)
