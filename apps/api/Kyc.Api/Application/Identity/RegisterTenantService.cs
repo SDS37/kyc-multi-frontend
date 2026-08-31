@@ -116,17 +116,19 @@ public sealed partial class RegisterTenantService(
         }
 
         var password = request.AdminPassword ?? string.Empty;
-        if (password.Length < 8)
+        if (password.Length < 12)
         {
-            errors.Add("Password must be at least 8 characters.");
+            errors.Add("Password must be at least 12 characters.");
         }
         else if (password.Length > MaxPasswordLength)
         {
             errors.Add($"Password must be at most {MaxPasswordLength} characters.");
         }
-        else if (!password.Any(char.IsLetter) || !password.Any(char.IsDigit))
+        else if (!password.Any(char.IsUpper) ||
+                 !password.Any(char.IsLower) ||
+                 !password.Any(char.IsDigit))
         {
-            errors.Add("Password must contain at least one letter and one digit.");
+            errors.Add("Password must contain upper and lower case letters and at least one digit.");
         }
 
         return errors;

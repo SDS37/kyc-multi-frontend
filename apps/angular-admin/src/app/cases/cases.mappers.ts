@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { AppRole } from '../auth/auth.models';
 import { GraphqlError } from '../shared/graphql.models';
 import {
   CASE_FORM_FIELD_LABELS,
@@ -115,8 +116,14 @@ export function toCasesLoadError(err: unknown): CasesLoadError {
   return new CasesLoadError(CASES_LIST_MESSAGES.listLoadFailed);
 }
 
-/** Pure: which review buttons apply for a case status (API DOMAIN rules). */
-export function resolveReviewActions(status: CaseStatus): CaseReviewActions {
+/** Pure: which review buttons apply for status + admin role (API DOMAIN rules). */
+export function resolveReviewActions(
+  status: CaseStatus,
+  role: AppRole | null,
+): CaseReviewActions {
+  if (role !== 'Reviewer' && role !== 'TenantAdmin') {
+    return { canStartReview: false, canApprove: false, canReject: false };
+  }
   return {
     canStartReview: status === 'SUBMITTED',
     canApprove: status === 'IN_REVIEW',

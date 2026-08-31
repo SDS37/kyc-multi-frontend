@@ -5,6 +5,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { APP_CONFIG } from '../config/app-config';
 import { authInterceptor } from './auth.interceptor';
 import { SKIP_AUTH } from './skip-auth';
@@ -23,6 +24,7 @@ describe('authInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
+        provideRouter([{ path: 'login', children: [] }]),
         {
           provide: APP_CONFIG,
           useValue: { apiBaseUrl, graphqlUrl },

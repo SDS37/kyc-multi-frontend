@@ -3,12 +3,29 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { APP_CONFIG } from '../../config/app-config';
 import { TokenStorage } from '../../auth/token-storage';
 import { CaseReview } from './case-review';
 
 const graphqlUrl: string = 'http://localhost:5295/graphql';
 const caseId: string = '11111111-1111-1111-1111-111111111111';
+
+function reviewerToken(): string {
+  const payload: string = btoa(
+    JSON.stringify({
+      sub: '00000000-0000-0000-0000-000000000001',
+      tenant_id: '00000000-0000-0000-0000-000000000002',
+      role: 'Reviewer',
+      email: 'rev@acme.example',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }),
+  )
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  return `hdr.${payload}.sig`;
+}
 
 describe('CaseReview', () => {
   let fixture: ComponentFixture<CaseReview>;
@@ -28,6 +45,7 @@ describe('CaseReview', () => {
             snapshot: {
               paramMap: convertToParamMap({ caseId }),
             },
+            paramMap: of(convertToParamMap({ caseId })),
           },
         },
         {
@@ -41,7 +59,7 @@ describe('CaseReview', () => {
     }).compileComponents();
 
     tokens = TestBed.inject(TokenStorage);
-    tokens.setAccessToken('jwt');
+    tokens.setAccessToken(reviewerToken());
     httpTesting = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(CaseReview);
     fixture.detectChanges();

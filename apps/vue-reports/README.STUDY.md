@@ -39,7 +39,7 @@ Not a remote in MVP (ADR-005). Week 7 might load this from an Angular shell; unt
 
 ## Today vs target
 
-API list/detail exist — a Vue table could be built tomorrow against the playground token. The folder is empty because Week 6 is the scheduled UI. Prefer port `5174` so it does not collide with React on `5173`. Security headers stay W6.
+API list/detail exist — a Vue table could be built tomorrow against the playground token. The folder is empty because Week 6 is the scheduled UI. Prefer port `5174` (on the API CORS allow-list). Security headers are partially shipped on the API.
 
 ## What to skip
 

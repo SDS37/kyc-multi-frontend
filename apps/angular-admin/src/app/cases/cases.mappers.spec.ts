@@ -84,18 +84,26 @@ describe('cases.mappers', () => {
     expect(toCasesLoadError(new HttpErrorResponse({ status: 0 })).code).toBe('NETWORK');
   });
 
-  it('resolveReviewActions follows status rules', (): void => {
-    expect(resolveReviewActions('SUBMITTED')).toEqual({
+  it('resolveReviewActions follows status rules for reviewers', (): void => {
+    expect(resolveReviewActions('SUBMITTED', 'Reviewer')).toEqual({
       canStartReview: true,
       canApprove: false,
       canReject: false,
     });
-    expect(resolveReviewActions('IN_REVIEW')).toEqual({
+    expect(resolveReviewActions('IN_REVIEW', 'TenantAdmin')).toEqual({
       canStartReview: false,
       canApprove: true,
       canReject: true,
     });
-    expect(resolveReviewActions('DRAFT').canStartReview).toBe(false);
+    expect(resolveReviewActions('DRAFT', 'Reviewer').canStartReview).toBe(false);
+  });
+
+  it('resolveReviewActions hides actions for Customer role', (): void => {
+    expect(resolveReviewActions('SUBMITTED', 'Customer')).toEqual({
+      canStartReview: false,
+      canApprove: false,
+      canReject: false,
+    });
   });
 
   it('parseCaseFormData orders known keys', (): void => {

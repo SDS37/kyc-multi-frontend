@@ -32,7 +32,7 @@ flowchart TB
     PG[Service: postgres:18-alpine]
     SDK["setup-dotnet from global.json"]
     R[dotnet restore]
-    V["dotnet list --vulnerable warn"]
+    V["dotnet list --vulnerable"]
     B1[dotnet build Release]
     X1["dotnet test with KYC_TEST_POSTGRES"]
     T1 --> PG
@@ -82,7 +82,7 @@ Vue CI when `apps/vue-reports` lands (KYC-080). Keep API isolation tests in `api
 ## What to skip
 
 - Re-reading SHA pins — know *why* they are pinned.
-- `continue-on-error` on api-ci vuln list — it **warns**, it does not fail the PR (yet).
+- Vulnerable package list on api-ci — step runs without `continue-on-error` (treat non-zero as fail when the tool reports vulns).
 
 ## Links
 

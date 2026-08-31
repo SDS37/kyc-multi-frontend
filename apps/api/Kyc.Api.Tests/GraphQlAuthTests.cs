@@ -57,7 +57,7 @@ public sealed class GraphQlAuthTests(ApiFactory factory) : IClassFixture<ApiFact
                   "tenantName": "Anon Co",
                   "tenantSlug": "{{slug}}",
                   "adminEmail": "a@{{slug}}.example",
-                  "adminPassword": "ChangeMe1"
+                  "adminPassword": "ChangeMe1234"
                 }
               }
             }
@@ -72,7 +72,7 @@ public sealed class GraphQlAuthTests(ApiFactory factory) : IClassFixture<ApiFact
                 "input": {
                   "tenantSlug": "{{slug}}",
                   "email": "a@{{slug}}.example",
-                  "password": "ChangeMe1"
+                  "password": "ChangeMe1234"
                 }
               }
             }
@@ -123,7 +123,7 @@ public sealed class GraphQlAuthTests(ApiFactory factory) : IClassFixture<ApiFact
                   "tenantName": "Auth Co",
                   "tenantSlug": "{{slug}}",
                   "adminEmail": "a@{{slug}}.example",
-                  "adminPassword": "ChangeMe1"
+                  "adminPassword": "ChangeMe1234"
                 }
               }
             }
@@ -137,7 +137,7 @@ public sealed class GraphQlAuthTests(ApiFactory factory) : IClassFixture<ApiFact
                 "input": {
                   "tenantSlug": "{{slug}}",
                   "email": "a@{{slug}}.example",
-                  "password": "ChangeMe1"
+                  "password": "ChangeMe1234"
                 }
               }
             }

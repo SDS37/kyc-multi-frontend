@@ -21,7 +21,7 @@
   @if (loadError(); as error) {
     <div class="review__alert" role="alert">
       <p>{{ error }}</p>
-      @if (caseId) {
+      @if (caseId()) {
         <button mat-stroked-button type="button" (click)="reload()">{{ sharedCopy.tryAgain }}</button>
       } @else {
         <a routerLink="/cases" class="review__back-link">{{ copy.backToCasesShort }}</a>

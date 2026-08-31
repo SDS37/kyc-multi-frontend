@@ -10,4 +10,10 @@ public sealed class RegistrationOptions
     /// Local Development sets true via appsettings.Development.json.
     /// </summary>
     public bool AllowPublicRegistration { get; set; }
+
+    /// <summary>
+    /// Break-glass: allow <see cref="AllowPublicRegistration"/> outside Development.
+    /// Ignored when <see cref="AllowPublicRegistration"/> is false.
+    /// </summary>
+    public bool AllowInProduction { get; set; }
 }

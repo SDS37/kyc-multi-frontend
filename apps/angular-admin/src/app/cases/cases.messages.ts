@@ -86,11 +86,14 @@ export const CASES_REVIEW_MESSAGES = {
   downloadFailed: 'Unable to download this document. Try again.',
 } as const;
 
-/** Pure: list count line (“1 case” / “3 cases”). */
-export function casesCountLabel(totalCount: number): string {
+/** Pure: list count line; honest when the page is truncated. */
+export function casesCountLabel(shownCount: number, totalCount: number): string {
   const unit: string =
     totalCount === 1 ? CASES_LIST_MESSAGES.caseSingular : CASES_LIST_MESSAGES.casePlural;
-  return `${totalCount} ${unit}`;
+  if (shownCount < totalCount) {
+    return `Showing ${String(shownCount)} of ${String(totalCount)} ${unit}`;
+  }
+  return `${String(totalCount)} ${unit}`;
 }
 
 /** Pure: empty list when a status filter is active. */

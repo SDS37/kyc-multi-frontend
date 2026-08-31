@@ -4,8 +4,13 @@ import { MockInstance, vi } from 'vitest';
 import { TokenStorage } from '../../auth/token-storage';
 import { AdminShell } from './admin-shell';
 
-function makeToken(claims: Record<string, string>): string {
-  const payload: string = btoa(JSON.stringify(claims))
+function makeToken(claims: Record<string, string | number>): string {
+  const payload: string = btoa(
+    JSON.stringify({
+      ...claims,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }),
+  )
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');

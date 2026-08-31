@@ -204,7 +204,14 @@ public sealed partial class UploadDocumentService(
         catch (Exception ex)
         {
             LogDocumentMetadataSaveFailed(logger, ex, documentId);
-            await objectStorage.DeleteAsync(storageKey, cancellationToken);
+            try
+            {
+                await objectStorage.DeleteAsync(storageKey, cancellationToken);
+            }
+            catch (Exception deleteEx)
+            {
+                LogDocumentOrphanCleanupFailed(logger, deleteEx, storageKey);
+            }
             return (null, ["Could not save document metadata. Please try again."], false, false, null, null);
         }
 
@@ -230,6 +237,11 @@ public sealed partial class UploadDocumentService(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Document metadata save failed for {DocumentId}; compensating delete")]
     private static partial void LogDocumentMetadataSaveFailed(ILogger logger, Exception ex, Guid documentId);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Compensating object-storage delete failed for key {StorageKey}; object may be orphaned")]
+    private static partial void LogDocumentOrphanCleanupFailed(ILogger logger, Exception ex, string storageKey);
 
     [LoggerMessage(
         Level = LogLevel.Information,

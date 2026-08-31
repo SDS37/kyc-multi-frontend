@@ -19,7 +19,7 @@ function stateSnapshot(url: string): RouterStateSnapshot {
 }
 
 /** Minimal parseable JWT for shell/guard tests (not cryptographically valid). */
-function testAccessToken(): string {
+function testAccessToken(role: string = 'TenantAdmin'): string {
   const header: string = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -28,8 +28,9 @@ function testAccessToken(): string {
     JSON.stringify({
       sub: '00000000-0000-0000-0000-000000000001',
       tenant_id: '00000000-0000-0000-0000-000000000002',
-      role: 'TenantAdmin',
+      role,
       email: 'admin@acme.example',
+      exp: Math.floor(Date.now() / 1000) + 3600,
     }),
   )
     .replace(/\+/g, '-')
@@ -55,12 +56,23 @@ describe('authGuard', () => {
     tokens.clearSession();
   });
 
-  it('allows navigation when a parseable token is present', (): void => {
-    tokens.setAccessToken(testAccessToken());
+  it('allows navigation when a parseable admin token is present', (): void => {
+    tokens.setAccessToken(testAccessToken('Reviewer'));
     const result: MaybeAsync<GuardResult> = TestBed.runInInjectionContext(
       (): MaybeAsync<GuardResult> => authGuard(routeSnapshot(), stateSnapshot('/cases')),
     );
     expect(result).toBe(true);
+  });
+
+  it('rejects Customer tokens and clears the session', (): void => {
+    tokens.setAccessToken(testAccessToken('Customer'));
+    const result: MaybeAsync<GuardResult> = TestBed.runInInjectionContext(
+      (): MaybeAsync<GuardResult> => authGuard(routeSnapshot(), stateSnapshot('/cases')),
+    );
+    expect(tokens.getAccessToken()).toBeNull();
+    expect(result).toEqual(
+      router.createUrlTree(['/login'], { queryParams: { returnUrl: '/cases' } }),
+    );
   });
 
   it('rejects corrupt tokens and clears the session', (): void => {

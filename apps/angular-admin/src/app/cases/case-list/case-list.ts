@@ -73,7 +73,9 @@ export class CaseList implements OnInit {
     (): boolean => !this.loading() && this.loadError() === null && this.items().length === 0,
   );
 
-  protected readonly countLabel = computed((): string => casesCountLabel(this.totalCount()));
+  protected readonly countLabel = computed((): string =>
+    casesCountLabel(this.items().length, this.totalCount()),
+  );
 
   protected readonly emptyMessage = computed((): string => {
     const status: CaseStatus | null = this.statusFilter();

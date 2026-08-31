@@ -10,13 +10,16 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, rxResource, toSignal } from '@angular/core/rxjs-interop';
 import type { RxResourceOptions } from '@angular/core/rxjs-interop';
 import { FieldTree, form } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
+import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
+import { Observable, map } from 'rxjs';
+import { toShellSession } from '../../auth/auth.mappers';
+import { AppRole } from '../../auth/auth.models';
+import { TokenStorage } from '../../auth/token-storage';
 import { UI_MESSAGES } from '../../shared/ui.messages';
 import { CaseDocumentsPane } from '../case-documents-pane/case-documents-pane';
 import { CaseFormDataPane } from '../case-form-data-pane/case-form-data-pane';
@@ -65,19 +68,30 @@ import { CasesService } from '../cases.service';
 export class CaseReview {
   private readonly casesService: CasesService = inject(CasesService);
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
+  private readonly tokens: TokenStorage = inject(TokenStorage);
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
 
-  private readonly routeCaseId: string | undefined = readRouteCaseId(this.route);
+  private readonly routeCaseIdParam: Signal<string | undefined> = toSignal(
+    this.route.paramMap.pipe(
+      map((params: ParamMap): string | undefined => {
+        const raw: string | null = params.get('caseId');
+        if (!raw || !isCaseId(raw)) {
+          return undefined;
+        }
+        return raw;
+      }),
+    ),
+    { initialValue: readRouteCaseId(this.route) },
+  );
 
-  protected readonly caseId: string = this.routeCaseId ?? '';
+  protected readonly caseId: Signal<string> = computed(
+    (): string => this.routeCaseIdParam() ?? '',
+  );
 
   protected readonly copy: typeof CASES_REVIEW_MESSAGES = CASES_REVIEW_MESSAGES;
   protected readonly sharedCopy: typeof UI_MESSAGES = UI_MESSAGES;
 
-  private readonly caseIdParam: WritableSignal<string | undefined> = signal(this.routeCaseId);
-  private readonly linkError: WritableSignal<string | null> = signal(
-    this.routeCaseId ? null : CASES_REVIEW_MESSAGES.invalidCaseLink,
-  );
+  private readonly caseIdParam: Signal<string | undefined> = this.routeCaseIdParam;
 
   protected readonly caseResource: ResourceRef<CaseDetail | undefined> = rxResource({
     // `undefined` params idle the resource (Angular runtime); typings omit the sentinel.
@@ -99,8 +113,6 @@ export class CaseReview {
   protected readonly downloadingId: WritableSignal<string | null> = signal(null);
 
   protected readonly detail: Signal<CaseDetail | null> = computed((): CaseDetail | null => {
-    // Never call `.value()` while the resource is in error — it throws ResourceValueError
-    // and breaks the template (header binds `detail()` outside the loadError branch).
     if (!this.caseResource.hasValue()) {
       return null;
     }
@@ -110,12 +122,16 @@ export class CaseReview {
   protected readonly loading: Signal<boolean> = computed((): boolean => this.caseResource.isLoading());
 
   protected readonly loadError: Signal<string | null> = computed((): string | null => {
-    const link: string | null = this.linkError();
-    if (link) {
-      return link;
+    if (!this.routeCaseIdParam()) {
+      return CASES_REVIEW_MESSAGES.invalidCaseLink;
     }
     const err: Error | undefined = this.caseResource.error();
     return err ? toCasesLoadError(err).message : null;
+  });
+
+  protected readonly callerRole: Signal<AppRole | null> = computed((): AppRole | null => {
+    const session = toShellSession(this.tokens.getAccessToken(), this.tokens.getTenantSlug());
+    return session?.role ?? null;
   });
 
   protected readonly actions: Signal<CaseReviewActions> = computed((): CaseReviewActions => {
@@ -123,7 +139,7 @@ export class CaseReview {
     if (!current) {
       return { canStartReview: false, canApprove: false, canReject: false };
     }
-    return resolveReviewActions(current.status);
+    return resolveReviewActions(current.status, this.callerRole());
   });
 
   protected readonly statusLabel: Signal<string> = computed((): string => {
@@ -145,7 +161,7 @@ export class CaseReview {
     if (!this.actions().canStartReview || this.actionBusy()) {
       return;
     }
-    this.runAction((): Observable<unknown> => this.casesService.startReview(this.caseId));
+    this.runAction((): Observable<unknown> => this.casesService.startReview(this.caseId()));
   }
 
   protected approve(): void {
@@ -158,7 +174,7 @@ export class CaseReview {
       return;
     }
     this.runAction(
-      (): Observable<unknown> => this.casesService.approve(this.caseId, normalized.comment),
+      (): Observable<unknown> => this.casesService.approve(this.caseId(), normalized.comment),
     );
   }
 
@@ -173,7 +189,7 @@ export class CaseReview {
       return;
     }
     this.runAction(
-      (): Observable<unknown> => this.casesService.reject(this.caseId, normalized.comment),
+      (): Observable<unknown> => this.casesService.reject(this.caseId(), normalized.comment),
     );
   }
 
@@ -185,7 +201,7 @@ export class CaseReview {
     this.downloadingId.set(doc.id);
 
     this.casesService
-      .downloadDocument(this.caseId, doc.id)
+      .downloadDocument(this.caseId(), doc.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob: Blob): void => {
@@ -207,7 +223,6 @@ export class CaseReview {
       .subscribe({
         next: (): void => {
           this.actionBusy.set(false);
-          // Clears value + touched/dirty so required error UI does not linger after submit.
           this.rejectForm.comment().reset('');
           this.approveComment.set('');
           this.reload();
@@ -238,5 +253,7 @@ function triggerBlobDownload(blob: Blob, fileName: string): void {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(objectUrl);
+  window.setTimeout((): void => {
+    URL.revokeObjectURL(objectUrl);
+  }, 1_000);
 }
