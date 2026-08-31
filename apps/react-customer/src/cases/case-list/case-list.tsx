@@ -1,7 +1,6 @@
 import {
   type ChangeEvent,
   type FormEvent,
-  type KeyboardEvent,
   type ReactElement,
   type RefObject,
   useCallback,
@@ -29,9 +28,14 @@ import {
   CASE_STATUSES,
   CREATE_DRAFT_TITLE_MAX_LENGTH,
   type CaseListItem,
+  type CaseListPage,
   type CaseStatus,
+  type CreatedDraftCase,
 } from '../cases.models';
 import styles from './case-list.module.css';
+
+const FOCUSABLE_SELECTOR: string =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Customer my-cases list + create draft (KYC-072).
@@ -42,6 +46,11 @@ export function CaseList(): ReactElement {
   const navigate: NavigateFunction = useNavigate();
   const loadSeq: RefObject<number> = useRef(0);
   const createLock: RefObject<boolean> = useRef(false);
+  const creatingRef: RefObject<boolean> = useRef(false);
+  const dialogRef: RefObject<HTMLDivElement | null> = useRef<HTMLDivElement | null>(null);
+  const titleInputRef: RefObject<HTMLInputElement | null> = useRef<HTMLInputElement | null>(
+    null,
+  );
 
   const [statusFilter, setStatusFilter] = useState<CaseStatus | null>(null);
   const [items, setItems] = useState<readonly CaseListItem[]>([]);
@@ -61,7 +70,7 @@ export function CaseList(): ReactElement {
     setLoading(true);
     setLoadError(null);
     try {
-      const page = await listCases({ status });
+      const page: CaseListPage = await listCases({ status });
       if (loadSeq.current !== seq) {
         return;
       }
@@ -83,6 +92,77 @@ export function CaseList(): ReactElement {
     void loadCases(statusFilter);
   }, [loadCases, statusFilter]);
 
+  useEffect((): (() => void) | void => {
+    if (!createOpen) {
+      return;
+    }
+
+    const previousOverflow: string = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const previouslyFocused: HTMLElement | null =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const focusTimer: number = window.setTimeout((): void => {
+      titleInputRef.current?.focus();
+    }, 0);
+
+    function onKeyDown(event: globalThis.KeyboardEvent): void {
+      if (event.key === 'Escape') {
+        if (creatingRef.current) {
+          return;
+        }
+        event.preventDefault();
+        setCreateOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const dialog: HTMLDivElement | null = dialogRef.current;
+      if (!dialog) {
+        return;
+      }
+
+      const focusable: HTMLElement[] = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter((el: HTMLElement): boolean => !el.hasAttribute('disabled'));
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first: HTMLElement | undefined = focusable[0];
+      const last: HTMLElement | undefined = focusable[focusable.length - 1];
+      if (!first || !last) {
+        return;
+      }
+
+      const active: Element | null = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || !dialog.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown);
+
+    return (): void => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
+    };
+  }, [createOpen]);
+
   const isEmpty: boolean = !loading && loadError === null && items.length === 0;
   const countLabel: string = casesCountLabel(totalCount);
   const emptyMessage: string = statusFilter
@@ -92,22 +172,13 @@ export function CaseList(): ReactElement {
 
   function onStatusChange(event: ChangeEvent<HTMLSelectElement>): void {
     const raw: string = event.target.value;
-    const parsed = parseStatusFilterValue(raw === '' ? null : raw);
+    const parsed: CaseStatus | null | undefined = parseStatusFilterValue(
+      raw === '' ? null : raw,
+    );
     if (parsed === undefined) {
       return;
     }
     setStatusFilter(parsed);
-  }
-
-  function openCase(row: CaseListItem): void {
-    void navigate(`/cases/${row.id}`);
-  }
-
-  function onRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, row: CaseListItem): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      openCase(row);
-    }
   }
 
   function openCreateDialog(): void {
@@ -118,7 +189,7 @@ export function CaseList(): ReactElement {
   }
 
   function closeCreateDialog(): void {
-    if (creating) {
+    if (creatingRef.current) {
       return;
     }
     setCreateOpen(false);
@@ -133,14 +204,17 @@ export function CaseList(): ReactElement {
     }
 
     createLock.current = true;
+    creatingRef.current = true;
     setCreating(true);
     try {
-      const created = await createDraftCase({ title: createTitle });
+      const created: CreatedDraftCase = await createDraftCase({ title: createTitle });
+      creatingRef.current = false;
       setCreating(false);
       createLock.current = false;
       setCreateOpen(false);
       void navigate(`/cases/${created.id}`);
     } catch (err: unknown) {
+      creatingRef.current = false;
       createLock.current = false;
       setCreating(false);
       setCreateError(toCreateDraftError(err).message);
@@ -217,25 +291,12 @@ export function CaseList(): ReactElement {
             </thead>
             <tbody>
               {items.map((row: CaseListItem) => (
-                <tr
-                  key={row.id}
-                  className={styles['row']}
-                  tabIndex={0}
-                  aria-label={row.openAriaLabel}
-                  onClick={(): void => {
-                    openCase(row);
-                  }}
-                  onKeyDown={(event: KeyboardEvent<HTMLTableRowElement>): void => {
-                    onRowKeyDown(event, row);
-                  }}
-                >
+                <tr key={row.id} className={styles['row']}>
                   <td>
                     <Link
                       className={styles['link']}
                       to={`/cases/${row.id}`}
-                      onClick={(event): void => {
-                        event.stopPropagation();
-                      }}
+                      aria-label={row.openAriaLabel}
                     >
                       {row.title}
                     </Link>
@@ -260,6 +321,7 @@ export function CaseList(): ReactElement {
           onClick={closeCreateDialog}
         >
           <div
+            ref={dialogRef}
             className={styles['dialog']}
             role="dialog"
             aria-modal="true"
@@ -280,10 +342,10 @@ export function CaseList(): ReactElement {
               <label className={styles['dialogField']}>
                 <span>{copy.createTitleLabel}</span>
                 <input
+                  ref={titleInputRef}
                   value={createTitle}
                   maxLength={CREATE_DRAFT_TITLE_MAX_LENGTH}
                   autoComplete="off"
-                  autoFocus
                   aria-invalid={createTouched && createTitleError !== null}
                   aria-describedby={
                     createTouched && createTitleError !== null

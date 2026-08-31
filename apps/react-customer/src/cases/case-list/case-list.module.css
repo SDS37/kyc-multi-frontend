@@ -194,17 +194,8 @@
   text-decoration: underline;
 }
 
-.row {
-  cursor: pointer;
-}
-
 .row:hover {
   background: var(--kyc-color-surface);
-}
-
-.row:focus-visible {
-  outline: var(--kyc-focus-ring);
-  outline-offset: -2px;
 }
 
 .status {
