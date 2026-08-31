@@ -42,6 +42,9 @@ export const CASES_LIST_MESSAGES = {
   caseSingular: 'case',
   casePlural: 'cases',
   openCaseAriaPrefix: 'Open case',
+  listLoadFailed: 'Unable to load cases. Try again.',
+  listIncomplete: 'Case list response was incomplete.',
+  listNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
 } as const;
 
 /** Case review chrome (KYC-063). */
@@ -74,9 +77,6 @@ export const CASES_REVIEW_MESSAGES = {
   loadIncomplete: 'Case detail response was incomplete.',
   commentsIncomplete: 'Case comments response was incomplete.',
   documentsIncomplete: 'Case documents response was incomplete.',
-  listLoadFailed: 'Unable to load cases. Try again.',
-  listIncomplete: 'Case list response was incomplete.',
-  listNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
   rejectCommentRequiredAction: 'A comment is required to reject a case.',
   actionFailed: 'Unable to complete that action. Try again.',
   actionIncomplete: 'Action response was incomplete.',

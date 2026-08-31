@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { GraphqlError } from '../shared/graphql.models';
 import {
   CASE_FORM_FIELD_LABELS,
+  CASES_LIST_MESSAGES,
   CASES_REVIEW_MESSAGES,
   caseStatusLabel,
   downloadDocumentAriaLabel,
@@ -54,20 +55,20 @@ export function parseCasesPage(
   const gqlError: GraphqlError | undefined = body.errors?.[0];
   if (gqlError) {
     throw new CasesLoadError(
-      gqlError.message?.trim() || CASES_REVIEW_MESSAGES.listLoadFailed,
+      gqlError.message?.trim() || CASES_LIST_MESSAGES.listLoadFailed,
       gqlError.extensions?.code,
     );
   }
 
   const page = body.data?.cases;
   if (!page || !Array.isArray(page.items)) {
-    throw new CasesLoadError(CASES_REVIEW_MESSAGES.listLoadFailed);
+    throw new CasesLoadError(CASES_LIST_MESSAGES.listLoadFailed);
   }
 
   const items: CaseListItem[] = page.items.map(
     (raw): CaseListItem => {
       if (!raw?.id || !raw.title || !raw.customerEmail || !raw.updatedAt || !raw.status) {
-        throw new CasesLoadError(CASES_REVIEW_MESSAGES.listIncomplete);
+        throw new CasesLoadError(CASES_LIST_MESSAGES.listIncomplete);
       }
       if (!isCaseStatus(raw.status)) {
         throw new CasesLoadError(unexpectedCaseStatusMessage(raw.status));
@@ -109,9 +110,9 @@ export function toCasesLoadError(err: unknown): CasesLoadError {
     return err;
   }
   if (err instanceof HttpErrorResponse) {
-    return new CasesLoadError(CASES_REVIEW_MESSAGES.listNetworkFailed, 'NETWORK');
+    return new CasesLoadError(CASES_LIST_MESSAGES.listNetworkFailed, 'NETWORK');
   }
-  return new CasesLoadError(CASES_REVIEW_MESSAGES.listLoadFailed);
+  return new CasesLoadError(CASES_LIST_MESSAGES.listLoadFailed);
 }
 
 /** Pure: which review buttons apply for a case status (API DOMAIN rules). */
