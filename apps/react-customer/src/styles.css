@@ -18,14 +18,15 @@ body,
 
 body {
   margin: 0;
-  background: var(--kyc-color-surface, #f6f4ef);
-  color: var(--kyc-color-text, #1c1917);
-  font-family: var(--kyc-font-sans, 'Source Sans 3', 'Segoe UI', sans-serif);
+  background: var(--kyc-color-surface);
+  color: var(--kyc-color-text);
+  font-family: var(--kyc-font-sans);
+  line-height: var(--kyc-leading-normal);
 }
 
 :focus-visible {
-  outline: 2px solid var(--kyc-focus-ring, #0f766e);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--kyc-focus-ring);
 }
 
 a {
