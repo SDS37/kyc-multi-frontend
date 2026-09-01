@@ -32,6 +32,12 @@
         {{ copy.latestHeading }}
       </h2>
       <p :class="$style['hint']">{{ copy.latestHint }}</p>
+      <p
+        v-if="overview.latest.length > 0"
+        :class="$style['count']"
+      >
+        {{ latestCountLabel }}
+      </p>
 
       <p
         v-if="overview.latest.length === 0"
@@ -50,13 +56,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, type Ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, type ComputedRef, type Ref } from 'vue';
 import ReportsLatestTable from './ReportsLatestTable.vue';
 import ReportsLoadError from './ReportsLoadError.vue';
 import ReportsStatusCounts from './ReportsStatusCounts.vue';
 import { loadReportsOverview } from './reports-api';
 import { toReportsLoadError } from './reports.mappers';
-import { REPORTS_HOME_MESSAGES, type ReportsHomeMessages } from './reports.messages';
+import {
+  REPORTS_HOME_MESSAGES,
+  reportsLatestCountLabel,
+  type ReportsHomeMessages,
+} from './reports.messages';
 import type { ReportsOverview } from './reports.models';
 
 defineOptions({ name: 'ReportsHome' });
@@ -71,8 +81,20 @@ const loading: Ref<boolean> = ref(true);
 const loadError: Ref<string | null> = ref(null);
 let loadSeq: number = 0;
 
+const latestCountLabel: ComputedRef<string> = computed((): string => {
+  const data: ReportsOverview | null = overview.value;
+  if (!data) {
+    return '';
+  }
+  return reportsLatestCountLabel(data.latest.length, data.latestTotalCount);
+});
+
 onMounted((): void => {
   void reload();
+});
+
+onUnmounted((): void => {
+  loadSeq += 1;
 });
 
 async function reload(): Promise<void> {
@@ -127,7 +149,8 @@ async function reload(): Promise<void> {
   color: var(--kyc-color-text);
 }
 
-.hint {
+.hint,
+.count {
   margin: 0 0 var(--kyc-space-3);
   color: var(--kyc-color-text-muted);
   font-size: var(--kyc-text-sm);

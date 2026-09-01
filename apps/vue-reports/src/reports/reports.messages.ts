@@ -51,3 +51,15 @@ export const REPORTS_HOME_MESSAGES: ReportsHomeMessages = {
   listLoadFailed: 'Unable to load reports. Try again.',
   listIncomplete: 'Reports response was incomplete.',
 };
+
+const CASE_SINGULAR: string = 'case';
+const CASE_PLURAL: string = 'cases';
+
+/** Pure: latest-table count line; honest when the page is truncated. */
+export function reportsLatestCountLabel(shownCount: number, totalCount: number): string {
+  const unit: string = totalCount === 1 ? CASE_SINGULAR : CASE_PLURAL;
+  if (shownCount < totalCount) {
+    return `Showing ${String(shownCount)} of ${String(totalCount)} ${unit}`;
+  }
+  return `${String(totalCount)} ${unit}`;
+}

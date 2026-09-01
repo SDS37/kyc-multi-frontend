@@ -26,6 +26,8 @@ describe('loadReportsOverview', () => {
       expect.stringContaining('query ReportsOverview'),
     );
     expect(http.graphqlRequest).toHaveBeenCalledWith(expect.stringContaining('draft: cases'));
+    expect(http.graphqlRequest).toHaveBeenCalledWith(expect.stringContaining('take: 1'));
+    expect(http.graphqlRequest).toHaveBeenCalledWith(expect.stringContaining('take: 10'));
     expect(http.graphqlRequest).not.toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),

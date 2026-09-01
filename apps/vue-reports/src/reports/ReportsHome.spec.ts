@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import ReportsHome from './ReportsHome.vue';
 import * as reportsApi from './reports-api';
 import { REPORTS_HOME_MESSAGES } from './reports.messages';
-import { ReportsLoadError, type ReportsOverview } from './reports.models';
+import { ReportsLoadError, type ReportCaseRow, type ReportsOverview } from './reports.models';
 
 const emptyOverview: ReportsOverview = {
   counts: [
@@ -57,6 +57,27 @@ describe('ReportsHome', () => {
     expect(wrapper.get('table').text()).toContain('Passport check');
     expect(wrapper.get('table').text()).toContain('c@acme.example');
     expect(wrapper.find('table a').exists()).toBe(false);
+    expect(wrapper.text()).toContain('1 case');
+  });
+
+  it('shows an honest count when latest is truncated', async (): Promise<void> => {
+    const latest: ReportCaseRow[] = [...Array(10).keys()].map((index: number) => ({
+      id: `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa${String(index).padStart(2, '0')}`,
+      title: `Case ${String(index)}`,
+      status: 'DRAFT',
+      statusLabel: 'Draft',
+      customerEmail: 'c@acme.example',
+      updatedAt: '2026-09-01T12:00:00.000Z',
+      updatedAtLabel: '1 Sep 2026, 12:00',
+    }));
+    vi.spyOn(reportsApi, 'loadReportsOverview').mockResolvedValue({
+      ...emptyOverview,
+      latest,
+      latestTotalCount: 40,
+    });
+    const wrapper = mount(ReportsHome);
+    await flushPromises();
+    expect(wrapper.text()).toContain('Showing 10 of 40 cases');
   });
 
   it('shows Try again on load failure', async (): Promise<void> => {

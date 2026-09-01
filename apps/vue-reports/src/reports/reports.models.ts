@@ -15,11 +15,8 @@ export function isCaseStatus(value: string): value is CaseStatus {
   return (CASE_STATUSES as readonly string[]).includes(value);
 }
 
-/** Latest-N page size for the overview table (KYC-081). */
+/** Latest-N page size for the overview table and GraphQL `take` (KYC-081). */
 export const LATEST_CASES_TAKE: number = 10;
-
-/** Count-only alias uses take: 1 because the API rejects take < 1. */
-export const COUNT_ALIAS_TAKE: number = 1;
 
 /** One status bucket for the counts strip. */
 export interface StatusCount {

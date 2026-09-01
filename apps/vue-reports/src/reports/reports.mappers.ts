@@ -125,17 +125,19 @@ export function formatUpdatedAt(iso: string): string {
 }
 
 function parseTotalCount(page: GraphqlCasesCountPage | null | undefined): number {
-  if (!page || typeof page.totalCount !== 'number' || !Number.isFinite(page.totalCount)) {
-    throw new ReportsLoadError(REPORTS_HOME_MESSAGES.listIncomplete);
-  }
-  if (page.totalCount < 0) {
+  if (
+    !page ||
+    typeof page.totalCount !== 'number' ||
+    !Number.isInteger(page.totalCount) ||
+    page.totalCount < 0
+  ) {
     throw new ReportsLoadError(REPORTS_HOME_MESSAGES.listIncomplete);
   }
   return page.totalCount;
 }
 
 function parseOptionalTotalCount(raw: number | undefined, fallback: number): number {
-  if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0) {
+  if (typeof raw === 'number' && Number.isInteger(raw) && raw >= 0) {
     return raw;
   }
   return fallback;

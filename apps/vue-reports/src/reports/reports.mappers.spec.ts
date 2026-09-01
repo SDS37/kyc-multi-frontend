@@ -97,6 +97,14 @@ describe('parseReportsOverview', () => {
       }),
     ).toThrow(ReportsLoadError);
   });
+
+  it('throws when a status totalCount is not an integer', (): void => {
+    expect(() =>
+      parseReportsOverview({
+        data: overviewData({ draft: countPage(1.5) }),
+      }),
+    ).toThrow(ReportsLoadError);
+  });
 });
 
 describe('toReportsLoadError', () => {
