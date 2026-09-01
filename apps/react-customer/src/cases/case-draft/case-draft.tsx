@@ -1,7 +1,7 @@
 import {
+  type MutableRefObject,
   type ReactElement,
   type SubmitEvent,
-  type RefObject,
   useCallback,
   useEffect,
   useRef,
@@ -38,8 +38,8 @@ export function CaseDraft(): ReactElement {
   const caseIdParam: string = params['caseId'] ?? '';
   const caseIdValid: boolean = isCaseId(caseIdParam);
 
-  const loadSeq: RefObject<number> = useRef(0);
-  const actionLock: RefObject<boolean> = useRef(false);
+  const loadSeq: MutableRefObject<number> = useRef(0);
+  const actionLock: MutableRefObject<boolean> = useRef(false);
 
   const [detail, setDetail] = useState<CaseDraftDetail | null>(null);
   const [form, setForm] = useState<DraftFormModel>(emptyDraftForm());
@@ -165,8 +165,10 @@ export function CaseDraft(): ReactElement {
       if (savedDraft !== null) {
         setDetail(savedDraft);
         setForm(savedDraft.form);
+        setActionError(toDraftActionError(err, 'submit').message);
+      } else {
+        setActionError(toDraftActionError(err, 'save').message);
       }
-      setActionError(toDraftActionError(err, 'submit').message);
     } finally {
       actionLock.current = false;
       setSubmitting(false);

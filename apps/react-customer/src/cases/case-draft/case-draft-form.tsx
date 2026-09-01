@@ -126,7 +126,6 @@ export function CaseDraftForm(props: CaseDraftFormProps): ReactElement {
                     autoComplete="street-address"
                     disabled={busy}
                     rows={3}
-                    aria-required={true}
                     aria-invalid={showError}
                     aria-describedby={describedBy}
                     onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
@@ -140,7 +139,6 @@ export function CaseDraftForm(props: CaseDraftFormProps): ReactElement {
                     value={props.form[key]}
                     autoComplete="off"
                     disabled={busy}
-                    aria-required={true}
                     aria-invalid={showError}
                     aria-describedby={describedBy}
                     onChange={(event: ChangeEvent<HTMLInputElement>): void => {
