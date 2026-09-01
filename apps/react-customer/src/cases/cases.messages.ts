@@ -1,4 +1,4 @@
-import type { CaseStatus } from './cases.models';
+import type { CaseFormFieldKey, CaseStatus } from './cases.models';
 import { CREATE_DRAFT_TITLE_MAX_LENGTH } from './cases.models';
 
 /** Case status labels for filters / badges. */
@@ -13,6 +13,14 @@ export const CASE_STATUS_LABELS: Readonly<Record<CaseStatus, string>> = {
 export function caseStatusLabel(status: CaseStatus): string {
   return CASE_STATUS_LABELS[status];
 }
+
+/** Known FormData field labels (KYC-033 / KYC-073 — match Angular admin). */
+export const CASE_FORM_FIELD_LABELS: Readonly<Record<CaseFormFieldKey, string>> = {
+  fullName: 'Full name',
+  dateOfBirth: 'Date of birth',
+  nationality: 'Nationality',
+  address: 'Address',
+};
 
 /** Customer my-cases chrome (KYC-072). */
 export interface CasesListMessages {
@@ -45,8 +53,6 @@ export interface CasesListMessages {
   readonly createIncomplete: string;
   readonly createNetworkFailed: string;
   readonly createUnauthorized: string;
-  readonly draftPlaceholderTitle: string;
-  readonly draftPlaceholderLede: string;
   readonly backToCases: string;
 }
 
@@ -81,11 +87,88 @@ export const CASES_LIST_MESSAGES: CasesListMessages = {
   createNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
   createUnauthorized:
     'Your account cannot create cases. Sign in with a Customer user.',
-  draftPlaceholderTitle: 'Draft case',
-  draftPlaceholderLede:
-    'Form fields and submit arrive in the next story. Your draft is saved.',
   backToCases: '← Back to my cases',
 };
+
+/** Draft editor chrome (KYC-073). */
+export interface CasesDraftMessages {
+  readonly pageTitleFallback: string;
+  readonly ledeEdit: string;
+  readonly ledeReadonly: string;
+  readonly loading: string;
+  readonly loadingAria: string;
+  readonly invalidCaseLink: string;
+  readonly loadFailed: string;
+  readonly loadIncomplete: string;
+  readonly loadNetworkFailed: string;
+  readonly loadNotFound: string;
+  readonly sectionPerson: string;
+  readonly sectionCompany: string;
+  readonly companyNameLabel: string;
+  readonly companyOptionalHint: string;
+  readonly dateOfBirthHint: string;
+  readonly dateOfBirthInvalid: string;
+  readonly saveDraft: string;
+  readonly savingDraft: string;
+  readonly submit: string;
+  readonly submitting: string;
+  readonly saveSuccess: string;
+  readonly submitSuccess: string;
+  readonly saveFailed: string;
+  readonly saveIncomplete: string;
+  readonly saveNetworkFailed: string;
+  readonly submitFailed: string;
+  readonly submitIncomplete: string;
+  readonly submitNetworkFailed: string;
+  readonly actionDomain: string;
+  readonly actionNotFound: string;
+  readonly actionUnauthorized: string;
+  readonly updatedLabel: string;
+  readonly submittedLabel: string;
+  readonly readonlyNotice: string;
+}
+
+export const CASES_DRAFT_MESSAGES: CasesDraftMessages = {
+  pageTitleFallback: 'Case',
+  ledeEdit: 'Fill in your details, save the draft anytime, then submit when ready.',
+  ledeReadonly: 'This case is no longer a draft. You can review the details below.',
+  loading: 'Loading case…',
+  loadingAria: 'Loading case',
+  invalidCaseLink: 'This case link is not valid.',
+  loadFailed: 'Unable to load this case. Try again.',
+  loadIncomplete: 'Case detail response was incomplete.',
+  loadNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  loadNotFound: 'Case was not found.',
+  sectionPerson: 'Personal details',
+  sectionCompany: 'Company (optional)',
+  companyNameLabel: 'Company name',
+  companyOptionalHint: 'Optional — leave blank if not applicable.',
+  dateOfBirthHint: 'Use YYYY-MM-DD.',
+  dateOfBirthInvalid: 'Date of birth must be an ISO date (YYYY-MM-DD).',
+  saveDraft: 'Save draft',
+  savingDraft: 'Saving…',
+  submit: 'Submit case',
+  submitting: 'Submitting…',
+  saveSuccess: 'Draft saved.',
+  submitSuccess: 'Case submitted.',
+  saveFailed: 'Unable to save the draft. Try again.',
+  saveIncomplete: 'Save draft response was incomplete.',
+  saveNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  submitFailed: 'Unable to submit the case. Try again.',
+  submitIncomplete: 'Submit response was incomplete.',
+  submitNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  actionDomain: 'Only draft cases can be updated or submitted.',
+  actionNotFound: 'Case was not found.',
+  actionUnauthorized: 'Your account cannot update this case.',
+  updatedLabel: 'Updated',
+  submittedLabel: 'Submitted',
+  readonlyNotice: 'Editing is only available while the case is a draft.',
+};
+
+/** Pure: required-field message for a FormData key (API-shaped). */
+export function draftFieldRequiredMessage(field: CaseFormFieldKey): string {
+  return `${field} is required.`;
+}
 
 /** Pure: list count line; honest when the page is truncated. */
 export function casesCountLabel(shownCount: number, totalCount: number): string {
