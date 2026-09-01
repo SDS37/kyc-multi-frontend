@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. These files **are** the project documentation. This note only tells you **how to read them** as a frontend architect.
 
-**Aligned with:** `main` after **W5** (Angular KYC-060–065 + React KYC-070–074).
+**Aligned with:** KYC-080 Vue reports foundation (login + shell).
 
 ## Purpose
 
@@ -37,7 +37,7 @@ This folder is the architecture decision log you wish every Angular repo kept: A
 
 ## Today vs target
 
-Architecture diagrams include Angular/React/Vue and Audit **modules**. API + Angular admin + React customer (full W5 happy path) are real; Vue reports is still empty. Citing the empty Vue folder as implemented is the main way to sound wrong in a review.
+Architecture diagrams include Angular/React/Vue and Audit **modules**. API + Angular admin + React customer + Vue reports **foundation** (login/shell) are real; Vue case overview is still KYC-081. Citing KYC-081 as shipped is the main way to sound wrong in a review.
 
 ADR-008: no formal AI context packs for MVP. `README.STUDY.md` files are a **tour of the tree**, not a versioned agent context pack — they do not contradict that ADR. Keep them aligned with the code; delete them from the repo when they are no longer useful.
 

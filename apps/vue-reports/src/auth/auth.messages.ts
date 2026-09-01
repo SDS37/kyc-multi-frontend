@@ -1,0 +1,55 @@
+import type { AppRole } from './auth.models';
+
+/** Login page + auth failure copy (same contract as Angular KYC-061 / React KYC-071). */
+export interface LoginMessages {
+  readonly title: string;
+  readonly lede: string;
+  readonly tenantSlugLabel: string;
+  readonly emailLabel: string;
+  readonly passwordLabel: string;
+  readonly submit: string;
+  readonly submitting: string;
+  readonly submittingAria: string;
+  readonly tenantSlugRequired: string;
+  readonly tenantSlugMaxLength: string;
+  readonly emailRequired: string;
+  readonly emailMaxLength: string;
+  readonly emailInvalid: string;
+  readonly passwordRequired: string;
+  readonly passwordMaxLength: string;
+  readonly signInFailed: string;
+  readonly networkFailed: string;
+  readonly wrongAppRole: string;
+}
+
+export const LOGIN_MESSAGES: LoginMessages = {
+  title: 'Sign in',
+  lede: 'Reviewer or tenant admin: use your tenant slug, work email, and password.',
+  tenantSlugLabel: 'Tenant slug',
+  emailLabel: 'Email',
+  passwordLabel: 'Password',
+  submit: 'Sign in',
+  submitting: 'Signing in…',
+  submittingAria: 'Signing in',
+  tenantSlugRequired: 'Tenant slug is required.',
+  tenantSlugMaxLength: 'Tenant slug must be at most 64 characters.',
+  emailRequired: 'Email is required.',
+  emailMaxLength: 'Email must be at most 256 characters.',
+  emailInvalid: 'Enter a valid email address.',
+  passwordRequired: 'Password is required.',
+  passwordMaxLength: 'Password must be at most 128 characters.',
+  signInFailed: 'Sign-in failed. Check your details and try again.',
+  networkFailed: 'Unable to reach the sign-in service. Try again in a moment.',
+  wrongAppRole: 'This app is for reviewers and tenant admins. Use the customer portal to submit cases.',
+};
+
+/** Shell role labels (display only). */
+export const APP_ROLE_LABELS: Readonly<Record<AppRole, string>> = {
+  TenantAdmin: 'Tenant admin',
+  Reviewer: 'Reviewer',
+  Customer: 'Customer',
+};
+
+export function appRoleLabel(role: AppRole): string {
+  return APP_ROLE_LABELS[role];
+}

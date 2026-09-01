@@ -1,0 +1,42 @@
+@import '@kyc/design-tokens/tokens.css';
+
+:root {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--kyc-color-surface);
+  color: var(--kyc-color-text);
+  font-family: var(--kyc-font-sans);
+  line-height: var(--kyc-leading-normal);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--kyc-focus-ring);
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
+
+a {
+  color: inherit;
+}

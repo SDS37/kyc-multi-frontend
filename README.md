@@ -44,7 +44,8 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Angular Admin | Ready (KYC-060–065: login, shell, case list, review) |
 | React Customer | Ready (KYC-070–074: login, shell, my cases, draft form, document upload) |
 | React CI (`npm` build / test) | Ready (`react-ci`; Node from `.nvmrc`; SHA-pinned actions) |
-| Vue Reports | Placeholder only (KYC-080 — W6) |
+| Vue Reports | Ready (KYC-080: login, shell, placeholder home; overview table is KYC-081) |
+| Vue CI (`npm` build / test) | Ready (`vue-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 
 **Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). Week 6 adds Vue reports, seed data, and remaining security hardening — see the [roadmap](docs/roadmap.md).
 
@@ -67,7 +68,7 @@ kyc-multi-frontend/
 ├── apps/
 │   ├── angular-admin/     # Angular 22+ admin/reviewer (KYC-060–065)
 │   ├── react-customer/    # React 19+ customer portal (KYC-070–074)
-│   ├── vue-reports/       # Vue reports portal (W6; not scaffolded yet)
+│   ├── vue-reports/       # Vue 3 reports portal (KYC-080 foundation)
 │   └── api/               # .NET API + tests (GraphQL + document REST)
 ├── packages/
 │   └── design-tokens/     # Shared CSS UX tokens (Angular / React / Vue)
@@ -76,7 +77,7 @@ kyc-multi-frontend/
 ├── infrastructure/
 │   ├── docker-compose.yml
 │   └── .env.example
-├── .github/               # GitHub Actions (api-ci, angular-ci, react-ci)
+├── .github/               # GitHub Actions (api-ci, angular-ci, react-ci, vue-ci)
 ├── .config/               # Local .NET tools (dotnet-ef)
 ├── global.json            # .NET SDK pin
 ├── .editorconfig
@@ -151,6 +152,18 @@ npm start
 
 App: `http://localhost:5173` (CORS already allows this origin). PRs that touch the React app run GitHub Actions `react-ci`.
 
+### 6. Run Vue Reports (optional)
+
+Same Node requirement. See [apps/vue-reports/README.md](apps/vue-reports/README.md).
+
+```bash
+cd apps/vue-reports
+npm install
+npm start
+```
+
+App: `http://localhost:5174` (CORS already allows this origin). PRs that touch the Vue app run GitHub Actions `vue-ci`.
+
 ## Architecture
 
 Diagrams in [docs/architecture.md](docs/architecture.md) describe the **target end state**. Decisions and sequencing live in [ADRs](docs/architecture-decision-records.md).
@@ -194,7 +207,7 @@ flowchart TB
 - [Frontend code standards](docs/frontend-code-standards.md) (angular.dev + filtered [Angular Architects](https://www.angulararchitects.io/en/) practices)
 - [UX design tokens & accessibility](docs/ux-design-tokens.md) (`packages/design-tokens`)
 - [API runbook](apps/api/README.md)
-- [Angular admin](apps/angular-admin/README.md) · [React customer](apps/react-customer/README.md)
+- [Angular admin](apps/angular-admin/README.md) · [React customer](apps/react-customer/README.md) · [Vue reports](apps/vue-reports/README.md)
 - [.NET API for frontend engineers](docs/guides/dotnet-api-for-frontend-engineers.md)
 
 ## Commit convention

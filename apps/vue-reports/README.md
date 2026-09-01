@@ -1,21 +1,66 @@
 # Vue Reports
 
-Placeholder for the Vue reports portal.
+Vue **3.5+** reports portal (`apps/vue-reports`). KYC-080 foundation (login, shell, placeholder home). Case counts / latest-10 table: **KYC-081**.
 
-No application scaffold yet (`package.json` / Vite config are not in the repo).
+**How to write this app:** [Frontend code standards](../../docs/frontend-code-standards.md) (shared rules + [Vue section](../../docs/frontend-code-standards.md#vue-appsvue-reports)). Shared `--kyc-*` tokens match Angular admin and React customer ([ux-design-tokens.md](../../docs/ux-design-tokens.md)).
 
-## Intended responsibilities
+## Prerequisites
 
-- Read-only view of cases relevant to the tenant
-- Basic filtering by status
-- Keep the first version to a single page if time is tight (see roadmap)
-- Read against the shared GraphQL API (cases list already on `main`)
+- Node.js **20.19+** (22 recommended; see `.nvmrc`)
+- API at `http://localhost:5295`
+- CORS allows `http://localhost:5174`
 
-When the scaffold exists:
+## Run
 
 ```bash
+cd apps/vue-reports
 npm install
-npm run dev
+npm start
 ```
 
-Expected URL: `http://localhost:5174` (avoid colliding with React customer on `5173`).
+App: `http://localhost:5174` → `/login` (guests) or `/reports` (Reviewer / TenantAdmin)
+
+```bash
+npm test
+npm run test:ci
+npm run build
+```
+
+PRs that touch `apps/vue-reports` (or `.github/workflows/vue-ci.yml`) run GitHub Actions `vue-ci` (`npm ci`, lint, `vue-tsc` + Vite build, `test:ci`).
+
+## Demo login
+
+`registerTenant` creates **TenantAdmin** — that role can sign in here. Reviewer users also work. **Customer sessions are rejected** (use the React portal).
+
+```json
+{ "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1", "tenantName": "Acme" }
+```
+
+## Security notes
+
+- GraphQL `login` is anonymous (`skipAuth`). All other calls attach JWT `Authorization` — never send `tenantId` / role in bodies (ADR-007)
+- Session lives in `sessionStorage` (tab close clears it)
+- HTTP 401 and GraphQL `AUTH_NOT_AUTHENTICATED` clear the session
+- `returnUrl` must be an in-app path (`/` but not `//`) — open redirects are blocked
+- Route guards are UX only; the API still enforces JWT
+- Templates never use `v-html`
+
+## Component tree (KYC-080)
+
+Living render tree for this app (update when routes change). Smart vs presentational **rules:** [frontend-code-standards](../../docs/frontend-code-standards.md#component-tree-all-frontends). System composition: [architecture.md §3](../../docs/architecture.md#3-frontend-composition).
+
+```mermaid
+flowchart TB
+  Main["main.ts"] --> App["App"]
+  App --> Login["/login LoginPage"]
+  App --> Shell["ReportsShell"]
+  Shell --> Home["/reports ReportsHome"]
+```
+
+| Piece | Location |
+|---|---|
+| Login | `src/auth/login-page/LoginPage.vue` |
+| Authenticated shell | `src/layout/ReportsShell.vue` |
+| Reports home (placeholder) | `src/reports/ReportsHome.vue` |
+| Auth API / mappers | `src/auth/login-api.ts`, `auth.mappers.ts` |
+| GraphQL helper | `src/shared/http.ts` |
