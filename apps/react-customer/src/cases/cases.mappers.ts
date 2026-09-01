@@ -10,9 +10,12 @@ import {
   unexpectedCaseStatusMessage,
 } from './cases.messages';
 import {
+  ALLOWED_DOCUMENT_CONTENT_TYPES,
   CASE_FORM_FIELD_KEYS,
   CREATE_DRAFT_TITLE_MAX_LENGTH,
+  MAX_DOCUMENT_BYTES,
   OPTIONAL_COMPANY_FIELD_KEY,
+  type CaseDocument,
   type CaseDraftDetail,
   type CaseFormFieldKey,
   type CaseListItem,
@@ -23,11 +26,13 @@ import {
   CreateDraftError,
   type CreatedDraftCase,
   DraftActionError,
+  DocumentUploadError,
   type DraftFormFieldErrors,
   type DraftFormModel,
   type GraphqlCaseDetailBody,
   type GraphqlCasesBody,
   type GraphqlCreateDraftBody,
+  type GraphqlDocumentWire,
   type GraphqlSubmitCaseBody,
   type GraphqlUpdateDraftBody,
   type ListCasesParams,
@@ -371,6 +376,9 @@ export function parseCaseDraftDetail(
 
   const formDataRaw: string = raw.formData ?? '{}';
   const submittedAt: string | null = raw.submittedAt ?? null;
+  const documents: readonly CaseDocument[] = parseCaseDocuments(
+    body.data?.case?.documents,
+  );
   return {
     id: raw.id,
     title: raw.title,
@@ -382,7 +390,9 @@ export function parseCaseDraftDetail(
     updatedAtLabel: formatUpdatedAt(raw.updatedAt),
     submittedAt,
     submittedAtLabel: submittedAt !== null ? formatUpdatedAt(submittedAt) : null,
+    documents,
     canEdit: raw.status === 'DRAFT',
+    canUpload: canUploadDocuments(raw.status),
   };
 }
 
@@ -399,9 +409,10 @@ export function toUpdateDraftVariables(input: UpdateDraftCaseInput): {
   };
 }
 
-/** Pure: map updateDraftCase body → detail DTO. */
+/** Pure: map updateDraftCase body → detail DTO (keeps prior documents). */
 export function parseUpdatedDraft(
   body: GraphqlUpdateDraftBody | GraphqlResponse<GraphqlUpdateDraftBody['data']>,
+  previous: CaseDraftDetail,
 ): CaseDraftDetail {
   const gqlError: GraphqlError | undefined = body.errors?.[0];
   if (gqlError) {
@@ -435,7 +446,9 @@ export function parseUpdatedDraft(
     updatedAtLabel: formatUpdatedAt(raw.updatedAt),
     submittedAt,
     submittedAtLabel: submittedAt !== null ? formatUpdatedAt(submittedAt) : null,
+    documents: previous.documents,
     canEdit: raw.status === 'DRAFT',
+    canUpload: canUploadDocuments(raw.status),
   };
 }
 
@@ -475,6 +488,7 @@ export function parseSubmittedCase(
     submittedAt,
     submittedAtLabel: submittedAt !== null ? formatUpdatedAt(submittedAt) : null,
     canEdit: false,
+    canUpload: canUploadDocuments(raw.status),
   };
 }
 
@@ -551,6 +565,174 @@ function formatUpdatedAt(iso: string): string {
     return iso;
   }
   return UPDATED_AT_FORMATTER.format(date);
+}
+
+/** Pure: Draft or Submitted may receive uploads (KYC-040). */
+export function canUploadDocuments(status: CaseStatus): boolean {
+  return status === 'DRAFT' || status === 'SUBMITTED';
+}
+
+/** Pure: human-readable file size (mirror Angular admin). */
+export function formatByteSize(sizeBytes: number): string {
+  if (sizeBytes < 1024) {
+    return `${String(sizeBytes)} B`;
+  }
+  if (sizeBytes < 1024 * 1024) {
+    return `${(sizeBytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Pure: REST upload path (relative to apiBaseUrl). */
+export function toDocumentUploadPath(caseId: string): string {
+  return `api/cases/${encodeURIComponent(caseId)}/documents`;
+}
+
+/** Pure: normalize browser MIME for allow-list checks. */
+export function normalizeDocumentContentType(contentType: string): string | null {
+  const type: string = contentType.split(';', 2)[0]?.trim().toLowerCase() ?? '';
+  if (type === 'image/jpg') {
+    return 'image/jpeg';
+  }
+  if ((ALLOWED_DOCUMENT_CONTENT_TYPES as readonly string[]).includes(type)) {
+    return type;
+  }
+  return null;
+}
+
+/** Pure: client-side type/size gate before POST (mirrors API messages). */
+export function validateDocumentFile(file: File): string | null {
+  if (file.size <= 0) {
+    return CASES_DRAFT_MESSAGES.docsEmptyFile;
+  }
+  if (file.size > MAX_DOCUMENT_BYTES) {
+    return CASES_DRAFT_MESSAGES.docsSizeRejected;
+  }
+  if (normalizeDocumentContentType(file.type) === null) {
+    return CASES_DRAFT_MESSAGES.docsTypeRejected;
+  }
+  return null;
+}
+
+/** Pure: parse GraphQL documents array → CaseDocument[]. */
+export function parseCaseDocuments(
+  rawDocs: Array<GraphqlDocumentWire | null> | null | undefined,
+): readonly CaseDocument[] {
+  if (!rawDocs) {
+    return [];
+  }
+  return rawDocs
+    .filter((d): d is GraphqlDocumentWire => d != null)
+    .map((d): CaseDocument => parseCaseDocument(d));
+}
+
+/** Pure: map REST 201 upload JSON → CaseDocument. */
+export function parseUploadedDocument(raw: unknown): CaseDocument {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadIncomplete);
+  }
+  try {
+    return parseCaseDocument(raw as GraphqlDocumentWire);
+  } catch (err: unknown) {
+    if (err instanceof CasesLoadError) {
+      throw new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadIncomplete);
+    }
+    throw err;
+  }
+}
+
+/** Pure: prepend uploaded doc (API lists newest first). */
+export function prependDocument(
+  documents: readonly CaseDocument[],
+  uploaded: CaseDocument,
+): readonly CaseDocument[] {
+  return [uploaded, ...documents.filter((d: CaseDocument): boolean => d.id !== uploaded.id)];
+}
+
+/** Pure: map REST upload errors → DocumentUploadError. */
+export async function toDocumentUploadError(response: Response): Promise<DocumentUploadError> {
+  let payload: unknown = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  const record: Record<string, unknown> | null =
+    payload !== null && typeof payload === 'object' && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)
+      : null;
+  const code: string | undefined =
+    record !== null && typeof record['code'] === 'string' ? record['code'] : undefined;
+
+  if (code === 'AUTH_NOT_AUTHORIZED') {
+    return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadUnauthorized, code);
+  }
+  if (code === 'NOT_FOUND') {
+    return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadNotFound, code);
+  }
+  if (code === 'DOMAIN') {
+    const message: string =
+      typeof record?.['error'] === 'string' && record['error'].trim()
+        ? record['error'].trim()
+        : CASES_DRAFT_MESSAGES.docsUploadDomain;
+    return new DocumentUploadError(message, code);
+  }
+  if (code === 'STORAGE') {
+    return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadStorage, code);
+  }
+  if (code === 'VALIDATION') {
+    const errorsRaw: unknown = record?.['errors'];
+    if (Array.isArray(errorsRaw)) {
+      const first: unknown = errorsRaw[0];
+      if (typeof first === 'string' && first.trim()) {
+        return new DocumentUploadError(first.trim(), code);
+      }
+    }
+  }
+
+  if (response.status >= 500) {
+    return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadFailed, code);
+  }
+  return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadFailed, code);
+}
+
+/** Pure: map transport / unknown upload errors. */
+export function toDocumentUploadTransportError(err: unknown): DocumentUploadError {
+  if (err instanceof DocumentUploadError) {
+    return err;
+  }
+  if (err instanceof TypeError) {
+    return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadNetworkFailed, 'NETWORK');
+  }
+  if (err instanceof Error && /Failed to fetch|NetworkError/i.test(err.message)) {
+    return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadNetworkFailed, 'NETWORK');
+  }
+  return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadFailed);
+}
+
+function parseCaseDocument(d: GraphqlDocumentWire): CaseDocument {
+  if (
+    !d.id ||
+    !d.fileName ||
+    !d.contentType ||
+    d.sizeBytes === undefined ||
+    d.sizeBytes === null ||
+    !d.uploadedAt ||
+    !d.uploadedBy
+  ) {
+    throw new CasesLoadError(CASES_DRAFT_MESSAGES.docsIncomplete);
+  }
+  return {
+    id: d.id,
+    fileName: d.fileName,
+    contentType: d.contentType,
+    sizeBytes: d.sizeBytes,
+    sizeLabel: formatByteSize(d.sizeBytes),
+    uploadedAt: d.uploadedAt,
+    uploadedAtLabel: formatUpdatedAt(d.uploadedAt),
+    uploadedBy: d.uploadedBy,
+  };
 }
 
 /** Exported for tests / labels — person field keys. */

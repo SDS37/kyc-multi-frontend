@@ -6,8 +6,9 @@ import {
   listCases,
   submitCase,
   updateDraftCase,
+  uploadDocument,
 } from './cases-api';
-import type { CaseDraftDetail } from './cases.models';
+import { DocumentUploadError, type CaseDraftDetail } from './cases.models';
 
 describe('cases-api', () => {
   afterEach((): void => {
@@ -68,6 +69,7 @@ describe('cases-api', () => {
             updatedAt: '2026-01-02T03:04:05Z',
             submittedAt: null,
           },
+          documents: [],
         },
       },
     };
@@ -75,6 +77,7 @@ describe('cases-api', () => {
     const getSpy = vi.spyOn(http, 'graphqlRequest').mockResolvedValue(detailBody);
     const loaded = await getCaseDetail(caseId);
     expect(loaded.form.fullName).toBe('Ada');
+    expect(loaded.documents).toEqual([]);
     expect(getSpy.mock.calls[0]?.[2]).toBeUndefined();
 
     getSpy.mockResolvedValue({
@@ -89,14 +92,18 @@ describe('cases-api', () => {
         },
       },
     });
-    const saved = await updateDraftCase(caseId, {
-      title: 'Onboarding',
-      fullName: 'Ada Lovelace',
-      dateOfBirth: '',
-      nationality: '',
-      address: '',
-      companyName: '',
-    });
+    const saved = await updateDraftCase(
+      caseId,
+      {
+        title: 'Onboarding',
+        fullName: 'Ada Lovelace',
+        dateOfBirth: '',
+        nationality: '',
+        address: '',
+        companyName: '',
+      },
+      loaded,
+    );
     expect(saved.form.fullName).toBe('Ada Lovelace');
     expect(getSpy.mock.calls[1]?.[1]).toEqual({
       input: {
@@ -122,5 +129,37 @@ describe('cases-api', () => {
     expect(submitted.status).toBe('SUBMITTED');
     expect(getSpy.mock.calls[2]?.[1]).toEqual({ input: { id: caseId } });
     expect(getSpy.mock.calls[2]?.[2]).toBeUndefined();
+  });
+
+  it('uploadDocument posts multipart file without skipAuth and blocks bad files', async (): Promise<void> => {
+    const caseId: string = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    await expect(
+      uploadDocument(caseId, new File([new Uint8Array(10)], 'x.txt', { type: 'text/plain' })),
+    ).rejects.toBeInstanceOf(DocumentUploadError);
+
+    const spy = vi.spyOn(http, 'apiFetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: 'dddddddd-eeee-ffff-aaaa-bbbbbbbbbbbb',
+          fileName: 'id.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 10,
+          uploadedAt: '2026-01-02T04:00:00Z',
+          uploadedBy: 'cccccccc-dddd-eeee-ffff-aaaaaaaaaaaa',
+        }),
+        { status: 201, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    const uploaded = await uploadDocument(
+      caseId,
+      new File([new Uint8Array(10)], 'id.pdf', { type: 'application/pdf' }),
+    );
+    expect(uploaded.fileName).toBe('id.pdf');
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0]?.[0]).toBe(`api/cases/${caseId}/documents`);
+    expect(spy.mock.calls[0]?.[1]?.method).toBe('POST');
+    expect(spy.mock.calls[0]?.[1]?.body).toBeInstanceOf(FormData);
+    expect(spy.mock.calls[0]?.[2]).toBeUndefined();
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   draftFormToFormDataJson,
   emptyDraftForm,
+  formatByteSize,
   hasDraftFieldErrors,
   isCaseId,
   parseCaseDraftDetail,
@@ -11,14 +12,23 @@ import {
   parseStatusFilterValue,
   parseSubmittedCase,
   parseUpdatedDraft,
+  prependDocument,
   toCreateDraftVariables,
+  toDocumentUploadPath,
   toListCasesVariables,
   toUpdateDraftVariables,
   validateCreateDraftTitle,
+  validateDocumentFile,
   validateDraftSave,
   validateDraftSubmit,
 } from './cases.mappers';
-import { CasesLoadError, CreateDraftError, DraftActionError } from './cases.models';
+import { CASES_DRAFT_MESSAGES } from './cases.messages';
+import {
+  DraftActionError,
+  CasesLoadError,
+  CreateDraftError,
+  MAX_DOCUMENT_BYTES,
+} from './cases.models';
 
 describe('cases.mappers', () => {
   it('toListCasesVariables defaults pagination', (): void => {
@@ -168,7 +178,7 @@ describe('cases.mappers', () => {
     expect(hasDraftFieldErrors(valid)).toBe(false);
   });
 
-  it('parseCaseDraftDetail maps DRAFT as editable', (): void => {
+  it('parseCaseDraftDetail maps DRAFT as editable with documents', (): void => {
     const detail = parseCaseDraftDetail({
       data: {
         case: {
@@ -180,12 +190,26 @@ describe('cases.mappers', () => {
             updatedAt: '2026-01-02T03:04:05Z',
             submittedAt: null,
           },
+          documents: [
+            {
+              id: 'dddddddd-eeee-ffff-aaaa-bbbbbbbbbbbb',
+              fileName: 'id.pdf',
+              contentType: 'application/pdf',
+              sizeBytes: 2048,
+              uploadedAt: '2026-01-02T04:00:00Z',
+              uploadedBy: 'cccccccc-dddd-eeee-ffff-aaaaaaaaaaaa',
+            },
+          ],
         },
       },
     });
     expect(detail.canEdit).toBe(true);
+    expect(detail.canUpload).toBe(true);
     expect(detail.form.fullName).toBe('Ada');
     expect(detail.submittedAtLabel).toBeNull();
+    expect(detail.documents).toHaveLength(1);
+    expect(detail.documents[0]?.fileName).toBe('id.pdf');
+    expect(detail.documents[0]?.sizeLabel).toBe('2.0 KB');
   });
 
   it('toUpdateDraftVariables never includes tenant ids', (): void => {
@@ -205,12 +229,6 @@ describe('cases.mappers', () => {
   });
 
   it('parseUpdatedDraft and parseSubmittedCase map action errors', (): void => {
-    expect(() =>
-      parseUpdatedDraft({
-        errors: [{ message: 'Locked', extensions: { code: 'DOMAIN' } }],
-      }),
-    ).toThrow(DraftActionError);
-
     const previous = parseCaseDraftDetail({
       data: {
         case: {
@@ -222,9 +240,19 @@ describe('cases.mappers', () => {
             updatedAt: '2026-01-02T03:04:05Z',
             submittedAt: null,
           },
+          documents: [],
         },
       },
     });
+
+    expect(() =>
+      parseUpdatedDraft(
+        {
+          errors: [{ message: 'Locked', extensions: { code: 'DOMAIN' } }],
+        },
+        previous,
+      ),
+    ).toThrow(DraftActionError);
 
     const submitted = parseSubmittedCase(
       {
@@ -240,7 +268,43 @@ describe('cases.mappers', () => {
       previous,
     );
     expect(submitted.canEdit).toBe(false);
+    expect(submitted.canUpload).toBe(true);
     expect(submitted.status).toBe('SUBMITTED');
     expect(submitted.submittedAtLabel).not.toBeNull();
+  });
+
+  it('validateDocumentFile rejects empty, oversized, and wrong types', (): void => {
+    expect(validateDocumentFile(new File([], 'empty.pdf', { type: 'application/pdf' }))).toBe(
+      CASES_DRAFT_MESSAGES.docsEmptyFile,
+    );
+    const big = new File([new Uint8Array(MAX_DOCUMENT_BYTES + 1)], 'big.pdf', {
+      type: 'application/pdf',
+    });
+    expect(validateDocumentFile(big)).toBe(CASES_DRAFT_MESSAGES.docsSizeRejected);
+    expect(
+      validateDocumentFile(new File([new Uint8Array(10)], 'x.txt', { type: 'text/plain' })),
+    ).toBe(CASES_DRAFT_MESSAGES.docsTypeRejected);
+    expect(
+      validateDocumentFile(new File([new Uint8Array(10)], 'ok.jpg', { type: 'image/jpg' })),
+    ).toBeNull();
+  });
+
+  it('formatByteSize and prependDocument helpers', (): void => {
+    expect(formatByteSize(500)).toBe('500 B');
+    expect(toDocumentUploadPath('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe(
+      'api/cases/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/documents',
+    );
+    const a = {
+      id: '1',
+      fileName: 'a.pdf',
+      contentType: 'application/pdf',
+      sizeBytes: 1,
+      sizeLabel: '1 B',
+      uploadedAt: '2026-01-01T00:00:00Z',
+      uploadedAtLabel: 'x',
+      uploadedBy: 'u',
+    };
+    const b = { ...a, id: '2', fileName: 'b.pdf' };
+    expect(prependDocument([a], b).map((d) => d.id)).toEqual(['2', '1']);
   });
 });

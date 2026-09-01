@@ -8,18 +8,21 @@ import {
   useState,
 } from 'react';
 import { useParams } from 'react-router';
-import { getCaseDetail, submitCase, updateDraftCase } from '../cases-api';
+import { getCaseDetail, submitCase, updateDraftCase, uploadDocument } from '../cases-api';
 import {
   emptyDraftForm,
   hasDraftFieldErrors,
   isCaseId,
+  prependDocument,
   toCaseDetailLoadError,
+  toDocumentUploadTransportError,
   toDraftActionError,
   validateDraftSave,
   validateDraftSubmit,
 } from '../cases.mappers';
 import { CASES_DRAFT_MESSAGES, type CasesDraftMessages } from '../cases.messages';
 import {
+  type CaseDocument,
   type CaseDraftDetail,
   type DraftFormFieldErrors,
   type DraftFormModel,
@@ -29,7 +32,7 @@ import { CaseDraftLoadError } from './case-draft-load-error';
 import { CaseDraftLoading } from './case-draft-loading';
 
 /**
- * Smart screen: customer draft editor + submit (KYC-073).
+ * Smart screen: customer draft editor, submit, and documents (KYC-073 / KYC-074).
  * Ownership is API JWT — client never sends tenant/user ids (ADR-007).
  */
 export function CaseDraft(): ReactElement {
@@ -40,9 +43,11 @@ export function CaseDraft(): ReactElement {
 
   const loadSeq: MutableRefObject<number> = useRef(0);
   const actionLock: MutableRefObject<boolean> = useRef(false);
+  const uploadLock: MutableRefObject<boolean> = useRef(false);
 
   const [detail, setDetail] = useState<CaseDraftDetail | null>(null);
   const [form, setForm] = useState<DraftFormModel>(emptyDraftForm());
+  const [documents, setDocuments] = useState<readonly CaseDocument[]>([]);
   const [fieldErrors, setFieldErrors] = useState<DraftFormFieldErrors>({});
   const [touched, setTouched] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -51,6 +56,8 @@ export function CaseDraft(): ReactElement {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const loadDetail = useCallback(async (caseId: string): Promise<void> => {
     const seq: number = loadSeq.current + 1;
@@ -59,6 +66,7 @@ export function CaseDraft(): ReactElement {
     setLoadError(null);
     setActionError(null);
     setSuccessMessage(null);
+    setUploadError(null);
     try {
       const loaded: CaseDraftDetail = await getCaseDetail(caseId);
       if (loadSeq.current !== seq) {
@@ -66,6 +74,7 @@ export function CaseDraft(): ReactElement {
       }
       setDetail(loaded);
       setForm(loaded.form);
+      setDocuments(loaded.documents);
       setFieldErrors({});
       setTouched(false);
       setLoading(false);
@@ -75,6 +84,7 @@ export function CaseDraft(): ReactElement {
       }
       setDetail(null);
       setForm(emptyDraftForm());
+      setDocuments([]);
       setLoading(false);
       setLoadError(toCaseDetailLoadError(err).message);
     }
@@ -123,9 +133,13 @@ export function CaseDraft(): ReactElement {
     actionLock.current = true;
     setSaving(true);
     try {
-      const saved: CaseDraftDetail = await updateDraftCase(detail.id, form);
+      const saved: CaseDraftDetail = await updateDraftCase(detail.id, form, {
+        ...detail,
+        documents,
+      });
       setDetail(saved);
       setForm(saved.form);
+      setDocuments(saved.documents);
       setFieldErrors({});
       setSuccessMessage(draftCopy.saveSuccess);
     } catch (err: unknown) {
@@ -154,17 +168,18 @@ export function CaseDraft(): ReactElement {
     setSubmitting(true);
     let savedDraft: CaseDraftDetail | null = null;
     try {
-      // Persist FormData first so submit validates against the server copy.
-      savedDraft = await updateDraftCase(detail.id, form);
+      savedDraft = await updateDraftCase(detail.id, form, { ...detail, documents });
       const submitted: CaseDraftDetail = await submitCase(savedDraft.id, savedDraft);
       setDetail(submitted);
       setForm(submitted.form);
+      setDocuments(submitted.documents);
       setFieldErrors({});
       setSuccessMessage(draftCopy.submitSuccess);
     } catch (err: unknown) {
       if (savedDraft !== null) {
         setDetail(savedDraft);
         setForm(savedDraft.form);
+        setDocuments(savedDraft.documents);
         setActionError(toDraftActionError(err, 'submit').message);
       } else {
         setActionError(toDraftActionError(err, 'save').message);
@@ -172,6 +187,27 @@ export function CaseDraft(): ReactElement {
     } finally {
       actionLock.current = false;
       setSubmitting(false);
+    }
+  }
+
+  async function onFileSelected(file: File): Promise<void> {
+    if (detail === null || !detail.canUpload || uploadLock.current) {
+      return;
+    }
+
+    uploadLock.current = true;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const uploaded: CaseDocument = await uploadDocument(detail.id, file);
+      setDocuments((prev: readonly CaseDocument[]): readonly CaseDocument[] =>
+        prependDocument(prev, uploaded),
+      );
+    } catch (err: unknown) {
+      setUploadError(toDocumentUploadTransportError(err).message);
+    } finally {
+      uploadLock.current = false;
+      setUploading(false);
     }
   }
 
@@ -203,7 +239,16 @@ export function CaseDraft(): ReactElement {
   if (!detail.canEdit) {
     return (
       <main>
-        <CaseDraftReadonly detail={detail} successMessage={successMessage} />
+        <CaseDraftReadonly
+          detail={detail}
+          successMessage={successMessage}
+          documents={documents}
+          uploading={uploading}
+          uploadError={uploadError}
+          onFileSelected={(file: File): void => {
+            void onFileSelected(file);
+          }}
+        />
       </main>
     );
   }
@@ -219,12 +264,18 @@ export function CaseDraft(): ReactElement {
         successMessage={successMessage}
         saving={saving}
         submitting={submitting}
+        documents={documents}
+        uploading={uploading}
+        uploadError={uploadError}
         onFieldChange={onFieldChange}
         onSave={(event: SubmitEvent<HTMLFormElement>): void => {
           void onSave(event);
         }}
         onSubmitCase={(): void => {
           void onSubmitCase();
+        }}
+        onFileSelected={(file: File): void => {
+          void onFileSelected(file);
         }}
       />
     </main>

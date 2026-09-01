@@ -31,6 +31,30 @@ export type CaseFormFieldKey = (typeof CASE_FORM_FIELD_KEYS)[number];
 /** Optional company FormData key (API does not require it). */
 export const OPTIONAL_COMPANY_FIELD_KEY = 'companyName' as const;
 
+/** Max upload size (KYC-040 / DocumentUploadValidation.MaxFileBytes). */
+export const MAX_DOCUMENT_BYTES: number = 10 * 1024 * 1024;
+
+/** Allowed upload MIME types (API allow-list; image/jpg normalized to jpeg). */
+export const ALLOWED_DOCUMENT_CONTENT_TYPES = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+] as const;
+
+export type AllowedDocumentContentType = (typeof ALLOWED_DOCUMENT_CONTENT_TYPES)[number];
+
+/** Document metadata from `case.documents` (never bytes / storage keys). */
+export interface CaseDocument {
+  readonly id: string;
+  readonly fileName: string;
+  readonly contentType: string;
+  readonly sizeBytes: number;
+  readonly sizeLabel: string;
+  readonly uploadedAt: string;
+  readonly uploadedAtLabel: string;
+  readonly uploadedBy: string;
+}
+
 /** One row from GraphQL `cases.items` (customer list — no customerEmail). */
 export interface CaseListItem {
   readonly id: string;
@@ -105,7 +129,10 @@ export interface CaseDraftDetail {
   readonly updatedAtLabel: string;
   readonly submittedAt: string | null;
   readonly submittedAtLabel: string | null;
+  readonly documents: readonly CaseDocument[];
   readonly canEdit: boolean;
+  /** API allows upload on Draft or Submitted (KYC-040). */
+  readonly canUpload: boolean;
 }
 
 export interface UpdateDraftCaseInput {
@@ -151,6 +178,17 @@ export class DraftActionError extends Error {
   }
 }
 
+/** User-facing document upload failure. */
+export class DocumentUploadError extends Error {
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'DocumentUploadError';
+    this.code = code;
+  }
+}
+
 /** Wire shape for GraphQL `cases` HTTP body. */
 export interface GraphqlCasesBody {
   data?: {
@@ -182,6 +220,16 @@ export interface GraphqlCreateDraftBody {
   errors?: GraphqlError[];
 }
 
+/** Wire shape for one GraphQL / REST document metadata row. */
+export interface GraphqlDocumentWire {
+  id?: string;
+  fileName?: string;
+  contentType?: string;
+  sizeBytes?: number;
+  uploadedAt?: string;
+  uploadedBy?: string;
+}
+
 /** Wire shape for GraphQL `case` detail. */
 export interface GraphqlCaseDetailBody {
   data?: {
@@ -194,6 +242,7 @@ export interface GraphqlCaseDetailBody {
         updatedAt?: string;
         submittedAt?: string | null;
       } | null;
+      documents?: Array<GraphqlDocumentWire | null> | null;
     } | null;
   };
   errors?: GraphqlError[];
