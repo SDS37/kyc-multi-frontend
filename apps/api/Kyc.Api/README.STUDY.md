@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Runbook: [../README.md](../README.md).
 
-**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`).
+**Aligned with:** `main` after W5 (same host; Angular + React call GraphQL + document REST).
 
 ## Purpose
 

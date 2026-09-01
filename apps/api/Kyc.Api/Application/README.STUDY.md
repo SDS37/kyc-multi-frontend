@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `feat/kyc-042-download-document`.
+**Aligned with:** `main` after KYC-042 (document upload/list/download).
 
 ## Purpose
 

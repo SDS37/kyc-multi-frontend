@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README. The official runbook is [README.md](README.md).
 
-**Aligned with:** W4 preflight (KYC-051 + CORS + `customerEmail`).
+**Aligned with:** `main` after W5 (API unchanged as UI consumers; Angular + React use this host).
 
 ## Purpose
 
-This folder is the **entire backend product**: one .NET solution with the web host and its tests. Nothing under `apps/angular-admin` (etc.) talks to Postgres; only this API does.
+This folder is the **entire backend product**: one .NET solution with the web host and its tests. Nothing under `apps/angular-admin` / `apps/react-customer` talks to Postgres; only this API does.
 
 ## Why these folders and files exist
 
@@ -65,7 +65,7 @@ Tests do **not** need the real port: `WebApplicationFactory<Program>` boots the 
 ## Today vs target
 
 - **Today:** one deployable, layered folders, GraphQL cases/documents/audit, REST identity twins, REST upload/download, local CORS.
-- **Target:** still one deployable (not microservices). CQRS / MediatR remains a target, not current. Three UI apps are W4–W6.
+- **Target:** still one deployable (not microservices). CQRS / MediatR remains a target, not current. Angular + React UIs are on `main`; Vue reports is W6.
 
 ## What to skip
 

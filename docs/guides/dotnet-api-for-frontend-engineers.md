@@ -8,13 +8,13 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
-| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles) | React customer + Vue reports foundations; Angular login/cases (KYC-061–064) |
-| GraphQL case lifecycle, `cases` / `case` (incl. `customerEmail`), document metadata, `caseAuditEntries`; REST upload + download | Optional user-management APIs; seed data (KYC-101) |
-| Angular admin foundation (KYC-060): standalone 22+, routing, GraphQL env, auth interceptor | |
-| Temporary register/login (JWT) + fail-closed tenant filters | Auth rate limits when leaving localhost (KYC-093) |
-| CORS allow-list for local UIs (`localhost:4200`, `:5173`) — KYC-091 W4 slice | Security headers / HSTS (rest of KYC-091, W6) |
-| Hot Chocolate `/graphql` + `/health` + `/ready`; JSON logs; deny-by-default JWT; introspection/SDL Development-only | GraphQL cost analyzer when list volume grows |
-| `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci`; SDK in `global.json` | |
+| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles); case/document/audit GraphQL + REST upload/download | Vue reports (KYC-080–081); seed data (KYC-101); optional user-management APIs |
+| **Angular admin** (KYC-060–065): login, shell, case list, review | Auth rate limits when leaving localhost (KYC-093) |
+| **React customer** (KYC-070–074): login, shell, my cases, draft form, document upload | Security headers / HSTS (rest of KYC-091, W6) |
+| Temporary register/login (JWT) + fail-closed tenant filters | GraphQL cost analyzer when list volume grows |
+| CORS allow-list for local UIs (`localhost:4200`, `:5173`) — KYC-091 W4 slice | |
+| Hot Chocolate `/graphql` + `/health` + `/ready`; JSON logs; deny-by-default JWT; introspection/SDL Development-only | |
+| `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` / `angular-ci` / `react-ci`; SDK in `global.json` | |
 
 The **target** remains one GraphQL API, CQRS modular monolith, JWT tenant context, and three frontends — see [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md).
 

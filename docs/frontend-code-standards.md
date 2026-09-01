@@ -27,7 +27,7 @@ Rules in this section apply to **Angular, React, and Vue**. Framework sections o
 | Auth | Store the access token after login; send `Authorization: Bearer <token>` on authenticated API calls; never put `tenant_id` / role in client-supplied request bodies for authorized ops (ADR-007) |
 | Config | GraphQL (and REST API) base URLs come from environment / build config — not hard-coded production hosts |
 | Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map each app’s UI kit to tokens; do not fork palettes per app. Import `tokens.css` at app start |
-| UI kits | One kit per app, themed to tokens. Angular → Material. React / Vue → choose a single kit (or CSS modules + tokens) in the foundation story — **do not** add Bootstrap as a second spacing/color system |
+| UI kits | One kit per app, themed to tokens. Angular → Material. React → CSS modules + tokens (KYC-070+). Vue → choose a single kit (or CSS modules + tokens) in the foundation story — **do not** add Bootstrap as a second spacing/color system |
 | **Feature folders** | Organize by **feature area** (`auth/`, `cases/`, `shared/`, `config/`), not by type buckets (`components/`, `services/`, `hooks/` as top-level) |
 | **Models / mappers / messages** | `*.models.ts` (shapes), `*.mappers.ts` (pure transforms), `*.messages.ts` (UI copy), `*.service.ts` / `*Api.ts` (I/O only) — same convention in every UI app |
 | **Functional style** | Prefer FP **at every app level**, expressed as pure **functions**. Side effects only at I/O edges. See below |
@@ -414,7 +414,7 @@ Follow official [react.dev](https://react.dev) ([Learn](https://react.dev/learn)
 
 ### React component tree
 
-**Living tree (required):** keep the current mermaid in [apps/react-customer/README.md](../apps/react-customer/README.md#component-tree-kyc-072) and update it when routes ship. System composition: [architecture.md §3](architecture.md#3-frontend-composition). Smart vs presentational rules: [Component tree (all frontends)](#component-tree-all-frontends).
+**Living tree (required):** keep the current mermaid in [apps/react-customer/README.md](../apps/react-customer/README.md#component-tree-kyc-074) and update it when routes ship. System composition: [architecture.md §3](architecture.md#3-frontend-composition). Smart vs presentational rules: [Component tree (all frontends)](#component-tree-all-frontends).
 
 | Node | Owns | Must not |
 |---|---|---|
@@ -442,7 +442,7 @@ Prefer **immutable** props/state so React’s bail-out and future Compiler wins 
 ### Routing
 
 - React Router (data APIs / `createBrowserRouter` preferred) with a clear route table
-- Guard authenticated areas (loader / wrapper); send guests to login when KYC-071 lands
+- Guard authenticated areas (loader / wrapper); send guests to login (KYC-071+)
 - Lazy-load heavy feature routes where it keeps the foundation small
 
 ### Testing and CI
@@ -484,5 +484,5 @@ Detailed Vue subsection lands with KYC-080 (mirror this React section’s depth)
 - [vuejs.org](https://vuejs.org)
 - Angular Architects (patterns only): [site](https://www.angulararchitects.io/en/), [blog](https://www.angulararchitects.io/en/blog/)
 - [ADR-004](architecture-decision-records.md) (Angular admin), [ADR-005](architecture-decision-records.md) (separate apps), [ADR-007](architecture-decision-records.md) (tenant in JWT)
-- Living trees: [angular-admin](../apps/angular-admin/README.md#component-tree), [react-customer](../apps/react-customer/README.md#component-tree-kyc-072), [vue-reports](../apps/vue-reports/README.md)
+- Living trees: [angular-admin](../apps/angular-admin/README.md#component-tree), [react-customer](../apps/react-customer/README.md#component-tree-kyc-074), [vue-reports](../apps/vue-reports/README.md)
 - Tokens package: [packages/design-tokens](../packages/design-tokens/)

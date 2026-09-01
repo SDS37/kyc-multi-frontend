@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README. Official stub: [README.md](README.md).
 
-**Aligned with:** `main` after Week 2. **No Vue app exists yet.**
+**Aligned with:** `main` after W5. **No Vue app exists yet** (W6).
 
 ## Purpose
 
-This folder is the **future read-only reports portal** (Week 6, KYC-080–081): tenant-relevant cases, filter by status, keep v1 to a **single page** if time is tight (roadmap time-control rule). Same GraphQL API; Vue is the third client that justifies “one schema, three consumers.”
+This folder is the **future read-only reports portal** (Week 6, KYC-080–081): tenant-relevant cases, filter by status, keep v1 to a **single page** if time is tight (roadmap time-control rule). Same GraphQL API; Vue is the third client that justifies “one schema, three consumers.” Angular admin and React customer are already on `main`.
 
 ## Why it exists if Angular can show a table
 

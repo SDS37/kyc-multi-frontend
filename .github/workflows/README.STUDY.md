@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** KYC-060 (`angular-ci`) + KYC-070 (`react-ci`).
+**Aligned with:** KYC-060 (`angular-ci`) + KYC-070 (`react-ci`) on `main` (W4–W5).
 
 ## Purpose
 

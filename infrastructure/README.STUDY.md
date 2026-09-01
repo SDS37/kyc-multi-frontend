@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README. Runbook: [README.md](README.md).
 
-**Aligned with:** `main` after KYC-040 (documents use MinIO; image still pinned KYC-105).
+**Aligned with:** `main` after W5 (Compose deps; Angular + React UIs on the host).
 
 ## Purpose
 
-This folder is **local production-shaped dependencies**, not the KYC application. Compose starts three containers. The .NET API and the future UIs run **on your machine** and connect in over localhost.
+This folder is **local production-shaped dependencies**, not the KYC application. Compose starts three containers. The .NET API and the UIs (Angular `:4200`, React `:5173`; Vue later `:5174`) run **on your machine** and connect in over localhost.
 
 If you only remember one sentence: **from the API, Postgres is `127.0.0.1:5432`, not hostname `postgres`.** `postgres` is the DNS name *inside* the Compose network. Mixing those up is the usual “connection refused” after a working Docker Desktop install. Same idea for MinIO: API uses `http://127.0.0.1:9000`, not hostname `minio`.
 
@@ -28,7 +28,8 @@ ADR-006: Postgres for relational data, MinIO for KYC files, Redis optional for c
 flowchart LR
     subgraph host ["Your laptop"]
         API["dotnet run :5295"]
-        UI["future Angular :4200"]
+        Ang["Angular :4200"]
+        React["React :5173"]
     end
     subgraph compose ["Docker Compose"]
         PG[(Postgres :5432)]
@@ -38,7 +39,8 @@ flowchart LR
     API -->|"cases / users / document metadata"| PG
     API -->|"document bytes KYC-040"| MN
     API -.->|"not yet"| RD
-    UI -.-> API
+    Ang --> API
+    React --> API
 ```
 
 ## Angular analog

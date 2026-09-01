@@ -1,6 +1,6 @@
 # Study: `apps/react-customer`
 
-**Aligned with:** KYC-070–074 on `feat/kyc-074-react-document-upload`.
+**Aligned with:** `main` after KYC-070–074 (W5 complete).
 
 ## Purpose
 
@@ -28,3 +28,4 @@ Admin list is a review queue (includes `customerEmail`, no create). Customer own
 - [Issue #35](https://github.com/SDS37/kyc-multi-frontend/issues/35) (KYC-074)
 - [Issue #34](https://github.com/SDS37/kyc-multi-frontend/issues/34) (KYC-073)
 - [Angular documents pane](../angular-admin/src/app/cases/case-documents-pane/)
+- [Roadmap W5](../../docs/roadmap.md)

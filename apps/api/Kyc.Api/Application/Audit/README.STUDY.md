@@ -2,7 +2,7 @@
 
 Study tour of this folder. Parent: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `feat/kyc-051-view-case-audit` / KYC-050–051.
+**Aligned with:** `main` after KYC-051 (case audit history).
 
 ## Purpose
 

@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Parent layer: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `feat/kyc-042-download-document` / KYC-042.
+**Aligned with:** `main` after KYC-042 (document download).
 
 ## Purpose
 

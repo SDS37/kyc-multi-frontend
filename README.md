@@ -42,10 +42,11 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Angular Admin foundation | Ready (KYC-060: Angular 22+, routing, GraphQL env, auth interceptor) |
 | Shared UX design tokens | Ready (`packages/design-tokens`; Angular + React) |
 | Angular Admin | Ready (KYC-060–065: login, shell, case list, review) |
-| React Customer | Ready (KYC-070–072: login, shell, my cases + create draft) |
-| Vue Reports | Placeholder only (KYC-080) |
+| React Customer | Ready (KYC-070–074: login, shell, my cases, draft form, document upload) |
+| React CI (`npm` build / test) | Ready (`react-ci`; Node from `.nvmrc`; SHA-pinned actions) |
+| Vue Reports | Placeholder only (KYC-080 — W6) |
 
-Yes — the project is intended to reach the full target (GraphQL, CQRS modular monolith, three clients, JWT tenant isolation). Early weeks deliver identity and infrastructure first; later weeks add the rest per the [roadmap](docs/roadmap.md).
+**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). Week 6 adds Vue reports, seed data, and remaining security hardening — see the [roadmap](docs/roadmap.md).
 
 ## Target tech stack
 
@@ -64,9 +65,9 @@ Yes — the project is intended to reach the full target (GraphQL, CQRS modular 
 ```
 kyc-multi-frontend/
 ├── apps/
-│   ├── angular-admin/     # Angular 22+ admin/reviewer (KYC-060+)
-│   ├── react-customer/    # React 19+ customer portal (KYC-070 foundation)
-│   ├── vue-reports/       # Vue reports portal (not scaffolded yet)
+│   ├── angular-admin/     # Angular 22+ admin/reviewer (KYC-060–065)
+│   ├── react-customer/    # React 19+ customer portal (KYC-070–074)
+│   ├── vue-reports/       # Vue reports portal (W6; not scaffolded yet)
 │   └── api/               # .NET API + tests (GraphQL + document REST)
 ├── packages/
 │   └── design-tokens/     # Shared CSS UX tokens (Angular / React / Vue)
@@ -136,7 +137,7 @@ npm install
 npm start
 ```
 
-App: `http://localhost:4200`.
+App: `http://localhost:4200` (CORS already allowed). PRs that touch the Angular app run GitHub Actions `angular-ci`.
 
 ### 5. Run React Customer (optional)
 
@@ -148,9 +149,7 @@ npm install
 npm start
 ```
 
-App: `http://localhost:5173` (CORS already allows this origin).
-
-App: `http://localhost:4200` (CORS already allowed by the API). PRs that touch the Angular app run GitHub Actions `angular-ci`.
+App: `http://localhost:5173` (CORS already allows this origin). PRs that touch the React app run GitHub Actions `react-ci`.
 
 ## Architecture
 
@@ -195,6 +194,7 @@ flowchart TB
 - [Frontend code standards](docs/frontend-code-standards.md) (angular.dev + filtered [Angular Architects](https://www.angulararchitects.io/en/) practices)
 - [UX design tokens & accessibility](docs/ux-design-tokens.md) (`packages/design-tokens`)
 - [API runbook](apps/api/README.md)
+- [Angular admin](apps/angular-admin/README.md) · [React customer](apps/react-customer/README.md)
 - [.NET API for frontend engineers](docs/guides/dotnet-api-for-frontend-engineers.md)
 
 ## Commit convention

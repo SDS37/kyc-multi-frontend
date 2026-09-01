@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. These files **are** the project documentation. This note only tells you **how to read them** as a frontend architect.
 
-**Aligned with:** W4 — Angular foundation (KYC-060) + API preflight.
+**Aligned with:** `main` after **W5** (Angular KYC-060–065 + React KYC-070–074).
 
 ## Purpose
 
@@ -29,7 +29,7 @@ There is no `docs/api/` Swagger dump. The GraphQL schema **is** the API doc (IDE
 
 Guides are **persona-specific** (you: Angular-strong, .NET-new). Architecture/ADRs are persona-neutral. If a guide disagrees with `architecture.md`, architecture + ADRs win — then the guide should be updated in a docs PR, not “fixed” in a study file.
 
-After Week 2–3, expect the guide’s “still ahead” table to lag. Cases GraphQL and document upload are on `main`. Use the API README done-checks as the live index.
+Prefer the API README done-checks and root README status table as the live index; the frontend-oriented guide can lag after each week.
 
 ## Angular analog
 
@@ -37,7 +37,7 @@ This folder is the architecture decision log you wish every Angular repo kept: A
 
 ## Today vs target
 
-Architecture diagrams include Angular/React/Vue and Audit **modules**. API + Angular admin + React customer are real; Vue reports is still empty. Citing empty UI folders as implemented is the main way to sound wrong in a review.
+Architecture diagrams include Angular/React/Vue and Audit **modules**. API + Angular admin + React customer (full W5 happy path) are real; Vue reports is still empty. Citing the empty Vue folder as implemented is the main way to sound wrong in a review.
 
 ADR-008: no formal AI context packs for MVP. `README.STUDY.md` files are a **tour of the tree**, not a versioned agent context pack — they do not contradict that ADR. Keep them aligned with the code; delete them from the repo when they are no longer useful.
 

@@ -11,7 +11,7 @@ Shared visual and a11y baseline for **all** KYC frontends (`apps/angular-admin`,
 | Colors, spacing, type, radius, focus ring (`--kyc-*`) | Angular Material components into React/Vue |
 | Short a11y rules (WCAG / WAI-ARIA) | One mega UI kit across frameworks |
 
-Each app owns its UI toolkit (Material on Angular; later libraries on React/Vue) but **themes and spacing map to the same tokens**.
+Each app owns its UI toolkit (Material on Angular; CSS modules + tokens on React; later libraries on Vue) but **themes and spacing map to the same tokens**.
 
 ## Package
 
@@ -44,7 +44,7 @@ Scale `--kyc-space-1` … `--kyc-space-8` (4px base). Page gutter: `--kyc-page-g
 
 ## Accessibility (all three frameworks)
 
-Align on **WAI-ARIA** and **WCAG 2.2 AA** intent for MVP screens (login, case list, review). Angular’s ARIA helpers, React `aria-*`, and Vue `aria-*` all target the **same** platform APIs — do not invent three different a11y models.
+Align on **WAI-ARIA** and **WCAG 2.2 AA** intent for MVP screens (login, case list, review, customer draft/upload). Angular’s ARIA helpers, React `aria-*`, and Vue `aria-*` all target the **same** platform APIs — do not invent three different a11y models.
 
 | Rule | Practice |
 |---|---|
@@ -60,7 +60,7 @@ Align on **WAI-ARIA** and **WCAG 2.2 AA** intent for MVP screens (login, case li
 | App | Prefer |
 |---|---|
 | Angular | Angular Material + CDK a11y; Angular ARIA APIs where helpful; semantic HTML first |
-| React | Native `aria-*` / roles; `eslint-plugin-jsx-a11y` when the app is scaffolded |
+| React | Native `aria-*` / roles; prefer `eslint-plugin-jsx-a11y` when tightening lint |
 | Vue | Native `aria-*` on templates; vue-eslint-plugin accessibility rules when scaffolded |
 
 Guards and UI redirects are **UX**, not security (JWT still enforced by the API).

@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README. Official runbook: [README.md](README.md).
 
-**Aligned with:** `feat/kyc-063-angular-case-review` / KYC-063 (+ KYC-062 list, KYC-061 login).
+**Aligned with:** `main` after KYC-060–065 (W4 Angular admin complete).
 
 ## Purpose
 
-Tenant Admin / Reviewer product (ADR-004). KYC-063 adds **case review** (form data, documents + download, start / approve / reject) on top of the case list.
+Tenant Admin / Reviewer product (ADR-004). KYC-060–065: login, shell, case list, and **case review** (form data, documents + download, start / approve / reject).
 
 ## Why these folders exist
 

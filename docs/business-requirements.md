@@ -2,8 +2,8 @@
 
 **Product**: KYC Compliance Platform
 **Version**: MVP
-**Last updated**: 2026-08-27
-**Status**: Aligned with accepted ADRs
+**Last updated**: 2026-09-01
+**Status**: Aligned with accepted ADRs; W1–W5 delivered on `main` (API + Angular admin + React customer). Vue reports remains W6.
 
 ## 1. Vision
 
