@@ -14,6 +14,7 @@ export type CaseDocumentsPaneProps = {
   readonly documents: readonly CaseDocument[];
   readonly canUpload: boolean;
   readonly uploading: boolean;
+  readonly uploadDisabled?: boolean;
   readonly uploadError: string | null;
   readonly onFileSelected: (file: File) => void;
 };
@@ -27,11 +28,13 @@ export function CaseDocumentsPane(props: CaseDocumentsPaneProps): ReactElement {
   const inputRef: RefObject<HTMLInputElement | null> = useRef<HTMLInputElement | null>(
     null,
   );
+  const inputDisabled: boolean =
+    props.uploading || props.uploadDisabled === true || !props.canUpload;
 
   function onInputChange(event: ChangeEvent<HTMLInputElement>): void {
     const file: File | undefined = event.target.files?.[0];
     event.target.value = '';
-    if (!file || props.uploading || !props.canUpload) {
+    if (!file || inputDisabled) {
       return;
     }
     props.onFileSelected(file);
@@ -50,7 +53,7 @@ export function CaseDocumentsPane(props: CaseDocumentsPaneProps): ReactElement {
             className={styles['fileInput']}
             type="file"
             accept={DOCUMENT_ACCEPT}
-            disabled={props.uploading}
+            disabled={inputDisabled}
             aria-label={copy.docsUploadLabel}
             aria-describedby="docs-accept-hint"
             onChange={onInputChange}

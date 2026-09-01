@@ -691,9 +691,6 @@ export async function toDocumentUploadError(response: Response): Promise<Documen
     }
   }
 
-  if (response.status >= 500) {
-    return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadFailed, code);
-  }
   return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadFailed, code);
 }
 

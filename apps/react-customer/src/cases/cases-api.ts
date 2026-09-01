@@ -27,6 +27,7 @@ import type {
   CreateDraftCaseInput,
   CreatedDraftCase,
   DraftFormModel,
+  GraphqlDocumentWire,
   ListCasesParams,
   SubmitCaseInput,
   UpdateDraftCaseInput,
@@ -170,14 +171,7 @@ export async function getCaseDetail(caseId: string): Promise<CaseDraftDetail> {
           updatedAt?: string;
           submittedAt?: string | null;
         } | null;
-        documents?: Array<{
-          id?: string;
-          fileName?: string;
-          contentType?: string;
-          sizeBytes?: number;
-          uploadedAt?: string;
-          uploadedBy?: string;
-        } | null> | null;
+        documents?: Array<GraphqlDocumentWire | null> | null;
       } | null;
     }>(CASE_DETAIL_QUERY, { id: caseId });
     return parseCaseDraftDetail(body);
@@ -261,15 +255,13 @@ export async function uploadDocument(
     if (!response.ok) {
       throw await toDocumentUploadError(response);
     }
-    const raw: unknown = await response.json();
+    let raw: unknown;
     try {
-      return parseUploadedDocument(raw);
-    } catch (err: unknown) {
-      if (err instanceof DocumentUploadError) {
-        throw err;
-      }
+      raw = await response.json();
+    } catch {
       throw new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadIncomplete, 'INCOMPLETE');
     }
+    return parseUploadedDocument(raw);
   } catch (err: unknown) {
     throw toDocumentUploadTransportError(err);
   }

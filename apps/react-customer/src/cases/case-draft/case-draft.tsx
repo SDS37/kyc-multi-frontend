@@ -139,7 +139,7 @@ export function CaseDraft(): ReactElement {
       });
       setDetail(saved);
       setForm(saved.form);
-      setDocuments(saved.documents);
+      // Keep live documents state — uploads may complete during save.
       setFieldErrors({});
       setSuccessMessage(draftCopy.saveSuccess);
     } catch (err: unknown) {
@@ -172,14 +172,13 @@ export function CaseDraft(): ReactElement {
       const submitted: CaseDraftDetail = await submitCase(savedDraft.id, savedDraft);
       setDetail(submitted);
       setForm(submitted.form);
-      setDocuments(submitted.documents);
+      // Keep live documents state — uploads may complete during submit.
       setFieldErrors({});
       setSuccessMessage(draftCopy.submitSuccess);
     } catch (err: unknown) {
       if (savedDraft !== null) {
         setDetail(savedDraft);
         setForm(savedDraft.form);
-        setDocuments(savedDraft.documents);
         setActionError(toDraftActionError(err, 'submit').message);
       } else {
         setActionError(toDraftActionError(err, 'save').message);
@@ -191,7 +190,14 @@ export function CaseDraft(): ReactElement {
   }
 
   async function onFileSelected(file: File): Promise<void> {
-    if (detail === null || !detail.canUpload || uploadLock.current) {
+    if (
+      detail === null ||
+      !detail.canUpload ||
+      uploadLock.current ||
+      actionLock.current ||
+      saving ||
+      submitting
+    ) {
       return;
     }
 
@@ -245,6 +251,7 @@ export function CaseDraft(): ReactElement {
           documents={documents}
           uploading={uploading}
           uploadError={uploadError}
+          uploadDisabled={false}
           onFileSelected={(file: File): void => {
             void onFileSelected(file);
           }}
@@ -267,6 +274,7 @@ export function CaseDraft(): ReactElement {
         documents={documents}
         uploading={uploading}
         uploadError={uploadError}
+        uploadDisabled={saving || submitting}
         onFieldChange={onFieldChange}
         onSave={(event: SubmitEvent<HTMLFormElement>): void => {
           void onSave(event);

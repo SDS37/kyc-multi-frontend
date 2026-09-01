@@ -32,6 +32,7 @@ export type CaseDraftFormProps = {
   readonly documents: readonly CaseDocument[];
   readonly uploading: boolean;
   readonly uploadError: string | null;
+  readonly uploadDisabled: boolean;
   readonly onFieldChange: (field: keyof DraftFormModel, value: string) => void;
   readonly onSave: (event: SubmitEvent<HTMLFormElement>) => void;
   readonly onSubmitCase: () => void;
@@ -209,6 +210,7 @@ export function CaseDraftForm(props: CaseDraftFormProps): ReactElement {
         documents={props.documents}
         canUpload={props.detail.canUpload}
         uploading={props.uploading}
+        uploadDisabled={props.uploadDisabled}
         uploadError={props.uploadError}
         onFileSelected={props.onFileSelected}
       />
@@ -222,6 +224,7 @@ export type CaseDraftReadonlyProps = {
   readonly documents: readonly CaseDocument[];
   readonly uploading: boolean;
   readonly uploadError: string | null;
+  readonly uploadDisabled: boolean;
   readonly onFileSelected: (file: File) => void;
 };
 
@@ -294,6 +297,7 @@ export function CaseDraftReadonly(props: CaseDraftReadonlyProps): ReactElement {
         documents={props.documents}
         canUpload={props.detail.canUpload}
         uploading={props.uploading}
+        uploadDisabled={props.uploadDisabled}
         uploadError={props.uploadError}
         onFileSelected={props.onFileSelected}
       />
