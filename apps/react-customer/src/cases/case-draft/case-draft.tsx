@@ -44,6 +44,7 @@ export function CaseDraft(): ReactElement {
   const loadSeq: MutableRefObject<number> = useRef(0);
   const actionLock: MutableRefObject<boolean> = useRef(false);
   const uploadLock: MutableRefObject<boolean> = useRef(false);
+  const documentsRef: MutableRefObject<readonly CaseDocument[]> = useRef([]);
 
   const [detail, setDetail] = useState<CaseDraftDetail | null>(null);
   const [form, setForm] = useState<DraftFormModel>(emptyDraftForm());
@@ -58,6 +59,13 @@ export function CaseDraft(): ReactElement {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  documentsRef.current = documents;
+
+  function replaceDocuments(next: readonly CaseDocument[]): void {
+    documentsRef.current = next;
+    setDocuments(next);
+  }
 
   const loadDetail = useCallback(async (caseId: string): Promise<void> => {
     const seq: number = loadSeq.current + 1;
@@ -74,7 +82,7 @@ export function CaseDraft(): ReactElement {
       }
       setDetail(loaded);
       setForm(loaded.form);
-      setDocuments(loaded.documents);
+      replaceDocuments(loaded.documents);
       setFieldErrors({});
       setTouched(false);
       setLoading(false);
@@ -84,7 +92,7 @@ export function CaseDraft(): ReactElement {
       }
       setDetail(null);
       setForm(emptyDraftForm());
-      setDocuments([]);
+      replaceDocuments([]);
       setLoading(false);
       setLoadError(toCaseDetailLoadError(err).message);
     }
@@ -135,11 +143,11 @@ export function CaseDraft(): ReactElement {
     try {
       const saved: CaseDraftDetail = await updateDraftCase(detail.id, form, {
         ...detail,
-        documents,
+        documents: documentsRef.current,
       });
-      setDetail(saved);
+      const liveDocs: readonly CaseDocument[] = documentsRef.current;
+      setDetail({ ...saved, documents: liveDocs });
       setForm(saved.form);
-      // Keep live documents state — uploads may complete during save.
       setFieldErrors({});
       setSuccessMessage(draftCopy.saveSuccess);
     } catch (err: unknown) {
@@ -168,16 +176,23 @@ export function CaseDraft(): ReactElement {
     setSubmitting(true);
     let savedDraft: CaseDraftDetail | null = null;
     try {
-      savedDraft = await updateDraftCase(detail.id, form, { ...detail, documents });
-      const submitted: CaseDraftDetail = await submitCase(savedDraft.id, savedDraft);
-      setDetail(submitted);
+      savedDraft = await updateDraftCase(detail.id, form, {
+        ...detail,
+        documents: documentsRef.current,
+      });
+      const submitted: CaseDraftDetail = await submitCase(savedDraft.id, {
+        ...savedDraft,
+        documents: documentsRef.current,
+      });
+      const liveDocs: readonly CaseDocument[] = documentsRef.current;
+      setDetail({ ...submitted, documents: liveDocs });
       setForm(submitted.form);
-      // Keep live documents state — uploads may complete during submit.
       setFieldErrors({});
       setSuccessMessage(draftCopy.submitSuccess);
     } catch (err: unknown) {
       if (savedDraft !== null) {
-        setDetail(savedDraft);
+        const liveDocs: readonly CaseDocument[] = documentsRef.current;
+        setDetail({ ...savedDraft, documents: liveDocs });
         setForm(savedDraft.form);
         setActionError(toDraftActionError(err, 'submit').message);
       } else {
@@ -206,8 +221,13 @@ export function CaseDraft(): ReactElement {
     setUploadError(null);
     try {
       const uploaded: CaseDocument = await uploadDocument(detail.id, file);
-      setDocuments((prev: readonly CaseDocument[]): readonly CaseDocument[] =>
-        prependDocument(prev, uploaded),
+      const next: readonly CaseDocument[] = prependDocument(
+        documentsRef.current,
+        uploaded,
+      );
+      replaceDocuments(next);
+      setDetail((prev: CaseDraftDetail | null): CaseDraftDetail | null =>
+        prev === null ? null : { ...prev, documents: next },
       );
     } catch (err: unknown) {
       setUploadError(toDocumentUploadTransportError(err).message);

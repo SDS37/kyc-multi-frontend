@@ -287,6 +287,12 @@ describe('cases.mappers', () => {
     expect(
       validateDocumentFile(new File([new Uint8Array(10)], 'ok.jpg', { type: 'image/jpg' })),
     ).toBeNull();
+    expect(
+      validateDocumentFile(new File([new Uint8Array(10)], 'ok.pdf', { type: '' })),
+    ).toBeNull();
+    expect(
+      validateDocumentFile(new File([new Uint8Array(10)], 'bad.bin', { type: '' })),
+    ).toBe(CASES_DRAFT_MESSAGES.docsTypeRejected);
   });
 
   it('formatByteSize and prependDocument helpers', (): void => {

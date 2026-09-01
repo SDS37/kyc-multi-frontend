@@ -600,6 +600,21 @@ export function normalizeDocumentContentType(contentType: string): string | null
   return null;
 }
 
+/** Pure: infer allow-listed MIME from filename when browser omits type. */
+export function contentTypeFromFileName(fileName: string): string | null {
+  const lower: string = fileName.trim().toLowerCase();
+  if (lower.endsWith('.pdf')) {
+    return 'application/pdf';
+  }
+  if (lower.endsWith('.png')) {
+    return 'image/png';
+  }
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+    return 'image/jpeg';
+  }
+  return null;
+}
+
 /** Pure: client-side type/size gate before POST (mirrors API messages). */
 export function validateDocumentFile(file: File): string | null {
   if (file.size <= 0) {
@@ -608,10 +623,14 @@ export function validateDocumentFile(file: File): string | null {
   if (file.size > MAX_DOCUMENT_BYTES) {
     return CASES_DRAFT_MESSAGES.docsSizeRejected;
   }
-  if (normalizeDocumentContentType(file.type) === null) {
-    return CASES_DRAFT_MESSAGES.docsTypeRejected;
+  if (normalizeDocumentContentType(file.type) !== null) {
+    return null;
   }
-  return null;
+  // Some browsers leave `File.type` empty — fall back to extension only then.
+  if (!file.type.trim() && contentTypeFromFileName(file.name) !== null) {
+    return null;
+  }
+  return CASES_DRAFT_MESSAGES.docsTypeRejected;
 }
 
 /** Pure: parse GraphQL documents array → CaseDocument[]. */
