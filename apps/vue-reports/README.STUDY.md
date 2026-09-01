@@ -1,10 +1,10 @@
 # Study: `apps/vue-reports`
 
-**Aligned with:** `feat/kyc-080-vue-app-foundation` / KYC-080 (login + shell; table is KYC-081).
+**Aligned with:** `feat/kyc-081-vue-case-overview` / KYC-081 (counts + latest 10 on the KYC-080 shell).
 
 ## Purpose
 
-Read-only reports portal for **Reviewer / TenantAdmin** (ADR-004). KYC-080 is the shell, auth, and GraphQL client so KYC-081 can add counts / latest cases without scaffolding.
+Read-only reports portal for **Reviewer / TenantAdmin** (ADR-004). Status counts and the latest ten cases reuse GraphQL `cases` (KYC-036) with aliases — no new backend field.
 
 ## Map
 
@@ -12,18 +12,21 @@ Read-only reports portal for **Reviewer / TenantAdmin** (ADR-004). KYC-080 is th
 |---|---|
 | Smart login screen | `src/auth/login-page/LoginPage.vue` |
 | Authenticated chrome | `src/layout/ReportsShell.vue` |
-| Presentational home | `src/reports/ReportsHome.vue` |
-| GraphQL | `src/shared/http.ts` + `src/auth/login-api.ts` |
-| Pure parse / guards | `src/auth/auth.mappers.ts` (`resolveReportsNavigation`) |
+| Smart reports home | `src/reports/ReportsHome.vue` |
+| Presentational counts / table | `ReportsStatusCounts.vue`, `ReportsLatestTable.vue` |
+| GraphQL | `src/shared/http.ts` + `src/reports/reports-api.ts` |
+| Pure parse | `src/reports/reports.mappers.ts` |
 | Router | `src/app-router.ts` — `beforeEach` **returns** a location (no `next()`) |
 
 ## Angular / React differences
 
-Admin list is a review queue with mutations. Customer owns draft/upload. Vue is **read-only reports** — no approve, no document upload. Same `login` mutation; role filter is stricter (Customer blocked).
+Admin list is a review queue with mutations and title links. Customer owns draft/upload. Vue is **read-only**: counts + a 10-row table with no links and no mutations. Same JWT; role filter is stricter (Customer blocked).
+
+Latest 10 uses API order (newest `Id` first), not `updatedAt`.
 
 ## Links
 
 - [README.md](README.md)
-- [Issue #36](https://github.com/SDS37/kyc-multi-frontend/issues/36) (KYC-080)
+- [Issue #37](https://github.com/SDS37/kyc-multi-frontend/issues/37) (KYC-081)
 - [Vue Style Guide](https://vuejs.org/style-guide/)
 - [roadmap time-control](../../docs/roadmap.md)

@@ -490,7 +490,7 @@ Follow official [vuejs.org](https://vuejs.org) ([Guide](https://vuejs.org/guide/
 
 ### Vue component tree
 
-**Living tree (required):** keep the current mermaid in [apps/vue-reports/README.md](../apps/vue-reports/README.md#component-tree-kyc-080) and update it when routes ship. System composition: [architecture.md §3](architecture.md#3-frontend-composition). Smart vs presentational rules: [Component tree (all frontends)](#component-tree-all-frontends).
+**Living tree (required):** keep the current mermaid in [apps/vue-reports/README.md](../apps/vue-reports/README.md#component-tree-kyc-081) and update it when routes ship. System composition: [architecture.md §3](architecture.md#3-frontend-composition). Smart vs presentational rules: [Component tree (all frontends)](#component-tree-all-frontends).
 
 | Node | Owns | Must not |
 |---|---|---|
@@ -554,5 +554,5 @@ Prefer **immutable** data so Vue’s reactivity stays predictable. Derived displ
 - [vuejs.org](https://vuejs.org)
 - Angular Architects (patterns only): [site](https://www.angulararchitects.io/en/), [blog](https://www.angulararchitects.io/en/blog/)
 - [ADR-004](architecture-decision-records.md) (Angular admin), [ADR-005](architecture-decision-records.md) (separate apps), [ADR-007](architecture-decision-records.md) (tenant in JWT)
-- Living trees: [angular-admin](../apps/angular-admin/README.md#component-tree), [react-customer](../apps/react-customer/README.md#component-tree-kyc-074), [vue-reports](../apps/vue-reports/README.md#component-tree-kyc-080)
+- Living trees: [angular-admin](../apps/angular-admin/README.md#component-tree), [react-customer](../apps/react-customer/README.md#component-tree-kyc-074), [vue-reports](../apps/vue-reports/README.md#component-tree-kyc-081)
 - Tokens package: [packages/design-tokens](../packages/design-tokens/)

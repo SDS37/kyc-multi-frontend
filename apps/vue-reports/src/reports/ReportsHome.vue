@@ -2,23 +2,128 @@
   <section :class="$style['page']" aria-labelledby="reports-heading">
     <h1 id="reports-heading" :class="$style['title']">{{ copy.pageTitle }}</h1>
     <p :class="$style['lede']">{{ copy.lede }}</p>
-    <p :class="$style['hint']" role="status">{{ copy.pendingHint }}</p>
+
+    <ReportsLoadError
+      v-if="loadError"
+      :message="loadError"
+      @retry="reload"
+    />
+
+    <div
+      v-else-if="loading"
+      :class="$style['loading']"
+      role="status"
+      aria-live="polite"
+    >
+      <span :class="$style['spinner']" :aria-label="copy.loadingAria" />
+      <span>{{ copy.loading }}</span>
+    </div>
+
+    <template v-else-if="overview">
+      <h2 id="counts-heading" :class="$style['sectionTitle']">
+        {{ copy.countsHeading }}
+      </h2>
+      <ReportsStatusCounts
+        :counts="overview.counts"
+        labelled-by="counts-heading"
+      />
+
+      <h2 id="latest-heading" :class="$style['sectionTitle']">
+        {{ copy.latestHeading }}
+      </h2>
+      <p :class="$style['hint']">{{ copy.latestHint }}</p>
+      <p
+        v-if="overview.latest.length > 0"
+        :class="$style['count']"
+      >
+        {{ latestCountLabel }}
+      </p>
+
+      <p
+        v-if="overview.latest.length === 0"
+        :class="$style['empty']"
+        role="status"
+      >
+        {{ copy.emptyLatest }}
+      </p>
+      <ReportsLatestTable
+        v-else
+        :items="overview.latest"
+        labelled-by="latest-heading"
+      />
+    </template>
   </section>
 </template>
 
 <script setup lang="ts">
-import { REPORTS_HOME_MESSAGES, type ReportsHomeMessages } from './reports.messages';
+import { computed, onMounted, onUnmounted, ref, type ComputedRef, type Ref } from 'vue';
+import ReportsLatestTable from './ReportsLatestTable.vue';
+import ReportsLoadError from './ReportsLoadError.vue';
+import ReportsStatusCounts from './ReportsStatusCounts.vue';
+import { loadReportsOverview } from './reports-api';
+import { toReportsLoadError } from './reports.mappers';
+import {
+  REPORTS_HOME_MESSAGES,
+  reportsLatestCountLabel,
+  type ReportsHomeMessages,
+} from './reports.messages';
+import type { ReportsOverview } from './reports.models';
 
 defineOptions({ name: 'ReportsHome' });
 
-/** Presentational reports landing (KYC-080). Counts/table are KYC-081. */
+/**
+ * Smart reports screen (KYC-081).
+ * Loads aliased `cases` counts + latest 10; leaves are presentational.
+ */
 const copy: ReportsHomeMessages = REPORTS_HOME_MESSAGES;
+const overview: Ref<ReportsOverview | null> = ref(null);
+const loading: Ref<boolean> = ref(true);
+const loadError: Ref<string | null> = ref(null);
+let loadSeq: number = 0;
+
+const latestCountLabel: ComputedRef<string> = computed((): string => {
+  const data: ReportsOverview | null = overview.value;
+  if (!data) {
+    return '';
+  }
+  return reportsLatestCountLabel(data.latest.length, data.latestTotalCount);
+});
+
+onMounted((): void => {
+  void reload();
+});
+
+onUnmounted((): void => {
+  loadSeq += 1;
+});
+
+async function reload(): Promise<void> {
+  const seq: number = loadSeq + 1;
+  loadSeq = seq;
+  loading.value = true;
+  loadError.value = null;
+  try {
+    const data: ReportsOverview = await loadReportsOverview();
+    if (loadSeq !== seq) {
+      return;
+    }
+    overview.value = data;
+    loading.value = false;
+  } catch (err: unknown) {
+    if (loadSeq !== seq) {
+      return;
+    }
+    overview.value = null;
+    loading.value = false;
+    loadError.value = toReportsLoadError(err).message;
+  }
+}
 </script>
 
 <style module>
 .page {
   box-sizing: border-box;
-  max-width: var(--kyc-content-max);
+  max-width: 64rem;
   margin: 0 auto;
   padding: var(--kyc-space-6) var(--kyc-page-gutter);
 }
@@ -32,19 +137,48 @@ const copy: ReportsHomeMessages = REPORTS_HOME_MESSAGES;
 }
 
 .lede {
-  margin: 0 0 var(--kyc-space-4);
+  margin: 0 0 var(--kyc-space-5);
   color: var(--kyc-color-text-muted);
   font-size: var(--kyc-text-sm);
 }
 
-.hint {
-  margin: 0;
-  padding: var(--kyc-space-4);
-  border: 1px dashed var(--kyc-color-border);
-  border-radius: var(--kyc-radius-md);
-  background: var(--kyc-color-surface-raised);
+.sectionTitle {
+  margin: 0 0 var(--kyc-space-3);
+  font-size: var(--kyc-text-md);
+  font-weight: 600;
+  color: var(--kyc-color-text);
+}
+
+.hint,
+.count {
+  margin: 0 0 var(--kyc-space-3);
   color: var(--kyc-color-text-muted);
   font-size: var(--kyc-text-sm);
+}
+
+.loading,
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--kyc-space-3);
+  margin: var(--kyc-space-4) 0;
+  color: var(--kyc-color-text-muted);
+  font-size: var(--kyc-text-sm);
+}
+
+.spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--kyc-color-border);
+  border-top-color: var(--kyc-color-brand);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {

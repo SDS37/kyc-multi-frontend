@@ -21,7 +21,7 @@ Date: 2026-08-24
 Status: Accepted
 
 ### Context
-The monorepo is intended to hold an Angular admin app, a React customer portal, a Vue reports app, a .NET GraphQL API, infrastructure, and documentation. This is a solo portfolio project. **Today:** Compose + a .NET GraphQL API (cases, documents, audit, JWT tenancy, local CORS); temporary REST identity + dedicated document upload/download; **Angular admin** (KYC-060–065), **React customer** (KYC-070–074), and **Vue reports** (KYC-080 foundation; overview table is KYC-081) are implemented.
+The monorepo is intended to hold an Angular admin app, a React customer portal, a Vue reports app, a .NET GraphQL API, infrastructure, and documentation. This is a solo portfolio project. **Today:** Compose + a .NET GraphQL API (cases, documents, audit, JWT tenancy, local CORS); temporary REST identity + dedicated document upload/download; **Angular admin** (KYC-060–065), **React customer** (KYC-070–074), and **Vue reports** (KYC-080–081: login, shell, status counts, latest-10) are implemented.
 
 ### Decision
 Keep all code in one repository: `kyc-multi-frontend`.

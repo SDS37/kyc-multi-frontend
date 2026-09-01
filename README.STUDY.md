@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** KYC-080 Vue reports foundation (login + shell). Next: KYC-081 overview table.
+**Aligned with:** KYC-081 Vue reports overview (counts + latest 10). Next: W6 seed + security hardening.
 
 Tracked in git so they render on GitHub. They are a tour, not a contract — ADRs and official READMEs win if anything disagrees. Update these files when the code or architecture moves; they can be deleted from the repo later.
 
@@ -36,7 +36,7 @@ Java analog: a multi-module Maven reactor where `apps/api`, `apps/angular-admin`
 ```mermaid
 sequenceDiagram
     participant You as You (host)
-    participant UI as Angular or React (browser)
+    participant UI as Angular, React, or Vue (browser)
     participant API as Kyc.Api (dotnet run)
     participant PG as Postgres (Compose)
     participant MN as MinIO (Compose)
@@ -58,13 +58,13 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 
 | Target ([architecture](docs/architecture.md), [ADRs](docs/architecture-decision-records.md)) | Today on `main` |
 |---|---|
-| Three UIs + GraphQL API | API is real; **Angular admin** (KYC-060–065), **React customer** (KYC-070–074), **Vue reports** (KYC-080 foundation; table is KYC-081) |
+| Three UIs + GraphQL API | API is real; **Angular admin** (KYC-060–065), **React customer** (KYC-070–074), **Vue reports** (KYC-080–081) |
 | Modular monolith (Identity, Cases, Documents, Audit) | **Layer folders** inside one .NET project; Documents use-cases exist |
 | CQRS + MediatR | Application **services** called from GraphQL / REST upload (MediatR is target only) |
 | GraphQL as the only public API | Cases are GraphQL; **upload/download are dedicated REST**; login/register still have temporary REST twins |
 | MinIO for KYC files | Compose + API `IObjectStorage` / MinIO (InMemory in tests) |
 
-**What you can say with confidence:** “Weeks 1–5 delivered the API plus Angular admin review and React customer create → fill → upload → submit. KYC-080 adds Vue login/shell on the same JWT contract. Vue case overview is KYC-081. Remaining security hardening is still Week 6.”
+**What you can say with confidence:** “Weeks 1–5 delivered the API plus Angular admin review and React customer create → fill → upload → submit. KYC-080–081 add Vue login/shell and a read-only status-count + latest-10 report on the same JWT contract. Remaining Week 6 work is seed data and security hardening.”
 
 ## Suggested reading order
 
