@@ -33,7 +33,7 @@ At the end of every week, answer:
 
 ### Time-control rules
 
-- If Module Federation is not working by **end of W5**, keep 3 separate apps. Do not block MVP.
+- MVP ships **3 separate apps** (ADR-005). W7 Module Federation is a spike only — if it is not stable by **end of W7**, keep separate apps. Do not treat MF as MVP scope.
 - If Vue is late, keep Reports as a **single read-only page**.
 - If document storage is slow, use local disk in dev and keep the same interface.
 - Do not add notifications, billing, OCR, or custom workflows.
