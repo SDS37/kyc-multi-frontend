@@ -1,6 +1,6 @@
 import {
   type ChangeEvent,
-  type FormEvent,
+  type SubmitEvent,
   type ReactElement,
   type RefObject,
   useRef,
@@ -48,7 +48,7 @@ export function LoginPage(): ReactElement {
     password,
   });
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+  async function onSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setFormError(null);
     setTouched(true);

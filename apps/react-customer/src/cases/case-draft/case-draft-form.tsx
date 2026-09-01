@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent, ReactElement } from 'react';
+import type { ChangeEvent, ReactElement, SubmitEvent } from 'react';
 import { Link } from 'react-router';
 import { UI_MESSAGES } from '../../shared/ui.messages';
 import {
@@ -28,7 +28,7 @@ export type CaseDraftFormProps = {
   readonly saving: boolean;
   readonly submitting: boolean;
   readonly onFieldChange: (field: keyof DraftFormModel, value: string) => void;
-  readonly onSave: (event: FormEvent<HTMLFormElement>) => void;
+  readonly onSave: (event: SubmitEvent<HTMLFormElement>) => void;
   readonly onSubmitCase: () => void;
 };
 

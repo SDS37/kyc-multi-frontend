@@ -1,6 +1,6 @@
 import {
-  type FormEvent,
   type ReactElement,
+  type SubmitEvent,
   type RefObject,
   useCallback,
   useEffect,
@@ -110,7 +110,7 @@ export function CaseList(): ReactElement {
     setCreateOpen(false);
   }, []);
 
-  async function onCreateSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+  async function onCreateSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setCreateTouched(true);
     setCreateError(null);

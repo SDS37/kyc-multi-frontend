@@ -1,6 +1,6 @@
 import {
-  type FormEvent,
   type ReactElement,
+  type SubmitEvent,
   type RefObject,
   useCallback,
   useEffect,
@@ -105,7 +105,7 @@ export function CaseDraft(): ReactElement {
     setActionError(null);
   }
 
-  async function onSave(event: FormEvent<HTMLFormElement>): Promise<void> {
+  async function onSave(event: SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (detail === null || !detail.canEdit || actionLock.current) {
       return;
@@ -218,7 +218,7 @@ export function CaseDraft(): ReactElement {
         saving={saving}
         submitting={submitting}
         onFieldChange={onFieldChange}
-        onSave={(event: FormEvent<HTMLFormElement>): void => {
+        onSave={(event: SubmitEvent<HTMLFormElement>): void => {
           void onSave(event);
         }}
         onSubmitCase={(): void => {

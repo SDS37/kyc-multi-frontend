@@ -1,7 +1,7 @@
 import {
   type ChangeEvent,
-  type FormEvent,
   type ReactElement,
+  type SubmitEvent,
   type RefObject,
   useEffect,
   useRef,
@@ -21,7 +21,7 @@ export type CreateDraftDialogProps = {
   readonly formError: string | null;
   readonly onTitleChange: (value: string) => void;
   readonly onClose: () => void;
-  readonly onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  readonly onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
 };
 
 /**
