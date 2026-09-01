@@ -27,9 +27,9 @@
       </div>
     </header>
 
-    <div id="main" :class="$style['content']" tabindex="-1">
+    <main id="main" :class="$style['content']" tabindex="-1">
       <RouterView />
-    </div>
+    </main>
   </div>
 </template>
 
@@ -80,6 +80,12 @@ const roleLabel: ComputedRef<string> = computed((): string => {
 onMounted((): void => {
   unsubscribe = onSessionCleared((): void => {
     session.value = null;
+    if (!route.path.startsWith('/login')) {
+      void router.replace({
+        path: '/login',
+        query: { returnUrl: route.fullPath },
+      });
+    }
   });
 });
 

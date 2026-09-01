@@ -23,7 +23,10 @@ export async function graphqlRequest<TData>(
     'Content-Type': 'application/json',
   });
 
-  if (!options.skipAuth && isConfiguredApiUrl(appConfig.graphqlUrl)) {
+  // Always POST to the configured GraphQL URL (not an arbitrary path). Attach
+  // Bearer unless skipAuth — do not require graphqlUrl to sit under apiBaseUrl
+  // (split GraphQL / REST hosts are a valid deployment).
+  if (!options.skipAuth) {
     const token: string | null = tokenStorage.getAccessToken();
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
@@ -131,7 +134,7 @@ function toGraphqlError(value: Record<string, unknown>): GraphqlError {
     typeof messageRaw === 'string' ? messageRaw : undefined;
 
   const extensionsRaw: unknown = value['extensions'];
-  let extensions: GraphqlError['extensions'];
+  let extensions: GraphqlError['extensions'] = undefined;
   if (isRecord(extensionsRaw)) {
     const codeRaw: unknown = extensionsRaw['code'];
     const code: string | undefined = typeof codeRaw === 'string' ? codeRaw : undefined;
