@@ -8,7 +8,7 @@
 | **W6** | Next | Vue Reports + Security + Seed | KYC-080, KYC-081, KYC-090 to KYC-101, KYC-093 (rate limits when leaving localhost), KYC-091 remainder (security headers / HSTS) | All 3 UIs usable, isolation tests green |
 | **W7** | Planned | Federation attempt, polish, docs | leftover + Module Federation spike | Public README and architecture complete |
 
-**W5 demoable now:** Customer signs in (React), creates a draft, fills FormData, uploads PDF/PNG/JPG (≤10 MB), and submits. Reviewer finishes the case in Angular (W4). Next product slice is Vue reports (W6).
+**W5 demoable now:** Customer signs in (React), creates a draft, fills FormData, uploads PDF/PNG/JPG (≤10 MB), and submits. Reviewer finishes the case in Angular (W4). Vue reports overview is KYC-081 (counts + latest 10). Remaining W6 is seed + security hardening.
 
 Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. **KYC-103** (readiness / EF retries / timeouts), **KYC-104** (structured logs / request id), **KYC-105** (GraphQL introspection/depth, EF command log level, MinIO pin), **KYC-106** (case NOT_FOUND / FormData caps / atomic status), **KYC-107** (login dummy verify / registerTenant retries), **KYC-108** (api-ci SHA pins + Postgres test slice), and **KYC-109** (login password cap, updateDraftCase DOMAIN-before-FormData, status docs) are on the API.
 

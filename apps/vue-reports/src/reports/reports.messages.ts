@@ -1,12 +1,53 @@
-/** Reports home chrome (KYC-080 placeholder; counts land in KYC-081). */
+import type { CaseStatus } from './reports.models';
+
+/** Case status labels (same copy as Angular / React). */
+export const CASE_STATUS_LABELS: Readonly<Record<CaseStatus, string>> = {
+  DRAFT: 'Draft',
+  SUBMITTED: 'Submitted',
+  IN_REVIEW: 'In review',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+};
+
+export function caseStatusLabel(status: CaseStatus): string {
+  return CASE_STATUS_LABELS[status];
+}
+
+export function unexpectedCaseStatusMessage(raw: string): string {
+  return `Unexpected case status "${raw}".`;
+}
+
+/** Reports home chrome (KYC-081). */
 export interface ReportsHomeMessages {
   readonly pageTitle: string;
   readonly lede: string;
-  readonly pendingHint: string;
+  readonly countsHeading: string;
+  readonly latestHeading: string;
+  readonly latestHint: string;
+  readonly loading: string;
+  readonly loadingAria: string;
+  readonly emptyLatest: string;
+  readonly columnTitle: string;
+  readonly columnCustomer: string;
+  readonly columnStatus: string;
+  readonly columnUpdated: string;
+  readonly listLoadFailed: string;
+  readonly listIncomplete: string;
 }
 
 export const REPORTS_HOME_MESSAGES: ReportsHomeMessages = {
   pageTitle: 'Reports',
   lede: 'Tenant-wide case overview for reviewers and tenant admins.',
-  pendingHint: 'Status counts and the latest cases will appear here in the next story.',
+  countsHeading: 'Cases by status',
+  latestHeading: 'Latest cases',
+  latestHint: 'Newest 10 cases in this tenant (same list order as the API).',
+  loading: 'Loading reports…',
+  loadingAria: 'Loading reports',
+  emptyLatest: 'No cases yet for this tenant.',
+  columnTitle: 'Title',
+  columnCustomer: 'Customer',
+  columnStatus: 'Status',
+  columnUpdated: 'Updated',
+  listLoadFailed: 'Unable to load reports. Try again.',
+  listIncomplete: 'Reports response was incomplete.',
 };

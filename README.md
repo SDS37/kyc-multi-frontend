@@ -44,10 +44,10 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | Angular Admin | Ready (KYC-060–065: login, shell, case list, review) |
 | React Customer | Ready (KYC-070–074: login, shell, my cases, draft form, document upload) |
 | React CI (`npm` build / test) | Ready (`react-ci`; Node from `.nvmrc`; SHA-pinned actions) |
-| Vue Reports | Ready (KYC-080: login, shell, placeholder home; overview table is KYC-081) |
+| Vue Reports | Ready (KYC-080–081: login, shell, status counts, latest-10 table) |
 | Vue CI (`npm` build / test) | Ready (`vue-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 
-**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). Week 6 adds Vue reports, seed data, and remaining security hardening — see the [roadmap](docs/roadmap.md).
+**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). Week 6 adds Vue reports (KYC-081 overview), seed data, and remaining security hardening — see the [roadmap](docs/roadmap.md).
 
 ## Target tech stack
 
@@ -68,7 +68,7 @@ kyc-multi-frontend/
 ├── apps/
 │   ├── angular-admin/     # Angular 22+ admin/reviewer (KYC-060–065)
 │   ├── react-customer/    # React 19+ customer portal (KYC-070–074)
-│   ├── vue-reports/       # Vue 3 reports portal (KYC-080 foundation)
+│   ├── vue-reports/       # Vue 3 reports portal (KYC-080–081)
 │   └── api/               # .NET API + tests (GraphQL + document REST)
 ├── packages/
 │   └── design-tokens/     # Shared CSS UX tokens (Angular / React / Vue)
