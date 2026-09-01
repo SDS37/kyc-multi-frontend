@@ -1,0 +1,53 @@
+# Build and test the Vue reports app on PRs and main.
+name: vue-ci
+
+on:
+  pull_request:
+    paths:
+      - "apps/vue-reports/**"
+      - "packages/design-tokens/**"
+      - ".github/workflows/vue-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/vue-reports/**"
+      - "packages/design-tokens/**"
+      - ".github/workflows/vue-ci.yml"
+
+concurrency:
+  group: vue-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/vue-reports
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: apps/vue-reports/.nvmrc
+          cache: npm
+          cache-dependency-path: apps/vue-reports/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test:ci

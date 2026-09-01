@@ -11,7 +11,7 @@ Shared visual and a11y baseline for **all** KYC frontends (`apps/angular-admin`,
 | Colors, spacing, type, radius, focus ring (`--kyc-*`) | Angular Material components into React/Vue |
 | Short a11y rules (WCAG / WAI-ARIA) | One mega UI kit across frameworks |
 
-Each app owns its UI toolkit (Material on Angular; CSS modules + tokens on React; later libraries on Vue) but **themes and spacing map to the same tokens**.
+Each app owns its UI toolkit (Material on Angular; CSS modules + tokens on React and Vue) but **themes and spacing map to the same tokens**.
 
 ## Package
 
@@ -61,7 +61,7 @@ Align on **WAI-ARIA** and **WCAG 2.2 AA** intent for MVP screens (login, case li
 |---|---|
 | Angular | Angular Material + CDK a11y; Angular ARIA APIs where helpful; semantic HTML first |
 | React | Native `aria-*` / roles; prefer `eslint-plugin-jsx-a11y` when tightening lint |
-| Vue | Native `aria-*` on templates; vue-eslint-plugin accessibility rules when scaffolded |
+| Vue | Native `aria-*` / roles on templates; prefer `eslint-plugin-vuejs-accessibility` when tightening lint |
 
 Guards and UI redirects are **UX**, not security (JWT still enforced by the API).
 

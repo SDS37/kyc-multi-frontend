@@ -27,7 +27,7 @@ Rules in this section apply to **Angular, React, and Vue**. Framework sections o
 | Auth | Store the access token after login; send `Authorization: Bearer <token>` on authenticated API calls; never put `tenant_id` / role in client-supplied request bodies for authorized ops (ADR-007) |
 | Config | GraphQL (and REST API) base URLs come from environment / build config — not hard-coded production hosts |
 | Design tokens | Shared `@kyc/design-tokens` CSS variables for color, spacing, type, focus — see [ux-design-tokens.md](ux-design-tokens.md). Map each app’s UI kit to tokens; do not fork palettes per app. Import `tokens.css` at app start |
-| UI kits | One kit per app, themed to tokens. Angular → Material. React → CSS modules + tokens (KYC-070+). Vue → choose a single kit (or CSS modules + tokens) in the foundation story — **do not** add Bootstrap as a second spacing/color system |
+| UI kits | One kit per app, themed to tokens. Angular → Material. React → CSS modules + tokens (KYC-070+). Vue → CSS modules + tokens (KYC-080+) — **do not** add Bootstrap as a second spacing/color system |
 | **Feature folders** | Organize by **feature area** (`auth/`, `cases/`, `shared/`, `config/`), not by type buckets (`components/`, `services/`, `hooks/` as top-level) |
 | **Models / mappers / messages** | `*.models.ts` (shapes), `*.mappers.ts` (pure transforms), `*.messages.ts` (UI copy), `*.service.ts` / `*Api.ts` (I/O only) — same convention in every UI app |
 | **Functional style** | Prefer FP **at every app level**, expressed as pure **functions**. Side effects only at I/O edges. See below |
@@ -39,7 +39,7 @@ Rules in this section apply to **Angular, React, and Vue**. Framework sections o
 | **UI copy** | No hard-coded user-facing English in views — use `*.messages.ts` catalogs. See [UI copy and localization](#ui-copy-and-localization) |
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
 | Commits | [Conventional Commits](commits.md) with scopes like `angular`, `react`, `vue`, `docs` |
-| CI | Path-filtered GitHub Actions per app (`angular-ci`, `react-ci`, later `vue-ci`): `npm ci`, build, `test:ci` |
+| CI | Path-filtered GitHub Actions per app (`angular-ci`, `react-ci`, `vue-ci`): `npm ci`, build, `test:ci` |
 
 Do not invent Tenant user-management UIs in W4–W6 — that API does not exist yet.
 
@@ -461,19 +461,89 @@ Prefer **immutable** props/state so React’s bail-out and future Compiler wins 
 - Put `fetch` inside presentational leaves
 - Scaffold with `strict: false` or disable `noUncheckedIndexedAccess` without an ADR-level reason
 
-## Vue (`apps/vue-reports`) — stub until KYC-080
+## Vue (`apps/vue-reports`)
 
-Apply the **Shared** section in full (Hard TypeScript, feature folders, mappers/messages, tokens, a11y, **component tree**, view-binding rules).
+Follow official [vuejs.org](https://vuejs.org) ([Guide](https://vuejs.org/guide/introduction.html), [Style Guide](https://vuejs.org/style-guide/), [TypeScript](https://vuejs.org/guide/typescript/overview.html), [Security](https://vuejs.org/guide/best-practices/security.html)). When in doubt, **prefer consistency with this file and vuejs.org**. Shared rules above still apply (Hard TypeScript, feature folders, mappers/messages, tokens, a11y, component tree).
 
-| Setting | Expectation at KYC-080 |
-|---|---|
-| Vue | **Latest stable** Vue 3.x |
-| Docs authority | [vuejs.org](https://vuejs.org) |
-| Scaffold | Vite + `vue-ts` (or current official equivalent) |
-| Tree | Document shell / screens in the **app README** (same ownership as Angular/React); follow shared smart / presentational rules |
-| Tokens | Import `@kyc/design-tokens/tokens.css` at app start |
+### Versions and scaffold
 
-Detailed Vue subsection lands with KYC-080 (mirror this React section’s depth).
+| Setting | Value | Do not |
+|---|---|---|
+| Vue | **Latest stable 3.x** (3.5+ at KYC-080 writing) | Vue 2, Options API as the default, Vue CLI |
+| Bundler | **Vite** + `@vitejs/plugin-vue` | Webpack / Vue CLI |
+| Language | TypeScript with the shared hard baseline; `vue-tsc` in CI (Vite does not type-check) | `strict: false`; relying on `tsc` alone for `.vue` files |
+| App entry | `src/main.ts` → `createApp(App).use(router).mount('#app')` | Mount Vue on a node that may contain untrusted HTML |
+| UI code | Under `src/` as SFCs + `*.ts` modules | Dump feature code at the app root |
+| Design tokens | Import `@kyc/design-tokens/tokens.css` in `src/styles.css` | Fork a second palette; add Bootstrap |
+| Dev origin | `http://localhost:5174` (API CORS already allows it) | Invent a port not on the API allow-list without updating CORS |
+| UI kit | CSS modules + tokens (same visual language as React customer) | A second component library in MVP |
+
+### Naming and structure
+
+- Feature folders: `auth/`, `reports/`, `config/`, `shared/`, `layout/` — same idea as Angular/React
+- **PascalCase** SFC filenames (`LoginPage.vue`, `ReportsShell.vue`) — [Style Guide Priority B](https://vuejs.org/style-guide/rules-strongly-recommended.html)
+- Multi-word component names via `defineOptions({ name: 'LoginPage' })` (root `App` is the documented exception)
+- `<script setup lang="ts">`; type-based props/emits when leaves grow (`defineProps<T>()` / `defineEmits<T>()`)
+- Explicit `ref<T>()` / `computed((): T => …)` — same Hard TypeScript local-annotation rule as React
+- `*.models.ts` / `*.mappers.ts` / `*.messages.ts` / `*Api.ts` — API modules do not own UI state
+- CSS modules: `<style module>` and `$style['name']` (or `useCssModule()`) so `noPropertyAccessFromIndexSignature` stays honest
+
+### Vue component tree
+
+**Living tree (required):** keep the current mermaid in [apps/vue-reports/README.md](../apps/vue-reports/README.md#component-tree-kyc-080) and update it when routes ship. System composition: [architecture.md §3](architecture.md#3-frontend-composition). Smart vs presentational rules: [Component tree (all frontends)](#component-tree-all-frontends).
+
+| Node | Owns | Must not |
+|---|---|---|
+| `App` | Root `<RouterView />` | Feature GraphQL calls |
+| Shell / layout | Nav chrome, skip-link, child `<RouterView />` | Parse GraphQL bodies |
+| Screen (smart) | Load/mutate via `*Api`, local UI state (`ref` / `computed`) | Duplicate token reads across leaves |
+| Presentational | Props in / emits out | `fetch`, token storage, feature API modules |
+
+Prefer **immutable** data so Vue’s reactivity stays predictable. Derived display lives in `computed`, not in template expressions ([Priority B — simple expressions](https://vuejs.org/style-guide/rules-strongly-recommended.html#simple-expressions-in-templates)).
+
+### Style Guide we enforce
+
+**Priority A (errors):** keyed `v-for`; never `v-if` + `v-for` on the same node (filter in `computed`); detailed/typed props; component-scoped styles (CSS modules).
+
+**Priority B (readability):** PascalCase SFCs in templates; directive shorthands consistently (`:` / `@`); multi-attribute elements on multiple lines; self-closing empty components.
+
+### Data, auth, and config
+
+- GraphQL: typed `fetch` wrapper `POST` to `import.meta.env` / config `graphqlUrl` — **no Apollo / Vue Apollo** for MVP
+- Attach `Authorization: Bearer <token>` in one place (`shared/http.ts`); skip auth for `login` / `registerTenant`
+- Token storage: dedicated module (`token-storage.ts`); MVP uses `sessionStorage`; do not scatter `sessionStorage.getItem` across features
+- Navigation guards **return a location or `false`** — do not use the deprecated `next()` callback ([Vue Router](https://router.vuejs.org/guide/advanced/navigation-guards.html))
+- Reports roles are **Reviewer / TenantAdmin**. Customer sessions must not enter this app (UX guard + login mapper). API still enforces JWT (ADR-007)
+
+### Composition API ([vuejs.org](https://vuejs.org/guide/extras/composition-api-faq.html))
+
+- Default authoring style: `<script setup lang="ts">`
+- `computed` for derived state; `watch` only to synchronize with **external** systems
+- Composables (`useX`) for reusable wiring — not a Pinia store until shared reports state actually hurts
+- Prefer Vue 3.5+ APIs already stable (`useCssModule`, `useTemplateRef` when a template ref is required); do not adopt experimental APIs for the portfolio MVP
+
+### Security ([vuejs.org security](https://vuejs.org/guide/best-practices/security.html))
+
+- Never `v-html` (or `innerHTML`) on user content — templates already escape text
+- Never concatenate untrusted strings into a component `template`
+- Sanitize `returnUrl` to in-app paths only (`/` but not `//`)
+- Guards are UX; never treat JWT parse in the browser as authorization
+
+### Testing and CI
+
+- Unit tests with Vitest + Vue Test Utils (mappers/HTTP stay plain TS like React)
+- `vue-ci`: `npm ci`, `npm run lint`, `npm run build` (`vue-tsc` + Vite), `npm run test:ci` on `apps/vue-reports/**`
+
+### What Vue must not do in MVP
+
+- Call MinIO or Postgres directly — only the .NET API
+- Trust client-supplied tenant id for authorization
+- Add Apollo / Pinia / Vuex “for scale” before a story needs caching or shared client state
+- Add Nuxt, Vue CLI, or Options API as the house style
+- Declare exported DTOs inside SFCs instead of `*.models.ts`
+- Hard-code English in templates — use `*.messages.ts`
+- Put `fetch` inside presentational leaves
+- Scaffold with `strict: false` or disable `noUncheckedIndexedAccess` without an ADR-level reason
 
 ## Links
 
@@ -484,5 +554,5 @@ Detailed Vue subsection lands with KYC-080 (mirror this React section’s depth)
 - [vuejs.org](https://vuejs.org)
 - Angular Architects (patterns only): [site](https://www.angulararchitects.io/en/), [blog](https://www.angulararchitects.io/en/blog/)
 - [ADR-004](architecture-decision-records.md) (Angular admin), [ADR-005](architecture-decision-records.md) (separate apps), [ADR-007](architecture-decision-records.md) (tenant in JWT)
-- Living trees: [angular-admin](../apps/angular-admin/README.md#component-tree), [react-customer](../apps/react-customer/README.md#component-tree-kyc-074), [vue-reports](../apps/vue-reports/README.md)
+- Living trees: [angular-admin](../apps/angular-admin/README.md#component-tree), [react-customer](../apps/react-customer/README.md#component-tree-kyc-074), [vue-reports](../apps/vue-reports/README.md#component-tree-kyc-080)
 - Tokens package: [packages/design-tokens](../packages/design-tokens/)

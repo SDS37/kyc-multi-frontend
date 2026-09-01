@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** KYC-060 (`angular-ci`) + KYC-070 (`react-ci`) on `main` (W4–W5).
+**Aligned with:** KYC-060 (`angular-ci`) + KYC-070 (`react-ci`) + KYC-080 (`vue-ci`).
 
 ## Purpose
 
-This folder is **automated proof on GitHub**, not local DX. Workflows answer: “Did this PR break the API, Angular admin, or React customer app?”
+This folder is **automated proof on GitHub**, not local DX. Workflows answer: “Did this PR break the API, Angular admin, React customer, or Vue reports app?”
 
 They do **not** deploy, do not run Compose from `infrastructure/`, and do not run Playwright/E2E yet.
 
@@ -19,10 +19,11 @@ GitHub Actions looks for YAML under `.github/workflows/`. Path filters mean a RE
 | `api-ci.yml` | On PR + push to `main` (path-filtered): restore, vuln list (warn), build, test (+ Postgres slice) |
 | `angular-ci.yml` | On PR + push to `main` (path-filtered): `npm ci`, `npm run build`, `npm run test:ci` |
 | `react-ci.yml` | On PR + push to `main` (path-filtered on `apps/react-customer` + design-tokens): same npm pipeline |
+| `vue-ci.yml` | On PR + push to `main` (path-filtered on `apps/vue-reports` + design-tokens): lint, `vue-tsc`/build, `test:ci` |
 
 ## UI CI analog
 
-`api-ci` ≈ `dotnet test` + real Postgres service. `angular-ci` / `react-ci` ≈ install → build → `test:ci` with Node from each app’s `.nvmrc`. SHA-pinned actions (`actions/checkout@11d59…`, `actions/setup-node@49933…`) match “pin your npm dependencies” — supply-chain hygiene (same idea as KYC-108). `permissions: contents: read` is least privilege so the job cannot push.
+`api-ci` ≈ `dotnet test` + real Postgres service. `angular-ci` / `react-ci` / `vue-ci` ≈ install → lint → build → `test:ci` with Node from each app’s `.nvmrc`. SHA-pinned actions (`actions/checkout@11d59…`, `actions/setup-node@49933…`) match “pin your npm dependencies” — supply-chain hygiene (same idea as KYC-108). `permissions: contents: read` is least privilege so the job cannot push.
 ## What each job does
 
 ```mermaid
@@ -49,13 +50,14 @@ flowchart TB
     T2 --> N --> CI --> B2 --> X2
   end
 
-  subgraph react [react-ci]
-    T3[Path filter apps/react-customer]
-    N3["setup-node from .nvmrc"]
-    CI3[npm ci]
-    B3[npm run build]
-    X3[npm run test:ci]
-    T3 --> N3 --> CI3 --> B3 --> X3
+  subgraph vue [vue-ci]
+    T4[Path filter apps/vue-reports]
+    N4["setup-node from .nvmrc"]
+    CI4[npm ci]
+    L4[npm run lint]
+    B4[npm run build]
+    X4[npm run test:ci]
+    T4 --> N4 --> CI4 --> L4 --> B4 --> X4
   end
 ```
 
@@ -77,7 +79,7 @@ Local `dotnet test` without Compose still proves SQLite isolation tests. CI adds
 
 ## Today vs target
 
-Vue CI when `apps/vue-reports` lands (KYC-080). Keep API isolation tests in `api-ci` — do not move tenant proof to e2e only.
+Vue CI (`vue-ci`) landed with KYC-080. Keep API isolation tests in `api-ci` — do not move tenant proof to e2e only.
 
 ## What to skip
 
@@ -88,7 +90,8 @@ Vue CI when `apps/vue-reports` lands (KYC-080). Keep API isolation tests in `api
 
 - [api-ci.yml](api-ci.yml)
 - [angular-ci.yml](angular-ci.yml)
-- [react-ci.yml](react-ci.yml)
+- [vue-ci.yml](vue-ci.yml)
+- [Vue reports README](../../apps/vue-reports/README.md)
 - [Tests STUDY](../../apps/api/Kyc.Api.Tests/README.STUDY.md)
 - [Angular admin README](../../apps/angular-admin/README.md)
 - [React customer README](../../apps/react-customer/README.md)
