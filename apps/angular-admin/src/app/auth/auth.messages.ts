@@ -19,6 +19,8 @@ export const LOGIN_MESSAGES = {
   passwordMaxLength: 'Password must be at most 128 characters.',
   signInFailed: 'Sign-in failed. Check your details and try again.',
   networkFailed: 'Unable to reach the sign-in service. Try again in a moment.',
+  wrongAppRole:
+    'This app is for reviewers and tenant admins. Use the customer portal to submit cases.',
 } as const;
 
 /** Shell role labels (display only). */

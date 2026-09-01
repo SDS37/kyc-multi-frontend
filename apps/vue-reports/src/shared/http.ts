@@ -23,10 +23,10 @@ export async function graphqlRequest<TData>(
     'Content-Type': 'application/json',
   });
 
-  // Always POST to the configured GraphQL URL (not an arbitrary path). Attach
-  // Bearer unless skipAuth — do not require graphqlUrl to sit under apiBaseUrl
-  // (split GraphQL / REST hosts are a valid deployment).
-  if (!options.skipAuth) {
+  // Attach Bearer only when graphqlUrl is under the configured API origin
+  // (Angular interceptor / React helper parity). Off-origin URLs must not
+  // receive the session JWT.
+  if (!options.skipAuth && isConfiguredApiUrl(appConfig.graphqlUrl)) {
     const token: string | null = tokenStorage.getAccessToken();
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);

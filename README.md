@@ -38,16 +38,16 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | GraphQL auth (deny by default) | Ready (KYC-021; login dummy verify — KYC-107; login password max 128 — KYC-109) |
 | GraphQL role authorization | Ready (KYC-022; Customer + Reviewer/TenantAdmin case mutations) |
 | Case mutation hardening | Ready (KYC-106; non-owner → `NOT_FOUND`; FormData 64 KiB / depth 8) |
-| CORS (local UIs) | Ready (KYC-091 W4 slice: `localhost:4200`, `localhost:5173`) |
+| CORS (local UIs) | Ready (KYC-091 W4 slice: `localhost:4200`, `localhost:5173`, `localhost:5174`) |
 | Angular Admin foundation | Ready (KYC-060: Angular 22+, routing, GraphQL env, auth interceptor) |
-| Shared UX design tokens | Ready (`packages/design-tokens`; Angular + React) |
+| Shared UX design tokens | Ready (`packages/design-tokens`; Angular + React + Vue) |
 | Angular Admin | Ready (KYC-060–065: login, shell, case list, review) |
 | React Customer | Ready (KYC-070–074: login, shell, my cases, draft form, document upload) |
 | React CI (`npm` build / test) | Ready (`react-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 | Vue Reports | Ready (KYC-080–081: login, shell, status counts, latest-10 table) |
 | Vue CI (`npm` build / test) | Ready (`vue-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 
-**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). Week 6 adds Vue reports (KYC-081 overview), seed data, and remaining security hardening — see the [roadmap](docs/roadmap.md).
+**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6 is seed data and security hardening — see the [roadmap](docs/roadmap.md).
 
 ## Target tech stack
 

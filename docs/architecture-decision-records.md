@@ -79,6 +79,8 @@ The domain has clear modules: Identity, Cases, Documents and Audit. The project 
 ### Decision
 Build one .NET deployable with internal modules and clear boundaries. Use CQRS inside the application layer. Do not split into microservices for MVP.
 
+**Today:** command/query **application services** (`*Service` classes). MediatR / domain events remain the target — see [dotnet-code-standards.md](dotnet-code-standards.md).
+
 ### Alternatives
 - Microservices from day one
 - Classic single-layer MVC / single project

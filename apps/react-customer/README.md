@@ -25,7 +25,7 @@ App: `http://localhost:5173` → `/login` (guests) or `/cases` (signed in)
 `registerTenant` creates **TenantAdmin**. Sign in works for any role; **`createDraftCase` / draft edit / submit / document upload require Customer**.
 
 ```json
-{ "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1", "tenantName": "Acme" }
+{ "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1234", "tenantName": "Acme" }
 ```
 
 Provision a Customer user in the DB for create-draft E2E (no public signup yet).

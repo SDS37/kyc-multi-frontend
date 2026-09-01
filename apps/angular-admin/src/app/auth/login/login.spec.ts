@@ -9,6 +9,26 @@ import { Login } from './login';
 
 const graphqlUrl: string = 'http://localhost:5295/graphql';
 
+function testAccessToken(role: string = 'Reviewer'): string {
+  const header: string = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+  const payload: string = btoa(
+    JSON.stringify({
+      sub: '00000000-0000-0000-0000-000000000001',
+      tenant_id: '00000000-0000-0000-0000-000000000002',
+      role,
+      email: 'reviewer@acme.test',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }),
+  )
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+  return `${header}.${payload}.sig`;
+}
+
 describe('Login', () => {
   let fixture: ComponentFixture<Login>;
   let httpTesting: HttpTestingController;
@@ -75,6 +95,7 @@ describe('Login', () => {
   });
 
   it('stores the token and navigates to /cases on success', (): void => {
+    const accessToken: string = testAccessToken();
     const navigateSpy: MockInstance = vi
       .spyOn(router, 'navigateByUrl')
       .mockResolvedValue(true);
@@ -89,14 +110,14 @@ describe('Login', () => {
     httpTesting.expectOne(graphqlUrl).flush({
       data: {
         login: {
-          accessToken: 'jwt-from-api',
+          accessToken,
           tokenType: 'Bearer',
           expiresInSeconds: 3600,
         },
       },
     });
 
-    expect(tokens.getAccessToken()).toBe('jwt-from-api');
+    expect(tokens.getAccessToken()).toBe(accessToken);
     expect(navigateSpy).toHaveBeenCalledWith('/cases');
     fixture.detectChanges();
     const submitButton: HTMLButtonElement | null = fixture.nativeElement.querySelector(

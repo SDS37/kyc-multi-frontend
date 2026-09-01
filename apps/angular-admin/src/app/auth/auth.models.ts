@@ -29,6 +29,13 @@ export function isAppRole(value: string): value is AppRole {
   return (APP_ROLES as readonly string[]).includes(value);
 }
 
+/** Roles allowed into the admin app (KYC-061). Customer uses React. */
+export const ADMIN_ROLES: readonly AppRole[] = ['Reviewer', 'TenantAdmin'];
+
+export function isAdminRole(role: AppRole): boolean {
+  return ADMIN_ROLES.includes(role);
+}
+
 /** Display-only claims from the access token (never trust for authorization). */
 export interface AccessTokenClaims {
   subject: string;

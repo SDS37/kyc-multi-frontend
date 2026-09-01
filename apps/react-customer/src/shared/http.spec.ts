@@ -54,6 +54,21 @@ describe('graphqlRequest', () => {
     expect(tokenStorage.getAccessToken()).toBeNull();
     expect(tokenStorage.getTenantSlug()).toBeNull();
   });
+
+  it('clears the session on GraphQL AUTH_NOT_AUTHENTICATED', async (): Promise<void> => {
+    tokenStorage.setSession('secret-jwt', 'acme');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        errors: [{ message: 'Expired.', extensions: { code: 'AUTH_NOT_AUTHENTICATED' } }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await graphqlRequest('{ apiStatus }');
+    expect(tokenStorage.getAccessToken()).toBeNull();
+  });
 });
 
 describe('apiFetch', () => {

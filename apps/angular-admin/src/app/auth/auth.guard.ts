@@ -1,11 +1,8 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, GuardResult, MaybeAsync, Router } from '@angular/router';
 import { toShellSession } from './auth.mappers';
-import { AppRole, ShellSession } from './auth.models';
+import { ShellSession, isAdminRole } from './auth.models';
 import { TokenStorage } from './token-storage';
-
-/** Admin portal personas (Customer uses react-customer). */
-const ADMIN_ROLES: readonly AppRole[] = ['Reviewer', 'TenantAdmin'];
 
 /**
  * UX gate for authenticated admin routes.
@@ -48,7 +45,7 @@ function readValidAdminSession(tokens: TokenStorage): ShellSession | null {
     tokens.clearSession();
     return null;
   }
-  if (!ADMIN_ROLES.includes(session.role)) {
+  if (!isAdminRole(session.role)) {
     tokens.clearSession();
     return null;
   }

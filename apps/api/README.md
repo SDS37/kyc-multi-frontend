@@ -6,7 +6,7 @@ New to .NET? Read [the frontend-oriented guide](../../docs/guides/dotnet-api-for
 
 `Tenant`, `User`, `Case`, `Document`, and `AuditEntry` are persisted via EF Core. Hot Chocolate serves `/graphql` (IDE in Development only). `/health` is available. GraphQL is **deny by default** (JWT): only `login` and `registerTenant` mutations are anonymous (KYC-021). Customers create/update/submit with `createDraftCase` / `updateDraftCase` / `submitCase` (KYC-031–033); Reviewer/TenantAdmin start review with `startCaseReview` (KYC-034) and finish with `approveCase` / `rejectCase` (KYC-035). Authenticated users list with `cases` (KYC-036; items include `customerEmail` for the KYC-062 column), open detail with `case` (KYC-037; same `customerEmail`), and list document metadata with `documents(caseId)` (KYC-041). Customers upload files with REST `POST /api/cases/{caseId}/documents` (KYC-040); authorized callers download with `GET /api/cases/{caseId}/documents/{documentId}` (KYC-042; private MinIO via `ObjectStorage`; metadata on case detail and `documents`). Key case/document writes append `audit_entries` (KYC-050; no update/delete API). Reviewer/TenantAdmin read case history with GraphQL `caseAuditEntries(caseId)` (KYC-051; newest first). Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the same anonymous allow-list. Login returns a short-lived JWT (`sub`, `tenant_id`, `role`, `email`). Tenant-owned entities implement `ITenantScoped` and are filtered by the JWT tenant (fail closed when unauthenticated; login uses `IgnoreQueryFilters`) (KYC-014).
 
-Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets. Browser apps on `http://localhost:4200` (Angular), `http://localhost:5173` (React), and `http://localhost:5174` (Vue) are on the CORS allow-list (`Cors:AllowedOrigins`). Security headers / HSTS are still W6.
+Local Development listens on **HTTP** (`http://localhost:5295`). That is acceptable for documented Compose credentials only — do not use plain HTTP for real secrets. Browser apps on `http://localhost:4200` (Angular), `http://localhost:5173` (React), and `http://localhost:5174` (Vue) are on the CORS allow-list (`Cors:AllowedOrigins`). Basic security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are on; HSTS is enabled outside Development. Remaining KYC-091 work (CSP, HTTPS redirect, preview origins) stays W6.
 
 ## Prerequisites
 
@@ -100,7 +100,7 @@ Register example:
   "tenantName": "Acme Compliance",
   "tenantSlug": "acme",
   "adminEmail": "admin@acme.example",
-  "adminPassword": "ChangeMe1"
+  "adminPassword": "ChangeMe1234"
 }
 ```
 
@@ -110,7 +110,7 @@ Login example:
 {
   "tenantSlug": "acme",
   "email": "admin@acme.example",
-  "password": "ChangeMe1"
+  "password": "ChangeMe1234"
 }
 ```
 
@@ -124,7 +124,7 @@ mutation {
     tenantName: "Acme Compliance"
     tenantSlug: "acme"
     adminEmail: "admin@acme.example"
-    adminPassword: "ChangeMe1"
+    adminPassword: "ChangeMe1234"
   }) { tenantSlug }
 }
 
@@ -132,7 +132,7 @@ mutation {
   login(input: {
     tenantSlug: "acme"
     email: "admin@acme.example"
-    password: "ChangeMe1"
+    password: "ChangeMe1234"
   }) { accessToken tokenType expiresInSeconds }
 }
 
@@ -235,7 +235,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-004 | `dotnet build` / `dotnet run`; OpenAPI at `http://localhost:5295/openapi/v1.json`; ConnectionStrings/Jwt secrets not committed |
 | KYC-010 | `tenants` table with unique `Slug`; entity has Id, Name, Slug, IsActive, CreatedAt |
 | KYC-011 | `users` with Role TenantAdmin/Reviewer/Customer; FK to one tenant; unique `(TenantId, Email)` |
-| KYC-012 | `POST /api/register-tenant` creates Tenant + TenantAdmin in one transaction; password hashed (8–128 chars); validation errors return 400; no JWT required |
+| KYC-012 | `POST /api/register-tenant` creates Tenant + TenantAdmin in one transaction; password hashed (min 12 chars, upper + lower + digit, max 128); validation errors return 400; no JWT required |
 | KYC-013 | `POST /api/login` with tenant slug + email + password; JWT claims `sub`, `tenant_id`, `role`, `email`; generic 401 on bad credentials; inactive tenant cannot log in |
 | KYC-014 | `ICurrentTenant` from JWT `tenant_id`; EF global filter on `ITenantScoped` (fail closed without tenant); `dotnet test` proves tenant A cannot read tenant B users |
 | KYC-020 | `/graphql` (Hot Chocolate); GraphQL IDE in Development only; `GET /health` |
@@ -260,8 +260,8 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-105 | Introspection + SDL Development-only; execution depth 10; EF `Database.Command` Warning in `appsettings.json`; MinIO image pinned |
 | KYC-106 | Non-owner update/submit → `NOT_FOUND`; FormData 64 KiB / depth 8; atomic submit and start-review status updates |
 | KYC-107 | Login dummy password verify on miss paths; `registerTenant` uses EF execution strategy |
-| KYC-108 | `api-ci` SHA-pinned actions, `contents: read`, vuln list (warn), thin Postgres migrate + jsonb tests |
+| KYC-108 | `api-ci` SHA-pinned actions, `contents: read`, `dotnet list --vulnerable` (fails CI on findings), thin Postgres migrate + jsonb tests |
 | KYC-109 | Login password max 128; `updateDraftCase` DOMAIN before FormData; status docs for 105–108 |
-| KYC-091 | CORS allow-list `http://localhost:4200` and `http://localhost:5173` (`Cors:AllowedOrigins`); preflight on GraphQL and document REST |
+| KYC-091 | CORS allow-list `http://localhost:4200`, `http://localhost:5173`, and `http://localhost:5174` (`Cors:AllowedOrigins`); preflight on GraphQL and document REST |
 
 Auth rate limits: REST login/register use policy `auth` (30/min/IP); GraphQL uses policy `graphql` (120/min Development, 60/min otherwise). Forwarded headers trusted in Development for client IP. Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are on; HSTS outside Development. Local HTTP is for Development only.

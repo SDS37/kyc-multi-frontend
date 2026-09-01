@@ -33,7 +33,7 @@ PRs that touch `apps/vue-reports` (or `.github/workflows/vue-ci.yml`) run GitHub
 `registerTenant` creates **TenantAdmin** — that role can sign in here. Reviewer users also work. **Customer sessions are rejected** (use the React portal).
 
 ```json
-{ "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1", "tenantName": "Acme" }
+{ "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1234", "tenantName": "Acme" }
 ```
 
 ## Security notes
@@ -56,6 +56,7 @@ flowchart TB
   App --> Login["/login LoginPage"]
   App --> Shell["ReportsShell"]
   Shell --> Home["/reports ReportsHome"]
+  Home --> Loading["loading status"]
   Home --> Counts["ReportsStatusCounts"]
   Home --> Table["ReportsLatestTable"]
   Home --> LoadErr["ReportsLoadError"]

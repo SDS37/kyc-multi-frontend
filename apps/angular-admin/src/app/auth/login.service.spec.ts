@@ -7,12 +7,33 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { APP_CONFIG } from '../config/app-config';
 import { authInterceptor } from './auth.interceptor';
+import { LOGIN_MESSAGES } from './auth.messages';
 import { LoginFailedError, LoginSuccess } from './auth.models';
 import { LoginService } from './login.service';
 import { TokenStorage } from './token-storage';
 
 const apiBaseUrl: string = 'http://localhost:5295';
 const graphqlUrl: string = `${apiBaseUrl}/graphql`;
+
+function testAccessToken(role: string = 'TenantAdmin'): string {
+  const header: string = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+  const payload: string = btoa(
+    JSON.stringify({
+      sub: '00000000-0000-0000-0000-000000000001',
+      tenant_id: '00000000-0000-0000-0000-000000000002',
+      role,
+      email: 'admin@acme.example',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }),
+  )
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+  return `${header}.${payload}.sig`;
+}
 
 describe('LoginService', () => {
   let service: LoginService;
@@ -42,6 +63,7 @@ describe('LoginService', () => {
   });
 
   it('posts GraphQL login without Authorization and stores the access token', (): void => {
+    const adminToken: string = testAccessToken('Reviewer');
     let succeeded: boolean = false;
     service
       .login({
@@ -51,7 +73,7 @@ describe('LoginService', () => {
       })
       .subscribe({
         next: (result: LoginSuccess): void => {
-          expect(result.accessToken).toBe('jwt-token');
+          expect(result.accessToken).toBe(adminToken);
           succeeded = true;
         },
       });
@@ -68,7 +90,7 @@ describe('LoginService', () => {
     req.flush({
       data: {
         login: {
-          accessToken: 'jwt-token',
+          accessToken: adminToken,
           tokenType: 'Bearer',
           expiresInSeconds: 3600,
         },
@@ -76,8 +98,34 @@ describe('LoginService', () => {
     });
 
     expect(succeeded).toBe(true);
-    expect(tokens.getAccessToken()).toBe('jwt-token');
+    expect(tokens.getAccessToken()).toBe(adminToken);
     expect(tokens.getTenantSlug()).toBe('Acme');
+  });
+
+  it('rejects Customer tokens without storing a session', (): void => {
+    const customerToken: string = testAccessToken('Customer');
+    let error: unknown;
+    service
+      .login({ tenantSlug: 'acme', email: 'c@acme.example', password: 'secret' })
+      .subscribe({
+        error: (err: unknown): void => {
+          error = err;
+        },
+      });
+
+    httpTesting.expectOne(graphqlUrl).flush({
+      data: {
+        login: {
+          accessToken: customerToken,
+          tokenType: 'Bearer',
+          expiresInSeconds: 3600,
+        },
+      },
+    });
+
+    expect(error).toBeInstanceOf(LoginFailedError);
+    expect((error as LoginFailedError).message).toBe(LOGIN_MESSAGES.wrongAppRole);
+    expect(tokens.getAccessToken()).toBeNull();
   });
 
   it('maps GraphQL AUTH_FAILED to LoginFailedError without storing a token', (): void => {

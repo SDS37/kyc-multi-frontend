@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { tokenStorage } from '../auth/token-storage';
-import { apiFetch, graphqlRequest } from './http';
+import { apiFetch, graphqlRequest, isConfiguredApiUrl } from './http';
 
 describe('graphqlRequest', () => {
   afterEach((): void => {
@@ -85,6 +85,13 @@ describe('graphqlRequest', () => {
     const parsed: Awaited<ReturnType<typeof graphqlRequest>> = await graphqlRequest('{ apiStatus }');
     expect(parsed.errors?.[0]?.message).toBe('boom');
     expect(parsed.errors?.[0]?.extensions).toBeUndefined();
+  });
+});
+
+describe('isConfiguredApiUrl', () => {
+  it('accepts the local API origin and rejects a foreign GraphQL host', (): void => {
+    expect(isConfiguredApiUrl('http://localhost:5295/graphql')).toBe(true);
+    expect(isConfiguredApiUrl('https://evil.example/graphql')).toBe(false);
   });
 });
 

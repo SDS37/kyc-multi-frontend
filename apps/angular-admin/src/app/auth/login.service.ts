@@ -6,12 +6,16 @@ import {
   normalizeLoginCredentials,
   parseLoginSuccess,
   toLoginFailedError,
+  toShellSession,
 } from './auth.mappers';
+import { LOGIN_MESSAGES } from './auth.messages';
 import {
   GraphqlLoginBody,
   LoginCredentials,
   LoginFailedError,
   LoginSuccess,
+  ShellSession,
+  isAdminRole,
 } from './auth.models';
 import { SKIP_AUTH } from './skip-auth';
 import { TokenStorage } from './token-storage';
@@ -49,7 +53,17 @@ export class LoginService {
         { context: new HttpContext().set(SKIP_AUTH, true) },
       )
       .pipe(
-        map((body: GraphqlLoginBody): LoginSuccess => parseLoginSuccess(body)),
+        map((body: GraphqlLoginBody): LoginSuccess => {
+          const login: LoginSuccess = parseLoginSuccess(body);
+          const session: ShellSession | null = toShellSession(
+            login.accessToken,
+            input.tenantSlug,
+          );
+          if (session === null || !isAdminRole(session.role)) {
+            throw new LoginFailedError(LOGIN_MESSAGES.wrongAppRole, 'AUTH_NOT_AUTHORIZED');
+          }
+          return login;
+        }),
         tap((login: LoginSuccess): void => {
           this.tokens.setSession(login.accessToken, input.tenantSlug);
         }),
