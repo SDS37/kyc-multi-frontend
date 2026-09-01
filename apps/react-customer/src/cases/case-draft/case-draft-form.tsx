@@ -1,6 +1,7 @@
 import type { ChangeEvent, ReactElement, SubmitEvent } from 'react';
 import { Link } from 'react-router';
 import { UI_MESSAGES } from '../../shared/ui.messages';
+import { CaseDocumentsPane } from '../case-documents-pane/case-documents-pane';
 import {
   CASE_FORM_FIELD_LABELS,
   CASES_DRAFT_MESSAGES,
@@ -11,6 +12,7 @@ import {
 import {
   CASE_FORM_FIELD_KEYS,
   CREATE_DRAFT_TITLE_MAX_LENGTH,
+  type CaseDocument,
   type CaseDraftDetail,
   type CaseFormFieldKey,
   type DraftFormFieldErrors,
@@ -27,9 +29,14 @@ export type CaseDraftFormProps = {
   readonly successMessage: string | null;
   readonly saving: boolean;
   readonly submitting: boolean;
+  readonly documents: readonly CaseDocument[];
+  readonly uploading: boolean;
+  readonly uploadError: string | null;
+  readonly uploadDisabled: boolean;
   readonly onFieldChange: (field: keyof DraftFormModel, value: string) => void;
   readonly onSave: (event: SubmitEvent<HTMLFormElement>) => void;
   readonly onSubmitCase: () => void;
+  readonly onFileSelected: (file: File) => void;
 };
 
 /**
@@ -198,6 +205,15 @@ export function CaseDraftForm(props: CaseDraftFormProps): ReactElement {
           </button>
         </div>
       </form>
+
+      <CaseDocumentsPane
+        documents={props.documents}
+        canUpload={props.detail.canUpload}
+        uploading={props.uploading}
+        uploadDisabled={props.uploadDisabled}
+        uploadError={props.uploadError}
+        onFileSelected={props.onFileSelected}
+      />
     </section>
   );
 }
@@ -205,6 +221,11 @@ export function CaseDraftForm(props: CaseDraftFormProps): ReactElement {
 export type CaseDraftReadonlyProps = {
   readonly detail: CaseDraftDetail;
   readonly successMessage?: string | null;
+  readonly documents: readonly CaseDocument[];
+  readonly uploading: boolean;
+  readonly uploadError: string | null;
+  readonly uploadDisabled: boolean;
+  readonly onFileSelected: (file: File) => void;
 };
 
 /** Presentational read-only view when the case is no longer a draft. */
@@ -271,6 +292,15 @@ export function CaseDraftReadonly(props: CaseDraftReadonlyProps): ReactElement {
           </dd>
         </div>
       </dl>
+
+      <CaseDocumentsPane
+        documents={props.documents}
+        canUpload={props.detail.canUpload}
+        uploading={props.uploading}
+        uploadDisabled={props.uploadDisabled}
+        uploadError={props.uploadError}
+        onFileSelected={props.onFileSelected}
+      />
     </section>
   );
 }

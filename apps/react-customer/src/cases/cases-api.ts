@@ -1,4 +1,4 @@
-import { graphqlRequest } from '../shared/http';
+import { apiFetch, graphqlRequest } from '../shared/http';
 import {
   draftFormToFormDataJson,
   parseCaseDraftDetail,
@@ -6,25 +6,34 @@ import {
   parseCreatedDraft,
   parseSubmittedCase,
   parseUpdatedDraft,
+  parseUploadedDocument,
   toCaseDetailLoadError,
   toCasesLoadError,
   toCreateDraftError,
   toCreateDraftVariables,
+  toDocumentUploadError,
+  toDocumentUploadPath,
+  toDocumentUploadTransportError,
   toDraftActionError,
   toListCasesVariables,
   toSubmitCaseVariables,
   toUpdateDraftVariables,
+  validateDocumentFile,
 } from './cases.mappers';
 import type {
+  CaseDocument,
   CaseDraftDetail,
   CaseListPage,
   CreateDraftCaseInput,
   CreatedDraftCase,
   DraftFormModel,
+  GraphqlDocumentWire,
   ListCasesParams,
   SubmitCaseInput,
   UpdateDraftCaseInput,
 } from './cases.models';
+import { DocumentUploadError } from './cases.models';
+import { CASES_DRAFT_MESSAGES } from './cases.messages';
 
 const LIST_CASES_QUERY: string = `
   query Cases($status: CaseStatus, $skip: Int, $take: Int) {
@@ -64,6 +73,14 @@ const CASE_DETAIL_QUERY: string = `
         updatedAt
         submittedAt
       }
+      documents {
+        id
+        fileName
+        contentType
+        sizeBytes
+        uploadedAt
+        uploadedBy
+      }
     }
   }
 `;
@@ -93,7 +110,7 @@ const SUBMIT_CASE_MUTATION: string = `
 `;
 
 /**
- * Authenticated cases GraphQL (KYC-072 / KYC-073).
+ * Authenticated cases GraphQL + REST document upload (KYC-072–074).
  * Never use skipAuth — JWT ownership is enforced by the API.
  */
 export async function listCases(params: ListCasesParams = {}): Promise<CaseListPage> {
@@ -141,7 +158,7 @@ export async function createDraftCase(
   }
 }
 
-/** Load case detail for the draft editor. */
+/** Load case detail for the draft editor (includes document metadata). */
 export async function getCaseDetail(caseId: string): Promise<CaseDraftDetail> {
   try {
     const body = await graphqlRequest<{
@@ -154,6 +171,7 @@ export async function getCaseDetail(caseId: string): Promise<CaseDraftDetail> {
           updatedAt?: string;
           submittedAt?: string | null;
         } | null;
+        documents?: Array<GraphqlDocumentWire | null> | null;
       } | null;
     }>(CASE_DETAIL_QUERY, { id: caseId });
     return parseCaseDraftDetail(body);
@@ -162,10 +180,11 @@ export async function getCaseDetail(caseId: string): Promise<CaseDraftDetail> {
   }
 }
 
-/** Persist title + FormData on a draft. */
+/** Persist title + FormData on a draft (preserves prior documents). */
 export async function updateDraftCase(
   caseId: string,
   form: DraftFormModel,
+  previous: CaseDraftDetail,
 ): Promise<CaseDraftDetail> {
   const input: UpdateDraftCaseInput = {
     id: caseId,
@@ -184,7 +203,7 @@ export async function updateDraftCase(
         submittedAt?: string | null;
       } | null;
     }>(UPDATE_DRAFT_MUTATION, variables);
-    return parseUpdatedDraft(body);
+    return parseUpdatedDraft(body, previous);
   } catch (err: unknown) {
     throw toDraftActionError(err, 'save');
   }
@@ -209,5 +228,41 @@ export async function submitCase(
     return parseSubmittedCase(body, previous);
   } catch (err: unknown) {
     throw toDraftActionError(err, 'submit');
+  }
+}
+
+/**
+ * Customer upload via REST multipart (KYC-074 / ADR-002).
+ * Field name must be `file`. Do not set Content-Type manually.
+ */
+export async function uploadDocument(
+  caseId: string,
+  file: File,
+): Promise<CaseDocument> {
+  const clientError: string | null = validateDocumentFile(file);
+  if (clientError !== null) {
+    throw new DocumentUploadError(clientError, 'VALIDATION');
+  }
+
+  const body: FormData = new FormData();
+  body.append('file', file);
+
+  try {
+    const response: Response = await apiFetch(toDocumentUploadPath(caseId), {
+      method: 'POST',
+      body,
+    });
+    if (!response.ok) {
+      throw await toDocumentUploadError(response);
+    }
+    let raw: unknown;
+    try {
+      raw = await response.json();
+    } catch {
+      throw new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadIncomplete, 'INCOMPLETE');
+    }
+    return parseUploadedDocument(raw);
+  } catch (err: unknown) {
+    throw toDocumentUploadTransportError(err);
   }
 }

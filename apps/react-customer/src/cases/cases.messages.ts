@@ -126,6 +126,22 @@ export interface CasesDraftMessages {
   readonly updatedLabel: string;
   readonly submittedLabel: string;
   readonly readonlyNotice: string;
+  readonly docsHeading: string;
+  readonly docsEmpty: string;
+  readonly docsUploadLabel: string;
+  readonly docsUploading: string;
+  readonly docsAcceptHint: string;
+  readonly docsTypeRejected: string;
+  readonly docsSizeRejected: string;
+  readonly docsEmptyFile: string;
+  readonly docsUploadFailed: string;
+  readonly docsUploadIncomplete: string;
+  readonly docsUploadNetworkFailed: string;
+  readonly docsUploadDomain: string;
+  readonly docsUploadUnauthorized: string;
+  readonly docsUploadNotFound: string;
+  readonly docsUploadStorage: string;
+  readonly docsIncomplete: string;
 }
 
 export const CASES_DRAFT_MESSAGES: CasesDraftMessages = {
@@ -163,6 +179,22 @@ export const CASES_DRAFT_MESSAGES: CasesDraftMessages = {
   updatedLabel: 'Updated',
   submittedLabel: 'Submitted',
   readonlyNotice: 'Editing is only available while the case is a draft.',
+  docsHeading: 'Documents',
+  docsEmpty: 'No documents uploaded.',
+  docsUploadLabel: 'Upload file',
+  docsUploading: 'Uploading…',
+  docsAcceptHint: 'PDF, PNG, or JPG up to 10 MB.',
+  docsTypeRejected: 'File type must be PDF, PNG, or JPG.',
+  docsSizeRejected: 'File must be at most 10 MB.',
+  docsEmptyFile: 'A non-empty file is required.',
+  docsUploadFailed: 'Unable to upload the document. Try again.',
+  docsUploadIncomplete: 'Upload response was incomplete.',
+  docsUploadNetworkFailed: 'Unable to reach the documents service. Try again in a moment.',
+  docsUploadDomain: 'Documents can only be uploaded to draft or submitted cases.',
+  docsUploadUnauthorized: 'Your account cannot upload documents.',
+  docsUploadNotFound: 'Case was not found.',
+  docsUploadStorage: 'Could not store the document. Please try again.',
+  docsIncomplete: 'Document list response was incomplete.',
 };
 
 /** Pure: required-field message for a FormData key (API-shaped). */
