@@ -70,17 +70,12 @@ const overview: Ref<ReportsOverview | null> = ref(null);
 const loading: Ref<boolean> = ref(true);
 const loadError: Ref<string | null> = ref(null);
 let loadSeq: number = 0;
-let reloadLock: boolean = false;
 
 onMounted((): void => {
   void reload();
 });
 
 async function reload(): Promise<void> {
-  if (reloadLock) {
-    return;
-  }
-  reloadLock = true;
   const seq: number = loadSeq + 1;
   loadSeq = seq;
   loading.value = true;
@@ -99,10 +94,6 @@ async function reload(): Promise<void> {
     overview.value = null;
     loading.value = false;
     loadError.value = toReportsLoadError(err).message;
-  } finally {
-    if (loadSeq === seq) {
-      reloadLock = false;
-    }
   }
 }
 </script>
