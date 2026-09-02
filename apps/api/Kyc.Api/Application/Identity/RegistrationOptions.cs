@@ -16,4 +16,18 @@ public sealed class RegistrationOptions
     /// Ignored when <see cref="AllowPublicRegistration"/> is false.
     /// </summary>
     public bool AllowInProduction { get; set; }
+
+    /// <summary>
+    /// When set, overrides the environment default (required outside Development).
+    /// Open public registration in Development does not require a code unless this is true.
+    /// </summary>
+    public bool? RequireInviteCode { get; set; }
+
+    /// <summary>Resolved: invite required when public registration is on.</summary>
+    public bool InviteRequired { get; set; }
+
+    public void ApplyEnvironment(IHostEnvironment environment)
+    {
+        InviteRequired = RequireInviteCode ?? !environment.IsDevelopment();
+    }
 }

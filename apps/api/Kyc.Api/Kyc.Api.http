@@ -1,6 +1,7 @@
 @Kyc.Api_HostAddress = http://localhost:5295
 
 ### Register tenant + first admin (anonymous GraphQL)
+### Non-Dev: add inviteCode + captchaToken on the input.
 POST {{Kyc.Api_HostAddress}}/graphql
 Content-Type: application/json
 

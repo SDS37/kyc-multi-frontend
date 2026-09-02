@@ -206,8 +206,8 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 
 | Field | Auth | Purpose |
 |---|---|---|
-| `registerTenant` | Anonymous | Create tenant + first TenantAdmin |
-| `login` | Anonymous | Issue JWT (`sub`, `tenant_id`, `role`, `email`) |
+| `registerTenant` | Anonymous | Create tenant + first TenantAdmin. Optional `inviteCode` / `captchaToken`. Closed registration is invite-only; captcha required outside Development |
+| `login` | Anonymous | Issue JWT (`sub`, `tenant_id`, `role`, `email`). Optional `captchaToken`. Failed attempts lock the slug+email (generic `AUTH_FAILED`) |
 | `createDraftCase` | Customer | Create draft case; `TenantId` / `CustomerUserId` from JWT only; title required; empty `formData` → `"{}"`; `formData` max 64 KiB / depth 8; status `DRAFT` |
 | `updateDraftCase` | Customer | Update own draft (`title` required; `formData` optional, max 64 KiB / depth 8); missing / not owner → `NOT_FOUND`; owner non-draft → `DOMAIN` |
 | `submitCase` | Customer | Submit own draft by `id`; missing / not owner → `NOT_FOUND`; FormData max 64 KiB / depth 8 with `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`; owner non-draft → `DOMAIN`; sets `SUBMITTED` + `submittedAt` |
@@ -265,5 +265,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-090 | FluentValidation on request DTOs in application services; bad input stays `VALIDATION` (GraphQL HTTP 200 / REST 400), never HTTP 500 |
 | KYC-091 | CORS allow-list `http://localhost:4200`, `http://localhost:5173`, and `http://localhost:5174` (`Cors:AllowedOrigins`); preflight on GraphQL and document REST; basic headers + non-Dev HSTS. CSP / HTTPS redirect → [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) |
 | KYC-092 | GraphQL `HappyPathAndIsolationTests`: register → login → create → submit → review → approve; tenant B cannot read tenant A’s case |
+| KYC-093 | Env-specific IP buckets: login 120/10 per min (Dev / non-Dev), register 30/3, other GraphQL 120/60. GraphQL `login` / `registerTenant` share the REST buckets. HTTP 429 generic body. In-memory lockout (5 failures / 15 min, same generic login error). CAPTCHA on register outside Development (`test` or Turnstile). Invite-only when public registration is off; hashed single-use `registration_invites`. Slug collisions stay generic |
 
-Auth rate limits: REST login/register use policy `auth` (30/min/IP); GraphQL uses policy `graphql` (120/min Development, 60/min otherwise). Forwarded headers trusted in Development for client IP. Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are on; HSTS outside Development. Local HTTP is for Development only.
+Auth abuse controls (KYC-093): Development stays generous so local UIs keep working without captcha or invite codes. Non-Development defaults require an invite for `registerTenant` (or a valid unused invite when public registration is off) and a captcha token (`Captcha:Provider` `turnstile` + `Captcha:Secret`, or `test` + `Captcha:BypassToken` in automated hosts). Excess login/register traffic is HTTP 429 `{ "error": "Too many requests." }` — not a GraphQL `AUTH_FAILED` that would distinguish accounts. Lockout and failed login still use `Invalid email, password, or tenant.` Set `AuthLimits:*PermitPerMinute` to override environment defaults (`0` in committed `appsettings.json` means “use the default”). Invites are inserted as SHA-256 hashes of high-entropy codes (no public create-invite API). Forwarded headers trusted in Development for client IP. Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are on; HSTS outside Development. Local HTTP is for Development only.

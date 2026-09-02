@@ -20,5 +20,10 @@ public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
             .WithMessage("Password is required.")
             .Must(password => (password ?? string.Empty).Length <= PasswordPolicy.MaxLength)
             .WithMessage($"Password must be at most {PasswordPolicy.MaxLength} characters.");
+
+        RuleFor(request => request.CaptchaToken)
+            .MaximumLength(2048)
+            .When(request => request.CaptchaToken is not null)
+            .WithMessage("Captcha token is too long.");
     }
 }

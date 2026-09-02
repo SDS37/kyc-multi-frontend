@@ -50,8 +50,8 @@ Splitting Identity vs Tenancy matches the conversation “authn vs tenant contex
 | `ICurrentUser` / `HttpCurrentUser` | `sub` → `UserId`, `role` → `UserRole`. Rejects numeric enum parse tricks. |
 | `AuthRoles` | String constants for `[Authorize(Roles = …)]`, kept in sync with enum **names**. |
 | `JwtOptions` / `JwtTokenService` | Issues HMAC-SHA256 access tokens: `sub`, `tenant_id`, `role`, `email`, `jti`. |
-| `LoginService` | Lookup tenant by **slug**, user by email; **`IgnoreQueryFilters()`** because login is not yet in a tenant JWT context. Dummy password verify on miss (KYC-107) so timing is less of an oracle. Generic error always. |
-| `RegisterTenantService` | Tenant + first TenantAdmin in **one transaction**, with EF execution strategy (retries). Password hashed via ASP.NET `PasswordHasher<User>`. |
+| `LoginService` | Lookup tenant by **slug**, user by email; **`IgnoreQueryFilters()`** because login is not yet in a tenant JWT context. Dummy password verify on miss (KYC-107) so timing is less of an oracle. Generic error always. In-memory lockout after consecutive failures (KYC-093). |
+| `RegisterTenantService` | Tenant + first TenantAdmin in **one transaction**, with EF execution strategy (retries). Password hashed via ASP.NET `PasswordHasher<User>`. Captcha + invite gates (KYC-093); slug collisions stay generic. |
 | `PasswordPolicy` | Length bounds shared with login/register (min 12, max 128). |
 | `*RequestValidator` | FluentValidation on request DTOs (KYC-090). Services call `RequestValidation` — not GraphQL middleware. |
 | `*Models.cs` | Request/response records used by GraphQL **and** REST so both adapters stay identical. |

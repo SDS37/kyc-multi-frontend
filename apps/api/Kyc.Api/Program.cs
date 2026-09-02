@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using System.Threading.RateLimiting;
 using FluentValidation;
 using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Cases;
@@ -21,6 +20,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -189,6 +189,8 @@ builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.Configure<RegistrationOptions>(
     builder.Configuration.GetSection(RegistrationOptions.SectionName));
+builder.Services.PostConfigure<RegistrationOptions>(options =>
+    options.ApplyEnvironment(builder.Environment));
 var registrationOptions = builder.Configuration
     .GetSection(RegistrationOptions.SectionName)
     .Get<RegistrationOptions>() ?? new RegistrationOptions();
@@ -200,6 +202,25 @@ if (registrationOptions.AllowPublicRegistration &&
         "Registration:AllowPublicRegistration is true outside Development. " +
         "Set Registration:AllowInProduction=true only as an explicit break-glass, or disable public registration.");
 }
+
+builder.Services.Configure<LoginLockoutOptions>(builder.Configuration.GetSection(LoginLockoutOptions.SectionName));
+var lockoutOptions = builder.Configuration
+    .GetSection(LoginLockoutOptions.SectionName)
+    .Get<LoginLockoutOptions>() ?? new LoginLockoutOptions();
+lockoutOptions.Validate();
+
+builder.Services.Configure<CaptchaOptions>(builder.Configuration.GetSection(CaptchaOptions.SectionName));
+builder.Services.PostConfigure<CaptchaOptions>(options =>
+    options.ApplyEnvironment(builder.Environment));
+
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ILoginLockoutStore, MemoryLoginLockoutStore>();
+builder.Services.AddHttpClient<ICaptchaVerifier, CaptchaVerifier>()
+    .ConfigureHttpClient((sp, client) =>
+    {
+        var captcha = sp.GetRequiredService<IOptions<CaptchaOptions>>().Value;
+        client.Timeout = TimeSpan.FromSeconds(Math.Max(1, captcha.TimeoutSeconds));
+    });
 
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 builder.Services.AddScoped<RegisterTenantService>();
@@ -240,33 +261,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     }
 });
 
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    // Strict bucket for REST login / register (and any endpoint tagged "auth").
-    options.AddPolicy("auth", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 30,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
-            }));
-
-    // Separate GraphQL bucket so normal UI traffic does not share login's 30/min limit.
-    var graphqlPermit = builder.Environment.IsDevelopment() ? 120 : 60;
-    options.AddPolicy("graphql", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = graphqlPermit,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
-            }));
-});
+var authLimits = AuthLimitsOptions.Bind(builder.Configuration, builder.Environment);
+authLimits.Validate();
+builder.Services.AddRateLimiter(options => AuthRateLimiting.Configure(options, authLimits));
 
 var app = builder.Build();
 
@@ -298,6 +295,7 @@ if (corsOrigins.Length > 0)
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<GraphQlOperationClassifierMiddleware>();
 app.UseRateLimiter();
 app.UseRequestTimeouts();
 
@@ -315,7 +313,7 @@ app.MapHealthChecks("/ready", new HealthCheckOptions
 // field auth (Query/Mutation [Authorize] + [AllowAnonymous]) enforces deny-by-default.
 app.MapGraphQL("/graphql")
     .AllowAnonymous()
-    .RequireRateLimiting("graphql")
+    .RequireRateLimiting(AuthRateLimiting.GraphqlPolicy)
     .WithOptions(options =>
     {
         var development = app.Environment.IsDevelopment();
@@ -342,7 +340,7 @@ app.MapPost("/api/register-tenant", async (
 })
 .WithName("RegisterTenant")
 .AllowAnonymous()
-.RequireRateLimiting("auth")
+.RequireRateLimiting(AuthRateLimiting.RegisterPolicy)
 .DisableAntiforgery();
 
 app.MapPost("/api/login", async (
@@ -367,7 +365,7 @@ app.MapPost("/api/login", async (
 })
 .WithName("Login")
 .AllowAnonymous()
-.RequireRateLimiting("auth")
+.RequireRateLimiting(AuthRateLimiting.LoginPolicy)
 .DisableAntiforgery();
 
 // Document upload (KYC-040) — multipart bytes on REST; metadata via GraphQL case detail.

@@ -46,6 +46,20 @@ public sealed partial class RegisterTenantRequestValidator : AbstractValidator<R
             .WithMessage($"Password must be at most {PasswordPolicy.MaxLength} characters.")
             .Must(HasRequiredComplexity)
             .WithMessage("Password must contain upper and lower case letters and at least one digit.");
+
+        RuleFor(request => request.InviteCode)
+            .Must(code =>
+            {
+                var trimmed = code?.Trim() ?? string.Empty;
+                return trimmed.Length is >= 16 and <= 64;
+            })
+            .When(request => !string.IsNullOrWhiteSpace(request.InviteCode))
+            .WithMessage("Invite code must be between 16 and 64 characters.");
+
+        RuleFor(request => request.CaptchaToken)
+            .MaximumLength(2048)
+            .When(request => request.CaptchaToken is not null)
+            .WithMessage("Captcha token is too long.");
     }
 
     private static bool HasRequiredComplexity(string? password)

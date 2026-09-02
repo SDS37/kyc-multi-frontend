@@ -112,7 +112,7 @@ public sealed class PostgresIntegrationTests(PostgresApiFactory factory) : IClas
 
         var second = await RegisterTenantAsync(slug);
         Assert.True(second.TryGetProperty("errors", out var errors), second.ToString());
-        Assert.Contains("already taken", errors.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(RegisterTenantService.GenericRegisterFailure, errors.ToString(), StringComparison.Ordinal);
     }
 
     private async Task<JsonElement> RegisterTenantAsync(string slug)
