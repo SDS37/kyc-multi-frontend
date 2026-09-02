@@ -1,9 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { MockInstance, vi } from 'vitest';
-import { APP_CONFIG } from '../../config/app-config';
+import { APP_CONFIG, AppConfig } from '../../config/app-config';
 import { LOGIN_MESSAGES } from '../auth.messages';
 import { TokenStorage } from '../token-storage';
 import { Login } from './login';
@@ -170,9 +174,117 @@ describe('Login', () => {
   });
 });
 
+describe('Login with captcha', (): void => {
+  let fixture: ComponentFixture<Login>;
+  let httpTesting: HttpTestingController;
+  let tokens: TokenStorage;
+
+  beforeEach(async (): Promise<void> => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [Login],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'cases', children: [] }]),
+        {
+          provide: APP_CONFIG,
+          useValue: {
+            apiBaseUrl: 'http://localhost:5295',
+            graphqlUrl,
+            captchaRequiredForLogin: true,
+            turnstileSiteKey: '',
+          } satisfies AppConfig,
+        },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Login);
+    httpTesting = TestBed.inject(HttpTestingController);
+    tokens = TestBed.inject(TokenStorage);
+    tokens.clearSession();
+    fixture.detectChanges();
+  });
+
+  afterEach((): void => {
+    httpTesting.verify();
+    tokens.clearSession();
+  });
+
+  it('blocks submit and shows the captcha error when the token is missing', (): void => {
+    setFormValues(fixture, {
+      tenantSlug: 'acme',
+      email: 'reviewer@acme.test',
+      password: 'Password1!',
+    });
+    submitForm(fixture);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(LOGIN_MESSAGES.captchaRequired);
+    httpTesting.expectNone(graphqlUrl);
+  });
+
+  it('blocks submit when the captcha token is only whitespace', (): void => {
+    setFormValues(fixture, {
+      tenantSlug: 'acme',
+      email: 'reviewer@acme.test',
+      password: 'Password1!',
+      captchaToken: '   ',
+    });
+    submitForm(fixture);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(LOGIN_MESSAGES.captchaRequired);
+    httpTesting.expectNone(graphqlUrl);
+  });
+
+  it('includes the captcha token on a successful login', (): void => {
+    setFormValues(fixture, {
+      tenantSlug: 'acme',
+      email: 'reviewer@acme.test',
+      password: 'Password1!',
+      captchaToken: ' token-1 ',
+    });
+    submitForm(fixture);
+
+    const request: TestRequest = httpTesting.expectOne(graphqlUrl);
+    expect(request.request.body.variables.input.captchaToken).toBe('token-1');
+    request.flush({
+      data: {
+        login: {
+          accessToken: testAccessToken(),
+          tokenType: 'Bearer',
+          expiresInSeconds: 3600,
+        },
+      },
+    });
+  });
+
+  it('clears the captcha control after a failed login', (): void => {
+    setFormValues(fixture, {
+      tenantSlug: 'acme',
+      email: 'reviewer@acme.test',
+      password: 'wrong',
+      captchaToken: 'token-1',
+    });
+    submitForm(fixture);
+
+    httpTesting.expectOne(graphqlUrl).flush({
+      errors: [
+        { message: 'Invalid email, password, or tenant.', extensions: { code: 'AUTH_FAILED' } },
+      ],
+    });
+    fixture.detectChanges();
+
+    const captcha: HTMLInputElement = captchaInput(fixture);
+    expect(captcha.value).toBe('');
+    expect(captcha.disabled).toBe(false);
+  });
+});
+
 function setFormValues(
   fixture: ComponentFixture<Login>,
-  values: { tenantSlug: string; email: string; password: string },
+  values: { tenantSlug: string; email: string; password: string; captchaToken?: string },
 ): void {
   const root: HTMLElement = fixture.nativeElement as HTMLElement;
   const inputs: Element[] = Array.from(root.querySelectorAll('input'));
@@ -189,7 +301,20 @@ function setFormValues(
   setInputValue(tenant, values.tenantSlug);
   setInputValue(email, values.email);
   setInputValue(password, values.password);
+  if (values.captchaToken !== undefined) {
+    setInputValue(captchaInput(fixture), values.captchaToken);
+  }
   fixture.detectChanges();
+}
+
+function captchaInput(fixture: ComponentFixture<Login>): HTMLInputElement {
+  const root: HTMLElement = fixture.nativeElement as HTMLElement;
+  const inputs: Element[] = Array.from(root.querySelectorAll('input'));
+  const captcha: Element | undefined = inputs[3];
+  if (!(captcha instanceof HTMLInputElement)) {
+    throw new Error('Expected captcha token input');
+  }
+  return captcha;
 }
 
 function setInputValue(input: HTMLInputElement, value: string): void {

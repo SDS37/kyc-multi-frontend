@@ -81,10 +81,8 @@
 
       @if (captchaRequired) {
         <app-login-captcha
+          formControlName="captchaToken"
           [siteKey]="turnstileSiteKey"
-          [disabled]="submitting()"
-          [invalid]="captchaInvalid()"
-          (tokenChange)="onCaptchaToken($event)"
           (loadFailed)="onCaptchaLoadFailed()"
         />
       }

@@ -6,10 +6,10 @@
       class="captcha__widget"
       role="group"
       aria-labelledby="login-captcha-label"
-      [attr.aria-invalid]="invalid() ? true : null"
-      [attr.aria-describedby]="invalid() ? 'captcha-error' : null"
+      [attr.aria-invalid]="showInvalid() ? true : null"
+      [attr.aria-describedby]="showInvalid() ? 'captcha-error' : null"
     ></div>
-    @if (invalid()) {
+    @if (showInvalid()) {
       <p id="captcha-error" class="captcha__error">{{ copy.captchaRequired }}</p>
     }
   } @else {
@@ -22,15 +22,17 @@
         autocomplete="off"
         spellcheck="false"
         maxlength="2048"
+        [value]="token()"
         [disabled]="disabled()"
-        [attr.aria-invalid]="invalid()"
-        [attr.aria-describedby]="invalid() ? 'captcha-error' : 'captcha-help'"
+        [attr.aria-invalid]="showInvalid()"
+        [attr.aria-describedby]="showInvalid() ? 'captcha-error' : 'captcha-help'"
         (input)="onTokenInput($event)"
+        (blur)="markTouched()"
       />
       <mat-hint id="captcha-help">{{ copy.captchaHelp }}</mat-hint>
-      @if (invalid()) {
-        <mat-error id="captcha-error">{{ copy.captchaRequired }}</mat-error>
-      }
     </mat-form-field>
+    @if (showInvalid()) {
+      <p id="captcha-error" class="captcha__error">{{ copy.captchaRequired }}</p>
+    }
   }
 </div>

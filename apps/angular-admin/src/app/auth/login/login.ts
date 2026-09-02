@@ -1,13 +1,14 @@
-import {
-  Component,
-  DestroyRef,
-  WritableSignal,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Component, DestroyRef, WritableSignal, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -20,6 +21,10 @@ import { LoginFormControls } from '../auth.models';
 import { LoginService } from '../login.service';
 import { UI_MESSAGES } from '../../shared/ui.messages';
 import { LoginCaptcha } from './login-captcha';
+
+function requiredTrimmed(control: AbstractControl<string>): ValidationErrors | null {
+  return control.value.trim().length === 0 ? { required: true } : null;
+}
 
 /**
  * Admin / reviewer sign-in (KYC-061 / KYC-094).
@@ -45,7 +50,6 @@ export class Login {
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
   private readonly config: AppConfig = inject(APP_CONFIG);
-  private readonly captcha = viewChild(LoginCaptcha);
 
   protected readonly copy: typeof LOGIN_MESSAGES = LOGIN_MESSAGES;
   protected readonly brand: string = UI_MESSAGES.brand;
@@ -54,7 +58,6 @@ export class Login {
 
   protected readonly submitting: WritableSignal<boolean> = signal(false);
   protected readonly formError: WritableSignal<string | null> = signal(null);
-  protected readonly captchaInvalid: WritableSignal<boolean> = signal(false);
 
   protected readonly form: FormGroup<LoginFormControls> = this.fb.nonNullable.group({
     tenantSlug: ['', [Validators.required, Validators.maxLength(64)]],
@@ -63,17 +66,10 @@ export class Login {
     captchaToken: [
       '',
       this.captchaRequired
-        ? [Validators.required, Validators.maxLength(2048)]
+        ? [requiredTrimmed, Validators.maxLength(2048)]
         : [Validators.maxLength(2048)],
     ],
   });
-
-  protected onCaptchaToken(token: string): void {
-    this.form.controls.captchaToken.setValue(token);
-    if (token.trim()) {
-      this.captchaInvalid.set(false);
-    }
-  }
 
   protected onCaptchaLoadFailed(): void {
     this.formError.set(this.copy.captchaUnavailable);
@@ -82,14 +78,12 @@ export class Login {
   protected submit(): void {
     this.formError.set(null);
     this.form.markAllAsTouched();
-    if (this.captchaRequired && !this.form.controls.captchaToken.value.trim()) {
-      this.captchaInvalid.set(true);
-    }
     if (this.form.invalid || this.submitting()) {
       return;
     }
 
     this.submitting.set(true);
+    this.setCaptchaEnabled(false);
     const {
       tenantSlug,
       email,
@@ -105,14 +99,28 @@ export class Login {
         next: (): void => {
           // Reset before navigate so a delayed/failed redirect does not leave the CTA disabled.
           this.submitting.set(false);
+          this.setCaptchaEnabled(true);
           const returnUrl: string | null = this.route.snapshot.queryParamMap.get('returnUrl');
           void this.router.navigateByUrl(resolvePostLoginUrl(returnUrl));
         },
         error: (err: unknown): void => {
           this.submitting.set(false);
-          this.captcha()?.resetWidget();
+          this.form.controls.captchaToken.setValue('');
+          this.setCaptchaEnabled(true);
           this.formError.set(toLoginFailedError(err).message);
         },
       });
+  }
+
+  private setCaptchaEnabled(enabled: boolean): void {
+    if (!this.captchaRequired) {
+      return;
+    }
+    const captcha: FormControl<string> = this.form.controls.captchaToken;
+    if (enabled) {
+      captcha.enable({ emitEvent: false });
+      return;
+    }
+    captcha.disable({ emitEvent: false });
   }
 }
