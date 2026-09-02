@@ -294,7 +294,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseHttpsRedirection();
+    app.UseWhen(HttpsRedirect.ShouldRedirect, branch => branch.UseHttpsRedirection());
     app.UseHsts();
 }
 

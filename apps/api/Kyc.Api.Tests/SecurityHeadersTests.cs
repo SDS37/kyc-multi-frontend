@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Kyc.Api.Infrastructure;
 
@@ -25,7 +26,7 @@ public sealed class SecurityHeadersTests(ApiFactory development, ProductionApiFa
     [Fact]
     public async Task Production_https_health_sends_csp()
     {
-        using var client = production.CreateHttpsClient();
+        using var client = production.CreateClient();
         using var response = await client.GetAsync("/health");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -35,17 +36,51 @@ public sealed class SecurityHeadersTests(ApiFactory development, ProductionApiFa
     }
 
     [Fact]
-    public async Task Production_http_health_redirects_to_https()
+    public async Task Production_http_health_does_not_redirect()
     {
         using var client = production.CreateHttpClientNoRedirect();
         using var response = await client.GetAsync("/health");
 
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+    }
+
+    [Fact]
+    public async Task Production_http_ready_does_not_redirect()
+    {
+        using var client = production.CreateHttpClientNoRedirect();
+        using var response = await client.GetAsync("/ready");
+
+        Assert.NotEqual(HttpStatusCode.TemporaryRedirect, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+    }
+
+    [Fact]
+    public async Task Production_http_graphql_redirects_to_https()
+    {
+        using var client = production.CreateHttpClientNoRedirect();
+        using var response = await client.PostAsync(
+            "/graphql",
+            new StringContent("{}", Encoding.UTF8, "application/json"));
+
         Assert.Equal(HttpStatusCode.TemporaryRedirect, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Equal(Uri.UriSchemeHttps, response.Headers.Location.Scheme);
-        Assert.Equal("/health", response.Headers.Location.PathAndQuery);
-        Assert.Equal(
-            SecurityHeaders.ContentSecurityPolicy,
-            Assert.Single(response.Headers.GetValues("Content-Security-Policy")));
+        Assert.Equal("/graphql", response.Headers.Location.PathAndQuery);
+    }
+
+    [Fact]
+    public async Task Production_http_graphql_with_forwarded_https_does_not_redirect()
+    {
+        using var client = production.CreateHttpClientNoRedirect();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/graphql")
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
+        request.Headers.TryAddWithoutValidation("X-Forwarded-Proto", "https");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.NotEqual(HttpStatusCode.TemporaryRedirect, response.StatusCode);
     }
 }
