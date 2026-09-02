@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This monorepo is a portfolio project. **Today:** three independent frontends on one GraphQL API (ADR-005). Module Federation is a **W7 spike**, not a requirement. Redis runs in Compose and is **unused** by the API. After DoD, see [beyond-mvp.md](docs/beyond-mvp.md).
+This monorepo is a portfolio project. **Today:** three independent frontends on one GraphQL API (ADR-002). Module Federation is a **W7 spike** (ADR-005), not a requirement. Redis runs in Compose and is **unused** by the API. After DoD, see [beyond-mvp.md](docs/beyond-mvp.md).
 
 ## Current status (what works today)
 
