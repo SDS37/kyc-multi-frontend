@@ -39,6 +39,8 @@ public sealed class GraphQlOperationFeature(GraphQlOperationKind kind) : IGraphQ
 /// Inspects <c>operationName</c> and the <c>query</c> document only — never variable values.
 /// The stricter of the two wins so a login <c>operationName</c> cannot hide <c>registerTenant</c>.
 /// GraphQL <c>#</c> comments are stripped before field counts so <c>login # x\\n(</c> still hits the login bucket.
+/// Named operations (<c>mutation Login(...) { login(...) }</c>) are stripped before those counts so
+/// the operation name is not treated as a second auth field.
 /// </summary>
 public static partial class GraphQlOperationClassifier
 {
@@ -146,7 +148,7 @@ public static partial class GraphQlOperationClassifier
             return new GraphQlClassification(kind, 0, 0);
         }
 
-        var query = StripGraphQlComments(queryElement.GetString() ?? string.Empty);
+        var query = StripNamedOperations(StripGraphQlComments(queryElement.GetString() ?? string.Empty));
         var loginCount = LoginField().Count(query);
         var registerCount = RegisterField().Count(query);
         if (registerCount > 0)
@@ -163,6 +165,19 @@ public static partial class GraphQlOperationClassifier
 
     private static GraphQlOperationKind Max(GraphQlOperationKind left, GraphQlOperationKind right) =>
         left > right ? left : right;
+
+    /// <summary>
+    /// Drops <c>mutation Login</c> / <c>query Foo</c> names so field regexes do not count
+    /// the operation name as a second <c>login(</c> / <c>registerTenant(</c>. All three UIs
+    /// send <c>mutation Login($input: ...) { login(...) }</c>.
+    /// </summary>
+    [GeneratedRegex(
+        @"\b(mutation|query|subscription)\s+[A-Za-z_]\w*",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex NamedOperation();
+
+    private static string StripNamedOperations(string query) =>
+        NamedOperation().Replace(query, "${1}");
 
     /// <summary>
     /// Drops GraphQL <c>#</c> line comments so field regexes still see <c>login(</c> / <c>registerTenant(</c>.
