@@ -264,5 +264,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-109 | Login password max 128; `updateDraftCase` DOMAIN before FormData; status docs for 105–108 |
 | KYC-090 | FluentValidation on request DTOs in application services; bad input stays `VALIDATION` (GraphQL HTTP 200 / REST 400), never HTTP 500 |
 | KYC-091 | CORS allow-list `http://localhost:4200`, `http://localhost:5173`, and `http://localhost:5174` (`Cors:AllowedOrigins`); preflight on GraphQL and document REST; basic headers + non-Dev HSTS. CSP / HTTPS redirect → [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) |
+| KYC-092 | GraphQL `HappyPathAndIsolationTests`: register → login → create → submit → review → approve; tenant B cannot read tenant A’s case |
 
 Auth rate limits: REST login/register use policy `auth` (30/min/IP); GraphQL uses policy `graphql` (120/min Development, 60/min otherwise). Forwarded headers trusted in Development for client IP. Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are on; HSTS outside Development. Local HTTP is for Development only.
