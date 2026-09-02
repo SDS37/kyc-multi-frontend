@@ -15,7 +15,7 @@ public sealed class RequestValidatorTests
 
         var errors = RequestValidation.Errors(validator, request);
 
-        Assert.Contains("Password must be at least 12 characters.", errors);
+        Assert.Contains($"Password must be at least {PasswordPolicy.MinLength} characters.", errors);
     }
 
     [Fact]

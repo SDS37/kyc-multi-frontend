@@ -41,7 +41,7 @@ public sealed partial class RegisterTenantRequestValidator : AbstractValidator<R
         RuleFor(request => request.AdminPassword)
             .Cascade(CascadeMode.Stop)
             .Must(password => (password ?? string.Empty).Length >= PasswordPolicy.MinLength)
-            .WithMessage("Password must be at least 12 characters.")
+            .WithMessage($"Password must be at least {PasswordPolicy.MinLength} characters.")
             .Must(password => (password ?? string.Empty).Length <= PasswordPolicy.MaxLength)
             .WithMessage($"Password must be at most {PasswordPolicy.MaxLength} characters.")
             .Must(HasRequiredComplexity)
