@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render } from '@testing-library/react';
+import { afterEach, describe, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import { CaseList } from './case-list';
 import * as casesApi from '../cases-api';
