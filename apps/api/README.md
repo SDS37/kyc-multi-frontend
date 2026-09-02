@@ -116,6 +116,8 @@ Login example:
 
 Successful login returns `{ "accessToken", "tokenType": "Bearer", "expiresInSeconds" }`. Invalid credentials or an inactive tenant return **401** with a generic error. See `Kyc.Api.http`.
 
+Colleague copy-paste (Docker → migrate → run → demo accounts including Customer SQL): [root README runbook](../../README.md#colleague-runbook).
+
 GraphQL smoke (anonymous mutations + authenticated query — or use the IDE at `/graphql`):
 
 ```graphql

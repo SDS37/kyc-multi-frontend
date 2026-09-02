@@ -24,4 +24,4 @@ Images: Postgres `postgres:18-alpine`, Redis `redis:8-alpine`, MinIO `minio/mini
 
 Data is stored in named volumes: `postgres_data`, `redis_data`, `minio_data`.
 
-The API and frontends are **not** Compose services yet. Run the API on the host with `dotnet run` — see [apps/api/README.md](../apps/api/README.md). Run Angular (`localhost:4200`), React (`localhost:5173`), and Vue (`localhost:5174`) on the host. Today vs after MVP: [docs/architecture.md](../docs/architecture.md), [docs/beyond-mvp.md](../docs/beyond-mvp.md).
+The API and frontends are **not** Compose services yet. Colleague copy-paste: [root README runbook](../README.md#colleague-runbook). API: [apps/api/README.md](../apps/api/README.md). Angular (`localhost:4200`), React (`localhost:5173`), and Vue (`localhost:5174`) on the host. Today vs after MVP: [docs/architecture.md](../docs/architecture.md), [docs/beyond-mvp.md](../docs/beyond-mvp.md).
