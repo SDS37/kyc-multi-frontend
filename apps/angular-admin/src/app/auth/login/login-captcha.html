@@ -14,6 +14,11 @@
     @if (showInvalid()) {
       <p id="captcha-error" class="captcha__error">{{ copy.captchaRequired }}</p>
     }
+    @if (widgetFailed()) {
+      <button type="button" class="captcha__retry" (click)="retryWidget()">
+        {{ copy.captchaRetry }}
+      </button>
+    }
   } @else {
     <mat-form-field appearance="outline" class="captcha__field">
       <mat-label>{{ copy.captchaLabel }}</mat-label>

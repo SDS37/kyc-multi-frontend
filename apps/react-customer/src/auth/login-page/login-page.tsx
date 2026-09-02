@@ -47,6 +47,7 @@ export function LoginPage(): ReactElement {
   const [touched, setTouched] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [captchaUnavailable, setCaptchaUnavailable] = useState<boolean>(false);
 
   const fieldErrors: LoginFieldErrors = validateLoginForm(
     {
@@ -60,11 +61,20 @@ export function LoginPage(): ReactElement {
 
   async function onSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    setFormError(null);
     setTouched(true);
 
+    if (captchaUnavailable) {
+      setFormError(copy.captchaUnavailable);
+      return;
+    }
+
+    setFormError(null);
+
     const credentials: LoginCredentials = { tenantSlug, email, password, captchaToken };
-    if (hasLoginFieldErrors(validateLoginForm(credentials, { captchaRequired })) || submittingLock.current) {
+    if (
+      hasLoginFieldErrors(validateLoginForm(credentials, { captchaRequired })) ||
+      submittingLock.current
+    ) {
       return;
     }
 
@@ -186,12 +196,17 @@ export function LoginPage(): ReactElement {
             <LoginCaptcha
               ref={captchaRef}
               siteKey={turnstileSiteKey}
-              disabled={submitting}
+              disabled={submitting || captchaUnavailable}
               invalid={touched && fieldErrors.captchaToken !== undefined}
               value={captchaToken}
               onTokenChange={setCaptchaToken}
               onLoadFailed={(): void => {
+                setCaptchaUnavailable(true);
                 setFormError(copy.captchaUnavailable);
+              }}
+              onRetry={(): void => {
+                setCaptchaUnavailable(false);
+                setFormError(null);
               }}
             />
           ) : null}
@@ -199,7 +214,7 @@ export function LoginPage(): ReactElement {
           <button
             type="submit"
             className={styles['submit']}
-            disabled={submitting}
+            disabled={submitting || captchaUnavailable}
             aria-busy={submitting}
           >
             {submitting ? (

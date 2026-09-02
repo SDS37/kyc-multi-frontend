@@ -1,4 +1,5 @@
-import type { GraphqlError, GraphqlResponse } from '../shared/graphql.models';
+import { GraphqlHttpError, type GraphqlError, type GraphqlResponse } from '../shared/graphql.models';
+import { RATE_LIMITED_CODE, RATE_LIMITED_HTTP_STATUS } from '../auth/auth.models';
 import {
   CASE_FORM_FIELD_LABELS,
   CASE_STATUS_LABELS,
@@ -122,16 +123,38 @@ export function parseStatusFilterValue(value: unknown): CaseStatus | null | unde
   return undefined;
 }
 
+function graphqlTransportFailure(
+  err: unknown,
+  rateLimitedMessage: string,
+  networkMessage: string,
+): { readonly message: string; readonly code: string } | null {
+  if (err instanceof GraphqlHttpError) {
+    if (err.status === RATE_LIMITED_HTTP_STATUS) {
+      return { message: rateLimitedMessage, code: RATE_LIMITED_CODE };
+    }
+    return { message: networkMessage, code: 'NETWORK' };
+  }
+  if (err instanceof TypeError) {
+    return { message: networkMessage, code: 'NETWORK' };
+  }
+  if (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message)) {
+    return { message: networkMessage, code: 'NETWORK' };
+  }
+  return null;
+}
+
 /** Pure: map transport / unknown errors to CasesLoadError. */
 export function toCasesLoadError(err: unknown): CasesLoadError {
   if (err instanceof CasesLoadError) {
     return err;
   }
-  if (err instanceof TypeError) {
-    return new CasesLoadError(CASES_LIST_MESSAGES.listNetworkFailed, 'NETWORK');
-  }
-  if (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message)) {
-    return new CasesLoadError(CASES_LIST_MESSAGES.listNetworkFailed, 'NETWORK');
+  const transport: { readonly message: string; readonly code: string } | null = graphqlTransportFailure(
+    err,
+    CASES_LIST_MESSAGES.listRateLimited,
+    CASES_LIST_MESSAGES.listNetworkFailed,
+  );
+  if (transport) {
+    return new CasesLoadError(transport.message, transport.code);
   }
   return new CasesLoadError(CASES_LIST_MESSAGES.listLoadFailed);
 }
@@ -144,11 +167,13 @@ export function toCaseDetailLoadError(err: unknown): CasesLoadError {
     }
     return err;
   }
-  if (err instanceof TypeError) {
-    return new CasesLoadError(CASES_DRAFT_MESSAGES.loadNetworkFailed, 'NETWORK');
-  }
-  if (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message)) {
-    return new CasesLoadError(CASES_DRAFT_MESSAGES.loadNetworkFailed, 'NETWORK');
+  const transport: { readonly message: string; readonly code: string } | null = graphqlTransportFailure(
+    err,
+    CASES_DRAFT_MESSAGES.loadRateLimited,
+    CASES_DRAFT_MESSAGES.loadNetworkFailed,
+  );
+  if (transport) {
+    return new CasesLoadError(transport.message, transport.code);
   }
   return new CasesLoadError(CASES_DRAFT_MESSAGES.loadFailed);
 }
@@ -206,11 +231,13 @@ export function toCreateDraftError(err: unknown): CreateDraftError {
   if (err instanceof CreateDraftError) {
     return err;
   }
-  if (err instanceof TypeError) {
-    return new CreateDraftError(CASES_LIST_MESSAGES.createNetworkFailed, 'NETWORK');
-  }
-  if (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message)) {
-    return new CreateDraftError(CASES_LIST_MESSAGES.createNetworkFailed, 'NETWORK');
+  const transport: { readonly message: string; readonly code: string } | null = graphqlTransportFailure(
+    err,
+    CASES_LIST_MESSAGES.createRateLimited,
+    CASES_LIST_MESSAGES.createNetworkFailed,
+  );
+  if (transport) {
+    return new CreateDraftError(transport.message, transport.code);
   }
   return new CreateDraftError(CASES_LIST_MESSAGES.createFailed);
 }
@@ -504,14 +531,20 @@ export function toDraftActionError(
     action === 'save'
       ? CASES_DRAFT_MESSAGES.saveNetworkFailed
       : CASES_DRAFT_MESSAGES.submitNetworkFailed;
+  const rateLimitedMessage: string =
+    action === 'save'
+      ? CASES_DRAFT_MESSAGES.saveRateLimited
+      : CASES_DRAFT_MESSAGES.submitRateLimited;
   const fallback: string =
     action === 'save' ? CASES_DRAFT_MESSAGES.saveFailed : CASES_DRAFT_MESSAGES.submitFailed;
 
-  if (err instanceof TypeError) {
-    return new DraftActionError(networkMessage, 'NETWORK');
-  }
-  if (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message)) {
-    return new DraftActionError(networkMessage, 'NETWORK');
+  const transport: { readonly message: string; readonly code: string } | null = graphqlTransportFailure(
+    err,
+    rateLimitedMessage,
+    networkMessage,
+  );
+  if (transport) {
+    return new DraftActionError(transport.message, transport.code);
   }
   return new DraftActionError(fallback);
 }
@@ -670,6 +703,9 @@ export function prependDocument(
 
 /** Pure: map REST upload errors → DocumentUploadError. */
 export async function toDocumentUploadError(response: Response): Promise<DocumentUploadError> {
+  if (response.status === RATE_LIMITED_HTTP_STATUS) {
+    return new DocumentUploadError(CASES_DRAFT_MESSAGES.docsUploadRateLimited, RATE_LIMITED_CODE);
+  }
   let payload: unknown = null;
   try {
     payload = await response.json();

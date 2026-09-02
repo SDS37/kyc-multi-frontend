@@ -3,8 +3,17 @@ import {
   parseLoginSuccess,
   toLoginFailedError,
   toLoginMutationInput,
+  toShellSession,
 } from './auth.mappers';
-import type { LoginCredentials, LoginMutationInput, LoginSuccess } from './auth.models';
+import { LOGIN_MESSAGES } from './auth.messages';
+import {
+  LoginFailedError,
+  isCustomerRole,
+  type LoginCredentials,
+  type LoginMutationInput,
+  type LoginSuccess,
+  type ShellSession,
+} from './auth.models';
 import { tokenStorage } from './token-storage';
 
 const LOGIN_MUTATION: string = `
@@ -31,6 +40,10 @@ export async function login(credentials: LoginCredentials): Promise<LoginSuccess
       { skipAuth: true },
     );
     const success: LoginSuccess = parseLoginSuccess(body);
+    const session: ShellSession | null = toShellSession(success.accessToken, input.tenantSlug);
+    if (session === null || !isCustomerRole(session.role)) {
+      throw new LoginFailedError(LOGIN_MESSAGES.wrongAppRole, 'AUTH_NOT_AUTHORIZED');
+    }
     tokenStorage.setSession(success.accessToken, input.tenantSlug);
     return success;
   } catch (err: unknown) {

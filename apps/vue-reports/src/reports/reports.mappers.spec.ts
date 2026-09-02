@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { GraphqlHttpError } from '../shared/graphql.models';
 import { parseReportsOverview, toReportsLoadError } from './reports.mappers';
 import { REPORTS_HOME_MESSAGES } from './reports.messages';
 import { ReportsLoadError, type ReportsOverview } from './reports.models';
@@ -112,6 +113,12 @@ describe('toReportsLoadError', () => {
     const mapped: ReportsLoadError = toReportsLoadError(new TypeError('Failed to fetch'));
     expect(mapped.code).toBe('NETWORK');
     expect(mapped.message).toBe(REPORTS_HOME_MESSAGES.listLoadFailed);
+  });
+
+  it('maps HTTP 429 to a rate-limit message', (): void => {
+    const mapped: ReportsLoadError = toReportsLoadError(new GraphqlHttpError(429));
+    expect(mapped.code).toBe('RATE_LIMITED');
+    expect(mapped.message).toBe(REPORTS_HOME_MESSAGES.listRateLimited);
   });
 
   it('passes ReportsLoadError through', (): void => {

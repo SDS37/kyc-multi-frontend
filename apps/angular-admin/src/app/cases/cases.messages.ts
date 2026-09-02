@@ -45,6 +45,7 @@ export const CASES_LIST_MESSAGES = {
   listLoadFailed: 'Unable to load cases. Try again.',
   listIncomplete: 'Case list response was incomplete.',
   listNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  listRateLimited: 'Too many requests. Wait a minute and try again.',
 } as const;
 
 /** Case review chrome (KYC-063). */
@@ -81,8 +82,10 @@ export const CASES_REVIEW_MESSAGES = {
   actionFailed: 'Unable to complete that action. Try again.',
   actionIncomplete: 'Action response was incomplete.',
   actionNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  actionRateLimited: 'Too many requests. Wait a minute and try again.',
   downloadNotFound: 'Document was not found.',
   downloadNetworkFailed: 'Unable to reach the download service. Try again in a moment.',
+  downloadRateLimited: 'Too many requests. Wait a minute and try again.',
   downloadFailed: 'Unable to download this document. Try again.',
 } as const;
 

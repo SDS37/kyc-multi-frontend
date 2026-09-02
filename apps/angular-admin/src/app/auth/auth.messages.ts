@@ -23,7 +23,8 @@ export const LOGIN_MESSAGES = {
   captchaLabel: 'Verification',
   captchaRequired: 'Complete the verification check.',
   captchaHelp: 'Paste the verification token from your sign-in provider.',
-  captchaUnavailable: 'Verification could not load. Refresh the page and try again.',
+  captchaUnavailable: 'Verification could not load. Try again.',
+  captchaRetry: 'Try again',
   wrongAppRole:
     'This app is for reviewers and tenant admins. Use the customer portal to submit cases.',
 } as const;

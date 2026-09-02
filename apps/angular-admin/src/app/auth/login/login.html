@@ -84,6 +84,7 @@
           formControlName="captchaToken"
           [siteKey]="turnstileSiteKey"
           (loadFailed)="onCaptchaLoadFailed()"
+          (retried)="onCaptchaRetried()"
         />
       }
 
@@ -92,7 +93,7 @@
         color="primary"
         type="submit"
         class="login__submit"
-        [disabled]="submitting()"
+        [disabled]="submitting() || captchaUnavailable()"
       >
         @if (submitting()) {
           <mat-spinner diameter="20" [attr.aria-label]="copy.submittingAria" />

@@ -56,3 +56,22 @@
   color: var(--kyc-color-danger);
   font-size: var(--kyc-text-sm);
 }
+
+.retry {
+  align-self: flex-start;
+  min-height: 2.75rem;
+  padding: 0 var(--kyc-space-3);
+  border: 1px solid var(--kyc-color-border);
+  border-radius: var(--kyc-radius-md);
+  background: var(--kyc-color-surface-raised);
+  color: var(--kyc-color-text);
+  font: inherit;
+  font-size: var(--kyc-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: none;
+  box-shadow: var(--kyc-focus-ring);
+}

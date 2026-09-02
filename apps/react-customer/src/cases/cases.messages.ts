@@ -41,6 +41,7 @@ export interface CasesListMessages {
   readonly listLoadFailed: string;
   readonly listIncomplete: string;
   readonly listNetworkFailed: string;
+  readonly listRateLimited: string;
   readonly createAction: string;
   readonly createDialogTitle: string;
   readonly createTitleLabel: string;
@@ -52,6 +53,7 @@ export interface CasesListMessages {
   readonly createFailed: string;
   readonly createIncomplete: string;
   readonly createNetworkFailed: string;
+  readonly createRateLimited: string;
   readonly createUnauthorized: string;
   readonly backToCases: string;
 }
@@ -74,6 +76,7 @@ export const CASES_LIST_MESSAGES: CasesListMessages = {
   listLoadFailed: 'Unable to load cases. Try again.',
   listIncomplete: 'Case list response was incomplete.',
   listNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  listRateLimited: 'Too many requests. Wait a minute and try again.',
   createAction: 'New case',
   createDialogTitle: 'Create draft case',
   createTitleLabel: 'Title',
@@ -85,6 +88,7 @@ export const CASES_LIST_MESSAGES: CasesListMessages = {
   createFailed: 'Unable to create the draft. Try again.',
   createIncomplete: 'Create draft response was incomplete.',
   createNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  createRateLimited: 'Too many requests. Wait a minute and try again.',
   createUnauthorized:
     'Your account cannot create cases. Sign in with a Customer user.',
   backToCases: '← Back to my cases',
@@ -101,6 +105,7 @@ export interface CasesDraftMessages {
   readonly loadFailed: string;
   readonly loadIncomplete: string;
   readonly loadNetworkFailed: string;
+  readonly loadRateLimited: string;
   readonly loadNotFound: string;
   readonly sectionPerson: string;
   readonly sectionCompany: string;
@@ -117,9 +122,11 @@ export interface CasesDraftMessages {
   readonly saveFailed: string;
   readonly saveIncomplete: string;
   readonly saveNetworkFailed: string;
+  readonly saveRateLimited: string;
   readonly submitFailed: string;
   readonly submitIncomplete: string;
   readonly submitNetworkFailed: string;
+  readonly submitRateLimited: string;
   readonly actionDomain: string;
   readonly actionNotFound: string;
   readonly actionUnauthorized: string;
@@ -137,6 +144,7 @@ export interface CasesDraftMessages {
   readonly docsUploadFailed: string;
   readonly docsUploadIncomplete: string;
   readonly docsUploadNetworkFailed: string;
+  readonly docsUploadRateLimited: string;
   readonly docsUploadDomain: string;
   readonly docsUploadUnauthorized: string;
   readonly docsUploadNotFound: string;
@@ -154,6 +162,7 @@ export const CASES_DRAFT_MESSAGES: CasesDraftMessages = {
   loadFailed: 'Unable to load this case. Try again.',
   loadIncomplete: 'Case detail response was incomplete.',
   loadNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  loadRateLimited: 'Too many requests. Wait a minute and try again.',
   loadNotFound: 'Case was not found.',
   sectionPerson: 'Personal details',
   sectionCompany: 'Company (optional)',
@@ -170,9 +179,11 @@ export const CASES_DRAFT_MESSAGES: CasesDraftMessages = {
   saveFailed: 'Unable to save the draft. Try again.',
   saveIncomplete: 'Save draft response was incomplete.',
   saveNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  saveRateLimited: 'Too many requests. Wait a minute and try again.',
   submitFailed: 'Unable to submit the case. Try again.',
   submitIncomplete: 'Submit response was incomplete.',
   submitNetworkFailed: 'Unable to reach the cases service. Try again in a moment.',
+  submitRateLimited: 'Too many requests. Wait a minute and try again.',
   actionDomain: 'Only draft cases can be updated or submitted.',
   actionNotFound: 'Case was not found.',
   actionUnauthorized: 'Your account cannot update this case.',
@@ -190,6 +201,7 @@ export const CASES_DRAFT_MESSAGES: CasesDraftMessages = {
   docsUploadFailed: 'Unable to upload the document. Try again.',
   docsUploadIncomplete: 'Upload response was incomplete.',
   docsUploadNetworkFailed: 'Unable to reach the documents service. Try again in a moment.',
+  docsUploadRateLimited: 'Too many requests. Wait a minute and try again.',
   docsUploadDomain: 'Documents can only be uploaded to draft or submitted cases.',
   docsUploadUnauthorized: 'Your account cannot upload documents.',
   docsUploadNotFound: 'Case was not found.',

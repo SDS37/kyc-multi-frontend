@@ -33,6 +33,7 @@ export interface ReportsHomeMessages {
   readonly columnUpdated: string;
   readonly listLoadFailed: string;
   readonly listIncomplete: string;
+  readonly listRateLimited: string;
 }
 
 export const REPORTS_HOME_MESSAGES: ReportsHomeMessages = {
@@ -50,6 +51,7 @@ export const REPORTS_HOME_MESSAGES: ReportsHomeMessages = {
   columnUpdated: 'Updated',
   listLoadFailed: 'Unable to load reports. Try again.',
   listIncomplete: 'Reports response was incomplete.',
+  listRateLimited: 'Too many requests. Wait a minute and try again.',
 };
 
 const CASE_SINGULAR: string = 'case';

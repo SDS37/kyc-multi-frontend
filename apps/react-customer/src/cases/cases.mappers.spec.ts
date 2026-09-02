@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { GraphqlHttpError } from '../shared/graphql.models';
 import {
   draftFormToFormDataJson,
   emptyDraftForm,
@@ -13,6 +14,7 @@ import {
   parseSubmittedCase,
   parseUpdatedDraft,
   prependDocument,
+  toCasesLoadError,
   toCreateDraftVariables,
   toDocumentUploadPath,
   toListCasesVariables,
@@ -22,7 +24,7 @@ import {
   validateDraftSave,
   validateDraftSubmit,
 } from './cases.mappers';
-import { CASES_DRAFT_MESSAGES } from './cases.messages';
+import { CASES_DRAFT_MESSAGES, CASES_LIST_MESSAGES } from './cases.messages';
 import {
   DraftActionError,
   CasesLoadError,
@@ -312,5 +314,11 @@ describe('cases.mappers', () => {
     };
     const b = { ...a, id: '2', fileName: 'b.pdf' };
     expect(prependDocument([a], b).map((d) => d.id)).toEqual(['2', '1']);
+  });
+
+  it('toCasesLoadError maps HTTP 429 to a rate-limit message', (): void => {
+    const mapped: CasesLoadError = toCasesLoadError(new GraphqlHttpError(429));
+    expect(mapped.code).toBe('RATE_LIMITED');
+    expect(mapped.message).toBe(CASES_LIST_MESSAGES.listRateLimited);
   });
 });

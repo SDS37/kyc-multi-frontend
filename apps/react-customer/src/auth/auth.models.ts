@@ -37,6 +37,13 @@ export function isAppRole(value: string): value is AppRole {
   return (APP_ROLES as readonly string[]).includes(value);
 }
 
+/** Roles allowed into the customer app (KYC-071). Reviewers use Angular / Vue. */
+export const CUSTOMER_ROLES: readonly AppRole[] = ['Customer'];
+
+export function isCustomerRole(role: AppRole): boolean {
+  return CUSTOMER_ROLES.includes(role);
+}
+
 /** Display-only claims from the access token (never trust for authorization). */
 export interface AccessTokenClaims {
   subject: string;

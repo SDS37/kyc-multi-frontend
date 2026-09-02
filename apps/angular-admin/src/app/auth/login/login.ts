@@ -58,6 +58,7 @@ export class Login {
 
   protected readonly submitting: WritableSignal<boolean> = signal(false);
   protected readonly formError: WritableSignal<string | null> = signal(null);
+  protected readonly captchaUnavailable: WritableSignal<boolean> = signal(false);
 
   protected readonly form: FormGroup<LoginFormControls> = this.fb.nonNullable.group({
     tenantSlug: ['', [Validators.required, Validators.maxLength(64)]],
@@ -71,11 +72,23 @@ export class Login {
     ],
   });
 
-  protected onCaptchaLoadFailed(): void {
+  onCaptchaLoadFailed(): void {
+    this.captchaUnavailable.set(true);
     this.formError.set(this.copy.captchaUnavailable);
   }
 
+  onCaptchaRetried(): void {
+    this.captchaUnavailable.set(false);
+    this.formError.set(null);
+  }
+
   protected submit(): void {
+    if (this.captchaUnavailable()) {
+      this.formError.set(this.copy.captchaUnavailable);
+      this.form.markAllAsTouched();
+      return;
+    }
+
     this.formError.set(null);
     this.form.markAllAsTouched();
     if (this.form.invalid || this.submitting()) {

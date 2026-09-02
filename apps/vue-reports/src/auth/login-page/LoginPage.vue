@@ -91,15 +91,16 @@
           ref="captchaRef"
           v-model="captchaToken"
           :site-key="turnstileSiteKey"
-          :disabled="submitting"
+          :disabled="submitting || captchaUnavailable"
           :invalid="touched && fieldErrors.captchaToken !== undefined"
           @load-failed="onCaptchaLoadFailed"
+          @retried="onCaptchaRetried"
         />
 
         <button
           type="submit"
           :class="$style['submit']"
-          :disabled="submitting"
+          :disabled="submitting || captchaUnavailable"
           :aria-busy="submitting"
         >
           <template v-if="submitting">
@@ -151,6 +152,7 @@ const captchaToken: Ref<string> = ref('');
 const touched: Ref<boolean> = ref(false);
 const submitting: Ref<boolean> = ref(false);
 const formError: Ref<string | null> = ref(null);
+const captchaUnavailable: Ref<boolean> = ref(false);
 const captchaRequired: boolean = appConfig.captchaRequiredForLogin;
 const turnstileSiteKey: string = appConfig.turnstileSiteKey;
 const captchaRef: Ref<{ reset: () => void } | null> = ref(null);
@@ -167,12 +169,24 @@ const fieldErrors: ComputedRef<LoginFieldErrors> = computed((): LoginFieldErrors
 });
 
 function onCaptchaLoadFailed(): void {
+  captchaUnavailable.value = true;
   formError.value = copy.captchaUnavailable;
 }
 
-async function onSubmit(): Promise<void> {
+function onCaptchaRetried(): void {
+  captchaUnavailable.value = false;
   formError.value = null;
+}
+
+async function onSubmit(): Promise<void> {
   touched.value = true;
+
+  if (captchaUnavailable.value) {
+    formError.value = copy.captchaUnavailable;
+    return;
+  }
+
+  formError.value = null;
 
   const credentials: LoginCredentials = {
     tenantSlug: tenantSlug.value,

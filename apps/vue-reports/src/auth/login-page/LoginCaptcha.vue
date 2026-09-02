@@ -14,6 +14,14 @@
       <p v-if="invalid" id="captcha-error" :class="$style['error']">
         {{ copy.captchaRequired }}
       </p>
+      <button
+        v-if="widgetFailed"
+        type="button"
+        :class="$style['retry']"
+        @click="retryWidget"
+      >
+        {{ copy.captchaRetry }}
+      </button>
     </template>
     <template v-else>
       <label for="captchaToken">{{ copy.captchaLabel }}</label>
@@ -39,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, type ComputedRef, type Ref } from 'vue';
+import { computed, onUnmounted, ref, watch, type ComputedRef, type Ref } from 'vue';
 import { LOGIN_MESSAGES, type LoginMessages } from '../auth.messages';
 import { loadTurnstileWidget, type TurnstileWidgetApi } from '../turnstile-loader';
 
@@ -55,14 +63,18 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [token: string];
   loadFailed: [];
+  retried: [];
 }>();
 
 const copy: LoginMessages = LOGIN_MESSAGES;
 const usesWidget: ComputedRef<boolean> = computed((): boolean => props.siteKey.trim().length > 0);
 const hostEl: Ref<HTMLDivElement | null> = ref(null);
+const widgetFailed: Ref<boolean> = ref(false);
+const retryNonce: Ref<number> = ref(0);
 let widgetApi: TurnstileWidgetApi | null = null;
 let widgetId: string | null = null;
 let destroyed: boolean = false;
+let mountEpoch: number = 0;
 
 function emitToken(token: string): void {
   if (destroyed || props.disabled) {
@@ -86,52 +98,71 @@ function reset(): void {
   emit('update:modelValue', '');
 }
 
-defineExpose({ reset });
-
-onMounted((): void => {
-  if (!usesWidget.value) {
-    return;
-  }
-  const site: string = props.siteKey.trim();
-  void loadTurnstileWidget()
-    .then((api: TurnstileWidgetApi): void => {
-      if (destroyed) {
-        return;
-      }
-      const host: HTMLDivElement | null = hostEl.value;
-      if (!host) {
-        emit('loadFailed');
-        return;
-      }
-      widgetApi = api;
-      widgetId = api.render(host, {
-        sitekey: site,
-        callback: (token: string): void => {
-          emitToken(token);
-        },
-        'expired-callback': (): void => {
-          emitToken('');
-        },
-        'error-callback': (): void => {
-          emitToken('');
-        },
-        theme: 'auto',
-      });
-    })
-    .catch((): void => {
-      if (!destroyed) {
-        emit('loadFailed');
-      }
-    });
-});
-
-onUnmounted((): void => {
-  destroyed = true;
+function removeWidget(): void {
   if (widgetApi && widgetId) {
     widgetApi.remove(widgetId);
   }
   widgetApi = null;
   widgetId = null;
+}
+
+function retryWidget(): void {
+  widgetFailed.value = false;
+  retryNonce.value += 1;
+  emit('retried');
+}
+
+defineExpose({ reset });
+
+watch(
+  [usesWidget, (): string => props.siteKey, hostEl, retryNonce],
+  (): void => {
+    const epoch: number = ++mountEpoch;
+    removeWidget();
+    if (!usesWidget.value) {
+      return;
+    }
+    const host: HTMLDivElement | null = hostEl.value;
+    const site: string = props.siteKey.trim();
+    if (!host || !site) {
+      return;
+    }
+    void loadTurnstileWidget()
+      .then((api: TurnstileWidgetApi): void => {
+        if (destroyed || epoch !== mountEpoch) {
+          return;
+        }
+        if (hostEl.value !== host) {
+          return;
+        }
+        widgetApi = api;
+        widgetId = api.render(host, {
+          sitekey: site,
+          callback: (token: string): void => {
+            emitToken(token);
+          },
+          'expired-callback': (): void => {
+            emitToken('');
+          },
+          'error-callback': (): void => {
+            emitToken('');
+          },
+          theme: 'auto',
+        });
+      })
+      .catch((): void => {
+        if (!destroyed && epoch === mountEpoch) {
+          widgetFailed.value = true;
+          emit('loadFailed');
+        }
+      });
+  },
+);
+
+onUnmounted((): void => {
+  destroyed = true;
+  mountEpoch += 1;
+  removeWidget();
 });
 </script>
 
@@ -193,5 +224,24 @@ onUnmounted((): void => {
   margin: 0;
   color: var(--kyc-color-danger);
   font-size: var(--kyc-text-sm);
+}
+
+.retry {
+  align-self: flex-start;
+  min-height: 2.75rem;
+  padding: 0 var(--kyc-space-3);
+  border: 1px solid var(--kyc-color-border);
+  border-radius: var(--kyc-radius-md);
+  background: var(--kyc-color-surface-raised);
+  color: var(--kyc-color-text);
+  font: inherit;
+  font-size: var(--kyc-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: none;
+  box-shadow: var(--kyc-focus-ring);
 }
 </style>

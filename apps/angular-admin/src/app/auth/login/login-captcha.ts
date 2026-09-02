@@ -35,12 +35,15 @@ import { loadTurnstileWidget, type TurnstileWidgetApi } from '../turnstile-loade
 export class LoginCaptcha implements ControlValueAccessor, OnInit, OnDestroy {
   readonly siteKey = input<string>('');
   readonly loadFailed = output<void>();
+  readonly retried = output<void>();
 
   protected readonly copy: typeof LOGIN_MESSAGES = LOGIN_MESSAGES;
   protected readonly usesWidget = computed((): boolean => this.siteKey().trim().length > 0);
   protected readonly token: WritableSignal<string> = signal('');
   protected readonly disabled: WritableSignal<boolean> = signal(false);
   protected readonly showInvalid: WritableSignal<boolean> = signal(false);
+  protected readonly widgetFailed: WritableSignal<boolean> = signal(false);
+  private readonly retryNonce: WritableSignal<number> = signal(0);
 
   private readonly document: Document = inject(DOCUMENT);
   private readonly destroyRef: DestroyRef = inject(DestroyRef);
@@ -53,6 +56,7 @@ export class LoginCaptcha implements ControlValueAccessor, OnInit, OnDestroy {
   private widgetApi: TurnstileWidgetApi | null = null;
   private widgetId: string | null = null;
   private destroyed: boolean = false;
+  private mountEpoch: number = 0;
   private onChange: (value: string) => void = (): void => {
     /* CVA: assigned in registerOnChange */
   };
@@ -76,11 +80,12 @@ export class LoginCaptcha implements ControlValueAccessor, OnInit, OnDestroy {
     write: (onCleanup: EffectCleanupRegisterFn): void => {
       const siteKey: string = this.siteKey().trim();
       const host: HTMLDivElement | undefined = this.widgetHost()?.nativeElement;
+      const retryNonce: number = this.retryNonce();
       if (!siteKey || !host) {
         return;
       }
 
-      void this.mountWidget(siteKey, host);
+      void this.mountWidget(siteKey, host, retryNonce);
       onCleanup((): void => {
         this.removeWidget();
       });
@@ -124,6 +129,12 @@ export class LoginCaptcha implements ControlValueAccessor, OnInit, OnDestroy {
     this.disabled.set(isDisabled);
   }
 
+  protected retryWidget(): void {
+    this.widgetFailed.set(false);
+    this.retryNonce.update((nonce: number): number => nonce + 1);
+    this.retried.emit();
+  }
+
   protected onTokenInput(event: Event): void {
     const target: EventTarget | null = event.target;
     if (!(target instanceof HTMLInputElement)) {
@@ -152,10 +163,20 @@ export class LoginCaptcha implements ControlValueAccessor, OnInit, OnDestroy {
     this.showInvalid.set(control !== null && control.invalid && control.touched);
   }
 
-  private async mountWidget(siteKey: string, host: HTMLDivElement): Promise<void> {
+  private async mountWidget(
+    siteKey: string,
+    host: HTMLDivElement,
+    retryNonce: number,
+  ): Promise<void> {
+    const epoch: number = ++this.mountEpoch;
     try {
       const api: TurnstileWidgetApi = await loadTurnstileWidget(this.document);
-      if (this.destroyed || this.widgetHost()?.nativeElement !== host) {
+      if (
+        this.destroyed ||
+        epoch !== this.mountEpoch ||
+        retryNonce !== this.retryNonce() ||
+        this.widgetHost()?.nativeElement !== host
+      ) {
         return;
       }
       this.widgetApi = api;
@@ -173,7 +194,8 @@ export class LoginCaptcha implements ControlValueAccessor, OnInit, OnDestroy {
         theme: 'auto',
       });
     } catch {
-      if (!this.destroyed) {
+      if (!this.destroyed && epoch === this.mountEpoch && retryNonce === this.retryNonce()) {
+        this.widgetFailed.set(true);
         this.loadFailed.emit();
       }
     }

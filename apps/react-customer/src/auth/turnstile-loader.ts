@@ -101,8 +101,7 @@ function loadTurnstileWidgetFrom(doc: Document): Promise<TurnstileWidgetApi> {
         return;
       }
       // load/error already fired (or a prior attempt failed). Do not attach listeners.
-      fail(found, 'Turnstile script failed');
-      return;
+      found.remove();
     }
 
     const head: HTMLHeadElement | null = doc.head;
@@ -122,7 +121,7 @@ function loadTurnstileWidgetFrom(doc: Document): Promise<TurnstileWidgetApi> {
   });
 
   inFlight = pending;
-  void pending.catch((): void => {
+  void pending.finally((): void => {
     inFlight = null;
   });
   return pending;

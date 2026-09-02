@@ -11,6 +11,7 @@ import {
   toListCasesVariables,
 } from './cases.mappers';
 import { CasesLoadError } from './cases.models';
+import { CASES_LIST_MESSAGES } from './cases.messages';
 
 describe('cases.mappers', () => {
   it('toListCasesVariables applies defaults', (): void => {
@@ -82,6 +83,14 @@ describe('cases.mappers', () => {
 
   it('toCasesLoadError maps network failures', (): void => {
     expect(toCasesLoadError(new HttpErrorResponse({ status: 0 })).code).toBe('NETWORK');
+  });
+
+  it('toCasesLoadError maps HTTP 429 to a rate-limit message', (): void => {
+    const mapped: CasesLoadError = toCasesLoadError(
+      new HttpErrorResponse({ status: 429, statusText: 'Too Many Requests' }),
+    );
+    expect(mapped.code).toBe('RATE_LIMITED');
+    expect(mapped.message).toBe(CASES_LIST_MESSAGES.listRateLimited);
   });
 
   it('resolveReviewActions follows status rules for reviewers', (): void => {

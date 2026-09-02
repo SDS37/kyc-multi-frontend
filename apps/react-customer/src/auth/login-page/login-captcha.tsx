@@ -5,6 +5,7 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from 'react';
 import { LOGIN_MESSAGES, type LoginMessages } from '../auth.messages';
 import { loadTurnstileWidget, type TurnstileWidgetApi } from '../turnstile-loader';
@@ -21,6 +22,7 @@ export interface LoginCaptchaProps {
   readonly value: string;
   readonly onTokenChange: (token: string) => void;
   readonly onLoadFailed: () => void;
+  readonly onRetry: () => void;
 }
 
 /**
@@ -29,7 +31,7 @@ export interface LoginCaptchaProps {
  */
 export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
   function LoginCaptcha(
-    { siteKey, disabled, invalid, value, onTokenChange, onLoadFailed }: LoginCaptchaProps,
+    { siteKey, disabled, invalid, value, onTokenChange, onLoadFailed, onRetry }: LoginCaptchaProps,
     ref,
   ): ReactElement {
     const copy: LoginMessages = LOGIN_MESSAGES;
@@ -39,12 +41,16 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
     const widgetIdRef = useRef<string | null>(null);
     const onTokenChangeRef = useRef(onTokenChange);
     const onLoadFailedRef = useRef(onLoadFailed);
+    const onRetryRef = useRef(onRetry);
     const disabledRef = useRef(disabled);
     const unmountedRef = useRef(false);
+    const [retryNonce, setRetryNonce] = useState<number>(0);
+    const [widgetFailed, setWidgetFailed] = useState<boolean>(false);
 
     useEffect((): void => {
       onTokenChangeRef.current = onTokenChange;
       onLoadFailedRef.current = onLoadFailed;
+      onRetryRef.current = onRetry;
       disabledRef.current = disabled;
     });
 
@@ -79,6 +85,7 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
           }
           const host: HTMLDivElement | null = hostRef.current;
           if (!host) {
+            setWidgetFailed(true);
             onLoadFailedRef.current();
             return;
           }
@@ -108,6 +115,7 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
         })
         .catch((): void => {
           if (!cancelled && !unmountedRef.current) {
+            setWidgetFailed(true);
             onLoadFailedRef.current();
           }
         });
@@ -120,7 +128,7 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
         apiRef.current = null;
         widgetIdRef.current = null;
       };
-    }, [usesWidget, siteKey]);
+    }, [usesWidget, siteKey, retryNonce]);
 
     if (usesWidget) {
       const widgetClass: string = disabled
@@ -144,6 +152,19 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
             <p id="captcha-error" className={styles['error']}>
               {copy.captchaRequired}
             </p>
+          ) : null}
+          {widgetFailed ? (
+            <button
+              type="button"
+              className={styles['retry']}
+              onClick={(): void => {
+                setWidgetFailed(false);
+                setRetryNonce((nonce: number): number => nonce + 1);
+                onRetryRef.current();
+              }}
+            >
+              {copy.captchaRetry}
+            </button>
           ) : null}
         </div>
       );

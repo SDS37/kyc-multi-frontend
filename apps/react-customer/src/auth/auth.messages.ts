@@ -24,6 +24,8 @@ export interface LoginMessages {
   readonly captchaRequired: string;
   readonly captchaHelp: string;
   readonly captchaUnavailable: string;
+  readonly captchaRetry: string;
+  readonly wrongAppRole: string;
 }
 
 export const LOGIN_MESSAGES: LoginMessages = {
@@ -48,7 +50,10 @@ export const LOGIN_MESSAGES: LoginMessages = {
   captchaLabel: 'Verification',
   captchaRequired: 'Complete the verification check.',
   captchaHelp: 'Paste the verification token from your sign-in provider.',
-  captchaUnavailable: 'Verification could not load. Refresh the page and try again.',
+  captchaUnavailable: 'Verification could not load. Try again.',
+  captchaRetry: 'Try again',
+  wrongAppRole:
+    'This app is for customers. Use the admin or reports app for review.',
 };
 
 /** Shell role labels (display only). */

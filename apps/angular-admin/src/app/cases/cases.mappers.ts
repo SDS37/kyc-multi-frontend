@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { AppRole } from '../auth/auth.models';
+import { AppRole, RATE_LIMITED_CODE, RATE_LIMITED_HTTP_STATUS } from '../auth/auth.models';
 import { GraphqlError } from '../shared/graphql.models';
 import {
   CASE_FORM_FIELD_LABELS,
@@ -111,6 +111,9 @@ export function toCasesLoadError(err: unknown): CasesLoadError {
     return err;
   }
   if (err instanceof HttpErrorResponse) {
+    if (err.status === RATE_LIMITED_HTTP_STATUS) {
+      return new CasesLoadError(CASES_LIST_MESSAGES.listRateLimited, RATE_LIMITED_CODE);
+    }
     return new CasesLoadError(CASES_LIST_MESSAGES.listNetworkFailed, 'NETWORK');
   }
   return new CasesLoadError(CASES_LIST_MESSAGES.listLoadFailed);
@@ -347,6 +350,9 @@ export function toCaseActionError(err: unknown): CaseActionError {
     return err;
   }
   if (err instanceof HttpErrorResponse) {
+    if (err.status === RATE_LIMITED_HTTP_STATUS) {
+      return new CaseActionError(CASES_REVIEW_MESSAGES.actionRateLimited, RATE_LIMITED_CODE);
+    }
     return new CaseActionError(CASES_REVIEW_MESSAGES.actionNetworkFailed, 'NETWORK');
   }
   return new CaseActionError(CASES_REVIEW_MESSAGES.actionFailed);
@@ -358,6 +364,9 @@ export function toCaseDownloadError(err: unknown): CaseDownloadError {
     return err;
   }
   if (err instanceof HttpErrorResponse) {
+    if (err.status === RATE_LIMITED_HTTP_STATUS) {
+      return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadRateLimited, RATE_LIMITED_CODE);
+    }
     if (err.status === 404) {
       return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadNotFound, 'NOT_FOUND');
     }

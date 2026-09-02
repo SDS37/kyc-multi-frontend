@@ -9,23 +9,61 @@ describe('loadTurnstileWidget', (): void => {
     delete (globalThis as { turnstile?: unknown }).turnstile;
   });
 
-  it('rejects when a leftover script already failed instead of hanging', async (): Promise<void> => {
+  it('replaces a leftover failed script and can resolve on a fresh load', async (): Promise<void> => {
     const leftover: HTMLScriptElement = document.createElement('script');
     leftover.setAttribute('data-kyc-turnstile', '1');
     leftover.setAttribute('data-kyc-turnstile-state', 'error');
     document.head.appendChild(leftover);
 
-    await expect(loadTurnstileWidget(document)).rejects.toThrow('Turnstile script failed');
-    await Promise.resolve();
+    const loading: Promise<unknown> = loadTurnstileWidget(document);
+    const injected: HTMLScriptElement | null = document.querySelector(
+      'script[data-kyc-turnstile]',
+    );
+    expect(injected).not.toBe(leftover);
+    expect(injected?.getAttribute('data-kyc-turnstile-state')).toBe('pending');
+    expect(document.contains(leftover)).toBe(false);
+
+    (globalThis as { turnstile?: unknown }).turnstile = {
+      render: (): string => 'widget-1',
+      reset: (): void => {
+        /* test double */
+      },
+      remove: (): void => {
+        /* test double */
+      },
+    };
+    injected?.dispatchEvent(new Event('load'));
+
+    await expect(loading).resolves.toMatchObject({
+      render: expect.any(Function),
+    });
   });
 
-  it('rejects when the existing script has no pending state (events already fired)', async (): Promise<void> => {
+  it('replaces a leftover script whose load event already fired', async (): Promise<void> => {
     const leftover: HTMLScriptElement = document.createElement('script');
     leftover.setAttribute('data-kyc-turnstile', '1');
     document.head.appendChild(leftover);
 
-    await expect(loadTurnstileWidget(document)).rejects.toThrow('Turnstile script failed');
-    await Promise.resolve();
+    const loading: Promise<unknown> = loadTurnstileWidget(document);
+    const injected: HTMLScriptElement | null = document.querySelector(
+      'script[data-kyc-turnstile]',
+    );
+    expect(injected).not.toBe(leftover);
+
+    (globalThis as { turnstile?: unknown }).turnstile = {
+      render: (): string => 'widget-1',
+      reset: (): void => {
+        /* test double */
+      },
+      remove: (): void => {
+        /* test double */
+      },
+    };
+    injected?.dispatchEvent(new Event('load'));
+
+    await expect(loading).resolves.toMatchObject({
+      render: expect.any(Function),
+    });
   });
 
   it('resolves from a pending in-document script when Turnstile becomes available', async (): Promise<void> => {

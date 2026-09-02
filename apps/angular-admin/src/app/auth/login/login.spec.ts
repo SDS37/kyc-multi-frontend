@@ -283,6 +283,26 @@ describe('Login with captcha', (): void => {
     expect(captcha.value).toBe('');
     expect(captcha.disabled).toBe(false);
   });
+
+  it('blocks submit when the captcha script fails to load', (): void => {
+    const login: Login = fixture.componentInstance;
+    login.onCaptchaLoadFailed();
+    fixture.detectChanges();
+
+    setFormValues(fixture, {
+      tenantSlug: 'acme',
+      email: 'reviewer@acme.test',
+      password: 'Password1!',
+      captchaToken: 'token-1',
+    });
+    submitForm(fixture);
+
+    httpTesting.expectNone(graphqlUrl);
+    expect(fixture.nativeElement.textContent).toContain(LOGIN_MESSAGES.captchaUnavailable);
+    const submit: Element | null = fixture.nativeElement.querySelector('button[type="submit"]');
+    expect(submit).toBeInstanceOf(HTMLButtonElement);
+    expect((submit as HTMLButtonElement).disabled).toBe(true);
+  });
 });
 
 function setFormValues(

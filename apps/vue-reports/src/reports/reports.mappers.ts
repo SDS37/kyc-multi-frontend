@@ -1,4 +1,5 @@
-import type { GraphqlError, GraphqlResponse } from '../shared/graphql.models';
+import { GraphqlHttpError, type GraphqlError, type GraphqlResponse } from '../shared/graphql.models';
+import { RATE_LIMITED_CODE, RATE_LIMITED_HTTP_STATUS } from '../auth/auth.models';
 import {
   CASE_STATUS_LABELS,
   REPORTS_HOME_MESSAGES,
@@ -106,6 +107,12 @@ export function parseReportsOverview(
 export function toReportsLoadError(err: unknown): ReportsLoadError {
   if (err instanceof ReportsLoadError) {
     return err;
+  }
+  if (err instanceof GraphqlHttpError) {
+    if (err.status === RATE_LIMITED_HTTP_STATUS) {
+      return new ReportsLoadError(REPORTS_HOME_MESSAGES.listRateLimited, RATE_LIMITED_CODE);
+    }
+    return new ReportsLoadError(REPORTS_HOME_MESSAGES.listLoadFailed, 'NETWORK');
   }
   if (err instanceof TypeError) {
     return new ReportsLoadError(REPORTS_HOME_MESSAGES.listLoadFailed, 'NETWORK');
