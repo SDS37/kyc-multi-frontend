@@ -37,6 +37,8 @@ npm run test:ci
 npm run build
 ```
 
+Production `ng build` uses `src/environments/environment.ts`, which has **empty** `apiBaseUrl` / `graphqlUrl`. Bootstrap throws if those stay empty or point at `localhost`. Set explicit HTTPS origins in that file (or a deploy-time replacement) before shipping. `ng serve` keeps `environment.development.ts` (`http://localhost:5295`).
+
 PRs that touch `apps/angular-admin` (or `.github/workflows/angular-ci.yml`) run GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`).
 
 ## What KYC-065 delivers

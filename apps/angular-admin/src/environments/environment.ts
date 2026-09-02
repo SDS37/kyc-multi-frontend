@@ -1,11 +1,14 @@
 import { AppConfig } from '../app/config/config.models';
 
+/**
+ * Production defaults (KYC-095). `ng build` uses this file.
+ * Local `ng serve` file-replaces with `environment.development.ts`.
+ * Set real HTTPS origins before a production deploy — empty/localhost fail at bootstrap.
+ */
 export const environment: AppConfig & { readonly production: boolean } = {
   production: true,
-  /** .NET API origin (GraphQL + document REST). */
-  apiBaseUrl: 'http://localhost:5295',
-  /** Hot Chocolate endpoint used by the admin app. */
-  graphqlUrl: 'http://localhost:5295/graphql',
+  apiBaseUrl: '',
+  graphqlUrl: '',
   captchaRequiredForLogin: false,
   turnstileSiteKey: '',
 };

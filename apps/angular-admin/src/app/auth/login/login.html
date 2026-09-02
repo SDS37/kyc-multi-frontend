@@ -94,6 +94,7 @@
         type="submit"
         class="login__submit"
         [disabled]="submitting() || captchaUnavailable()"
+        [attr.aria-busy]="submitting()"
       >
         @if (submitting()) {
           <mat-spinner diameter="20" [attr.aria-label]="copy.submittingAria" />

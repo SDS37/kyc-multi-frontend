@@ -62,6 +62,10 @@ export function CaseDraft(): ReactElement {
 
   documentsRef.current = documents;
 
+  function stillCurrent(seq: number): boolean {
+    return loadSeq.current === seq;
+  }
+
   function replaceDocuments(next: readonly CaseDocument[]): void {
     documentsRef.current = next;
     setDocuments(next);
@@ -98,22 +102,25 @@ export function CaseDraft(): ReactElement {
     }
   }, []);
 
-  useEffect((): void => {
+  useEffect((): (() => void) | void => {
     if (!caseIdValid) {
       return;
     }
     void loadDetail(caseIdParam);
+    return (): void => {
+      loadSeq.current += 1;
+    };
   }, [caseIdParam, caseIdValid, loadDetail]);
 
   if (!caseIdValid) {
     return (
-      <main>
+      <section>
         <CaseDraftLoadError
           message={draftCopy.invalidCaseLink}
           showRetry={false}
           onRetry={(): void => undefined}
         />
-      </main>
+      </section>
     );
   }
 
@@ -138,6 +145,7 @@ export function CaseDraft(): ReactElement {
       return;
     }
 
+    const seq: number = loadSeq.current;
     actionLock.current = true;
     setSaving(true);
     try {
@@ -145,16 +153,24 @@ export function CaseDraft(): ReactElement {
         ...detail,
         documents: documentsRef.current,
       });
+      if (!stillCurrent(seq)) {
+        return;
+      }
       const liveDocs: readonly CaseDocument[] = documentsRef.current;
       setDetail({ ...saved, documents: liveDocs });
       setForm(saved.form);
       setFieldErrors({});
       setSuccessMessage(draftCopy.saveSuccess);
     } catch (err: unknown) {
+      if (!stillCurrent(seq)) {
+        return;
+      }
       setActionError(toDraftActionError(err, 'save').message);
     } finally {
       actionLock.current = false;
-      setSaving(false);
+      if (stillCurrent(seq)) {
+        setSaving(false);
+      }
     }
   }
 
@@ -172,6 +188,7 @@ export function CaseDraft(): ReactElement {
       return;
     }
 
+    const seq: number = loadSeq.current;
     actionLock.current = true;
     setSubmitting(true);
     let savedDraft: CaseDraftDetail | null = null;
@@ -180,16 +197,25 @@ export function CaseDraft(): ReactElement {
         ...detail,
         documents: documentsRef.current,
       });
+      if (!stillCurrent(seq)) {
+        return;
+      }
       const submitted: CaseDraftDetail = await submitCase(savedDraft.id, {
         ...savedDraft,
         documents: documentsRef.current,
       });
+      if (!stillCurrent(seq)) {
+        return;
+      }
       const liveDocs: readonly CaseDocument[] = documentsRef.current;
       setDetail({ ...submitted, documents: liveDocs });
       setForm(submitted.form);
       setFieldErrors({});
       setSuccessMessage(draftCopy.submitSuccess);
     } catch (err: unknown) {
+      if (!stillCurrent(seq)) {
+        return;
+      }
       if (savedDraft !== null) {
         const liveDocs: readonly CaseDocument[] = documentsRef.current;
         setDetail({ ...savedDraft, documents: liveDocs });
@@ -200,7 +226,9 @@ export function CaseDraft(): ReactElement {
       }
     } finally {
       actionLock.current = false;
-      setSubmitting(false);
+      if (stillCurrent(seq)) {
+        setSubmitting(false);
+      }
     }
   }
 
@@ -216,11 +244,15 @@ export function CaseDraft(): ReactElement {
       return;
     }
 
+    const seq: number = loadSeq.current;
     uploadLock.current = true;
     setUploading(true);
     setUploadError(null);
     try {
       const uploaded: CaseDocument = await uploadDocument(detail.id, file);
+      if (!stillCurrent(seq)) {
+        return;
+      }
       const next: readonly CaseDocument[] = prependDocument(
         documentsRef.current,
         uploaded,
@@ -230,10 +262,15 @@ export function CaseDraft(): ReactElement {
         prev === null ? null : { ...prev, documents: next },
       );
     } catch (err: unknown) {
+      if (!stillCurrent(seq)) {
+        return;
+      }
       setUploadError(toDocumentUploadTransportError(err).message);
     } finally {
       uploadLock.current = false;
-      setUploading(false);
+      if (stillCurrent(seq)) {
+        setUploading(false);
+      }
     }
   }
 
@@ -242,7 +279,7 @@ export function CaseDraft(): ReactElement {
 
   if (loadError !== null) {
     return (
-      <main>
+      <section>
         <CaseDraftLoadError
           message={loadError}
           showRetry={caseIdValid}
@@ -250,21 +287,21 @@ export function CaseDraft(): ReactElement {
             void loadDetail(caseIdParam);
           }}
         />
-      </main>
+      </section>
     );
   }
 
   if (loading || !detailMatchesRoute || detail === null) {
     return (
-      <main>
+      <section>
         <CaseDraftLoading />
-      </main>
+      </section>
     );
   }
 
   if (!detail.canEdit) {
     return (
-      <main>
+      <section>
         <CaseDraftReadonly
           detail={detail}
           successMessage={successMessage}
@@ -276,12 +313,12 @@ export function CaseDraft(): ReactElement {
             void onFileSelected(file);
           }}
         />
-      </main>
+      </section>
     );
   }
 
   return (
-    <main>
+    <section>
       <CaseDraftForm
         detail={detail}
         form={form}
@@ -306,6 +343,6 @@ export function CaseDraft(): ReactElement {
           void onFileSelected(file);
         }}
       />
-    </main>
+    </section>
   );
 }

@@ -120,7 +120,7 @@ public sealed partial class UploadDocumentService(
 
             buffer.Position = 0;
             return await PersistAsync(
-                entity,
+                entity.Id,
                 tenantId.Value,
                 userId.Value,
                 safeName,
@@ -131,7 +131,7 @@ public sealed partial class UploadDocumentService(
         }
 
         return await PersistAsync(
-            entity,
+            entity.Id,
             tenantId.Value,
             userId.Value,
             safeName,
@@ -142,7 +142,7 @@ public sealed partial class UploadDocumentService(
     }
 
     private async Task<(CaseDocumentMetadataResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, bool Forbidden, string? ErrorCode, string? ErrorMessage)> PersistAsync(
-        Case caseEntity,
+        Guid caseId,
         Guid tenantId,
         Guid userId,
         string safeName,
@@ -152,7 +152,7 @@ public sealed partial class UploadDocumentService(
         CancellationToken cancellationToken)
     {
         var documentId = Guid.NewGuid();
-        var storageKey = DocumentUploadValidation.BuildStorageKey(tenantId, caseEntity.Id, documentId, safeName);
+        var storageKey = DocumentUploadValidation.BuildStorageKey(tenantId, caseId, documentId, safeName);
         var uploadedAt = DateTimeOffset.UtcNow;
 
         try
@@ -161,7 +161,7 @@ public sealed partial class UploadDocumentService(
         }
         catch (Exception ex)
         {
-            LogObjectStoragePutFailed(logger, ex, caseEntity.Id);
+            LogObjectStoragePutFailed(logger, ex, caseId);
             return (
                 null,
                 Array.Empty<string>(),
@@ -175,7 +175,7 @@ public sealed partial class UploadDocumentService(
         {
             Id = documentId,
             TenantId = tenantId,
-            CaseId = caseEntity.Id,
+            CaseId = caseId,
             FileName = safeName,
             ContentType = contentType,
             SizeBytes = sizeBytes,
@@ -186,40 +186,26 @@ public sealed partial class UploadDocumentService(
 
         try
         {
-            db.Documents.Add(document);
-            caseEntity.UpdatedAt = uploadedAt;
-            AuditRecorder.Append(
-                db,
+            var persisted = await TryPersistMetadataAsync(
+                document,
                 tenantId,
                 userId,
-                AuditEntityTypes.Document,
-                document.Id,
-                AuditActions.DocumentUploaded,
                 uploadedAt,
-                payload: System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    caseId = caseEntity.Id,
-                    fileName = document.FileName,
-                    contentType = document.ContentType,
-                    sizeBytes = document.SizeBytes
-                }));
-            await db.SaveChangesAsync(cancellationToken);
+                cancellationToken);
+            if (!persisted)
+            {
+                await CompensateObjectAsync(storageKey, documentId, caseId, cancellationToken);
+                return await UploadRejectedAfterRaceAsync(caseId, userId, cancellationToken);
+            }
         }
         catch (Exception ex)
         {
             LogDocumentMetadataSaveFailed(logger, ex, documentId);
-            try
-            {
-                await objectStorage.DeleteAsync(storageKey, cancellationToken);
-            }
-            catch (Exception deleteEx)
-            {
-                LogDocumentOrphanCleanupFailed(logger, deleteEx, storageKey);
-            }
+            await CompensateObjectAsync(storageKey, documentId, caseId, cancellationToken);
             return (null, ["Could not save document metadata. Please try again."], false, false, null, null);
         }
 
-        LogDocumentUploaded(logger, documentId, caseEntity.Id, sizeBytes, contentType);
+        LogDocumentUploaded(logger, documentId, caseId, sizeBytes, contentType);
 
         return (
             new CaseDocumentMetadataResponse(
@@ -236,6 +222,89 @@ public sealed partial class UploadDocumentService(
             null);
     }
 
+    /// <summary>
+    /// Inserts metadata only if the case is still Draft or Submitted (same-transaction status check).
+    /// </summary>
+    private async Task<bool> TryPersistMetadataAsync(
+        Document document,
+        Guid tenantId,
+        Guid userId,
+        DateTimeOffset uploadedAt,
+        CancellationToken cancellationToken)
+    {
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+            var rows = await db.Cases
+                .Where(c =>
+                    c.Id == document.CaseId &&
+                    c.CustomerUserId == userId &&
+                    (c.Status == CaseStatus.Draft || c.Status == CaseStatus.Submitted))
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(c => c.UpdatedAt, uploadedAt),
+                    cancellationToken);
+            if (rows == 0)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return false;
+            }
+
+            db.Documents.Add(document);
+            AuditRecorder.Append(
+                db,
+                tenantId,
+                userId,
+                AuditEntityTypes.Document,
+                document.Id,
+                AuditActions.DocumentUploaded,
+                uploadedAt,
+                payload: System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    caseId = document.CaseId,
+                    fileName = document.FileName,
+                    contentType = document.ContentType,
+                    sizeBytes = document.SizeBytes
+                }));
+            await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        });
+    }
+
+    private async Task<(CaseDocumentMetadataResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, bool Forbidden, string? ErrorCode, string? ErrorMessage)> UploadRejectedAfterRaceAsync(
+        Guid caseId,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var current = await db.Cases
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == caseId, cancellationToken);
+        if (current is null || current.CustomerUserId != userId)
+        {
+            return (null, Array.Empty<string>(), false, false, "NOT_FOUND", NotFoundMessage);
+        }
+
+        return (null, Array.Empty<string>(), false, false, "DOMAIN", NotUploadableMessage);
+    }
+
+    private async Task CompensateObjectAsync(
+        string storageKey,
+        Guid documentId,
+        Guid caseId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await objectStorage.DeleteAsync(storageKey, cancellationToken);
+        }
+        catch (Exception deleteEx)
+        {
+            LogDocumentOrphanCleanupFailed(logger, deleteEx, documentId, caseId);
+        }
+    }
+
     [LoggerMessage(Level = LogLevel.Error, Message = "Object storage put failed for case {CaseId}")]
     private static partial void LogObjectStoragePutFailed(ILogger logger, Exception ex, Guid caseId);
 
@@ -244,8 +313,12 @@ public sealed partial class UploadDocumentService(
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "Compensating object-storage delete failed for key {StorageKey}; object may be orphaned")]
-    private static partial void LogDocumentOrphanCleanupFailed(ILogger logger, Exception ex, string storageKey);
+        Message = "Compensating object-storage delete failed for document {DocumentId} case {CaseId}; object may be orphaned")]
+    private static partial void LogDocumentOrphanCleanupFailed(
+        ILogger logger,
+        Exception ex,
+        Guid documentId,
+        Guid caseId);
 
     [LoggerMessage(
         Level = LogLevel.Information,

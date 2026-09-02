@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Kyc.Api.Application.Documents;
@@ -83,4 +84,14 @@ public static class DocumentUploadValidation
 
     public static string BuildStorageKey(Guid tenantId, Guid caseId, Guid documentId, string safeFileName) =>
         $"tenants/{tenantId:N}/cases/{caseId:N}/{documentId:N}/{safeFileName}";
+}
+
+/// <summary>Log-safe identifier for object keys (KYC-095). Never log the full storage key.</summary>
+public static class StorageKeyLog
+{
+    public static string Hash(string storageKey)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(storageKey));
+        return Convert.ToHexString(bytes.AsSpan(0, 8));
+    }
 }

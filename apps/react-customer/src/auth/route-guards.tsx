@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
+import { loginPathWithReturnUrl } from './auth.mappers';
 import type { AppRole, ShellSession } from './auth.models';
 import { onSessionCleared } from './session-events';
 import { getValidShellSession } from './session';
@@ -18,20 +19,20 @@ export function RequireAuth({ children }: { readonly children: ReactElement }): 
     return onSessionCleared((): void => {
       const returnUrl: string = `${location.pathname}${location.search}`;
       if (!location.pathname.startsWith('/login')) {
-        void navigate(`/login?returnUrl=${encodeURIComponent(returnUrl)}`, { replace: true });
+        void navigate(loginPathWithReturnUrl(returnUrl), { replace: true });
       }
     });
   }, [location.pathname, location.search, navigate]);
 
   if (!session) {
     const returnUrl: string = `${location.pathname}${location.search}`;
-    const search: string = `?returnUrl=${encodeURIComponent(returnUrl)}`;
-    return <Navigate to={`/login${search}`} replace />;
+    return <Navigate to={loginPathWithReturnUrl(returnUrl)} replace />;
   }
 
   if (!CUSTOMER_ROLES.includes(session.role)) {
     tokenStorage.clearSession();
-    return <Navigate to="/login" replace />;
+    const returnUrl: string = `${location.pathname}${location.search}`;
+    return <Navigate to={loginPathWithReturnUrl(returnUrl)} replace />;
   }
 
   return children;
@@ -42,6 +43,9 @@ export function RequireGuest({ children }: { readonly children: ReactElement }):
   const session: ShellSession | null = getValidShellSession();
   if (session && CUSTOMER_ROLES.includes(session.role)) {
     return <Navigate to="/cases" replace />;
+  }
+  if (session) {
+    tokenStorage.clearSession();
   }
   return children;
 }

@@ -15,7 +15,7 @@ Still on the **MVP roadmap** (finish these first; they are not “beyond”):
 | Item | Where |
 |---|---|
 | Colleague runbook polish | [KYC-100](https://github.com/SDS37/kyc-multi-frontend/issues/41) (done) |
-| Post-094 review punch-list (atomic draft/upload, GraphQL auth ops, FE hygiene) | [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114) |
+| Post-094 review punch-list (atomic draft/upload, GraphQL auth ops, FE hygiene) | [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114) (done) |
 | Angular Playwright smoke | [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98) |
 | Module Federation **spike** (keep 3 apps if it fails) | W7 / [ADR-005](architecture-decision-records.md) |
 
@@ -87,7 +87,7 @@ These keep the portfolio honest. They do not make KYC “more production.”
 
 ## Suggested order (if you ever execute this)
 
-1. Finish W6 KYC-095 + Playwright so a colleague can click through all three roles with files.
+1. Finish W6 Playwright so a colleague can click through all three roles with files.
 2. `updateDraftCase` CAS + honest upload error mapping (small API; protects React).
 3. User invite/list API if humans must join without SQL.
 4. TLS on a real deploy; `/ready` not public.

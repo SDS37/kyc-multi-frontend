@@ -15,7 +15,7 @@ One class per action keeps PRs and tests aligned with stories (KYC-031, 032, …
 | File | Story | Who | What it does |
 |---|---|---|---|
 | `CreateDraftCaseService` + `CreateDraftCaseModels` | KYC-031 | Customer | New row, status `Draft`. `TenantId` / `CustomerUserId` from JWT. Empty FormData → `"{}"`. |
-| `UpdateDraftCaseService` | KYC-032 / 106 / 109 | Customer | Own draft only. **DOMAIN (not draft) before FormData validation** so a submitted case with huge JSON does not get a misleading VALIDATION error. |
+| `UpdateDraftCaseService` | KYC-032 / 106 / 109 / 095 | Customer | Own draft only. **DOMAIN (not draft) before FormData validation**. **Atomic** `ExecuteUpdate` where `Status = Draft`. Title-only updates omit `FormData` from the SET so a concurrent FormData save is not overwritten. |
 | `SubmitCaseService` | KYC-033 / 106 | Customer | Draft → Submitted. Required FormData fields. **Atomic** `ExecuteUpdate` so two tabs cannot double-submit. |
 | `StartCaseReviewService` | KYC-034 | Reviewer / TenantAdmin | Submitted → InReview. Sets `ReviewedBy`. |
 | `CompleteCaseReviewService` | KYC-035 | Reviewer / TenantAdmin | Approve (comment optional) or reject (comment required). InReview only. |
@@ -69,7 +69,7 @@ Detail returns document **metadata** from `documents` (KYC-040/041). Dedicated G
 
 ## Atomic status updates
 
-`SubmitCaseService` (and start-review similarly) uses `ExecuteUpdate` with a `WHERE` that includes **current status**. If `rows == 0`, another request won the race → treat as DOMAIN/NOT_FOUND rather than assuming in-memory `entity.Status` is still true. That is the production-minded bit of KYC-106.
+`SubmitCaseService`, `UpdateDraftCaseService` (KYC-095), and start-review use `ExecuteUpdate` with a `WHERE` that includes **current status**. If `rows == 0`, another request won the race → treat as DOMAIN/NOT_FOUND rather than assuming in-memory `entity.Status` is still true. Document upload re-checks Draft/Submitted at persist time in the same way.
 
 ## How to read this folder (90 minutes)
 

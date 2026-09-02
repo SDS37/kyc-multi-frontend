@@ -81,8 +81,11 @@ export function CaseList(): ReactElement {
     }
   }, []);
 
-  useEffect((): void => {
+  useEffect((): (() => void) => {
     void loadCases(statusFilter);
+    return (): void => {
+      loadSeq.current += 1;
+    };
   }, [loadCases, statusFilter]);
 
   const isEmpty: boolean = !loading && loadError === null && items.length === 0;
@@ -118,26 +121,33 @@ export function CaseList(): ReactElement {
       return;
     }
 
+    const seq: number = loadSeq.current;
     createLock.current = true;
     creatingRef.current = true;
     setCreating(true);
     try {
       const created: CreatedDraftCase = await createDraftCase({ title: createTitle });
       creatingRef.current = false;
-      setCreating(false);
       createLock.current = false;
+      if (loadSeq.current !== seq) {
+        return;
+      }
+      setCreating(false);
       setCreateOpen(false);
       void navigate(`/cases/${created.id}`);
     } catch (err: unknown) {
       creatingRef.current = false;
       createLock.current = false;
+      if (loadSeq.current !== seq) {
+        return;
+      }
       setCreating(false);
       setCreateError(toCreateDraftError(err).message);
     }
   }
 
   return (
-    <main className={styles['cases']}>
+    <section className={styles['cases']}>
       <header className={styles['header']}>
         <div>
           <h1 id="cases-heading" className={styles['title']}>
@@ -183,6 +193,6 @@ export function CaseList(): ReactElement {
           onSubmit={onCreateSubmit}
         />
       ) : null}
-    </main>
+    </section>
   );
 }

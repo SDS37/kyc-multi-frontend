@@ -48,7 +48,7 @@ This monorepo is a portfolio project. **Today:** three independent frontends on 
 | Vue CI (`npm` build / test) | Ready (`vue-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 | Demo seed (KYC-101) | Ready — Development `dotnet run` inserts Acme + Globex (all roles, cases in every status) |
 
-**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6: [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114), Playwright ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)). See the [roadmap](docs/roadmap.md).
+**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6: Playwright ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)). See the [roadmap](docs/roadmap.md).
 
 ## Tech stack (today)
 

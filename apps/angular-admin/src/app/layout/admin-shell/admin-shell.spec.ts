@@ -60,6 +60,14 @@ describe('AdminShell', () => {
     expect(text).toContain('Sign out');
   });
 
+  it('exposes a skip link to main content', (): void => {
+    const skip: HTMLAnchorElement | null = fixture.nativeElement.querySelector('a.shell__skip');
+    expect(skip).not.toBeNull();
+    expect(skip?.getAttribute('href')).toBe('#main');
+    expect(skip?.textContent?.trim()).toBe('Skip to main content');
+    expect(fixture.nativeElement.querySelector('main#main')).not.toBeNull();
+  });
+
   it('signs out and navigates to login', (): void => {
     const navigateSpy: MockInstance = vi
       .spyOn(router, 'navigateByUrl')

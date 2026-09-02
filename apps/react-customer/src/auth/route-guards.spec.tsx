@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { RequireAuth, RequireGuest } from './route-guards';
 import { tokenStorage } from './token-storage';
 
@@ -20,17 +21,22 @@ function testJwt(role: string): string {
   return `hdr.${payload}.sig`;
 }
 
+function LoginProbe(): ReactElement {
+  const location = useLocation();
+  return <div>{`login-page ${location.search}`}</div>;
+}
+
 describe('RequireAuth', () => {
   afterEach((): void => {
     cleanup();
     tokenStorage.clearSession();
   });
 
-  it('redirects guests to login', (): void => {
+  it('redirects guests to login with a safe returnUrl', (): void => {
     render(
       <MemoryRouter initialEntries={['/cases']}>
         <Routes>
-          <Route path="/login" element={<div>login-page</div>} />
+          <Route path="/login" element={<LoginProbe />} />
           <Route
             path="/cases"
             element={
@@ -42,7 +48,8 @@ describe('RequireAuth', () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByText('login-page')).toBeInTheDocument();
+    expect(screen.getByText(/login-page/)).toBeInTheDocument();
+    expect(screen.getByText(/returnUrl=%2Fcases/)).toBeInTheDocument();
   });
 
   it('renders children for a Customer session', (): void => {
@@ -50,7 +57,7 @@ describe('RequireAuth', () => {
     render(
       <MemoryRouter initialEntries={['/cases']}>
         <Routes>
-          <Route path="/login" element={<div>login-page</div>} />
+          <Route path="/login" element={<LoginProbe />} />
           <Route
             path="/cases"
             element={
@@ -65,12 +72,12 @@ describe('RequireAuth', () => {
     expect(screen.getByText('cases-page')).toBeInTheDocument();
   });
 
-  it('clears a TenantAdmin session and sends them to login', (): void => {
+  it('clears a TenantAdmin session and keeps a safe returnUrl', (): void => {
     tokenStorage.setSession(testJwt('TenantAdmin'), 'acme');
     render(
       <MemoryRouter initialEntries={['/cases']}>
         <Routes>
-          <Route path="/login" element={<div>login-page</div>} />
+          <Route path="/login" element={<LoginProbe />} />
           <Route
             path="/cases"
             element={
@@ -82,7 +89,8 @@ describe('RequireAuth', () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByText('login-page')).toBeInTheDocument();
+    expect(screen.getByText(/login-page/)).toBeInTheDocument();
+    expect(screen.getByText(/returnUrl=%2Fcases/)).toBeInTheDocument();
     expect(tokenStorage.getAccessToken()).toBeNull();
   });
 });
@@ -111,5 +119,26 @@ describe('RequireGuest', () => {
       </MemoryRouter>,
     );
     expect(screen.getByText('cases-page')).toBeInTheDocument();
+  });
+
+  it('clears a Reviewer JWT on /login', (): void => {
+    tokenStorage.setSession(testJwt('Reviewer'), 'acme');
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <RequireGuest>
+                <div>login-page</div>
+              </RequireGuest>
+            }
+          />
+          <Route path="/cases" element={<div>cases-page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('login-page')).toBeInTheDocument();
+    expect(tokenStorage.getAccessToken()).toBeNull();
   });
 });
