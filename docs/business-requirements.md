@@ -3,7 +3,7 @@
 **Product**: KYC Compliance Platform
 **Version**: MVP
 **Last updated**: 2026-09-01
-**Status**: Aligned with accepted ADRs; W1–W5 delivered on `main` (API + Angular admin + React customer). Vue reports overview (KYC-080–081) is on `main`. KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), and KYC-094 (frontend 429 + optional login captcha) are done. Remaining Week 6 is seed (KYC-101), runbook (KYC-100), and CSP/HTTPS ([#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)).
+**Status**: Aligned with accepted ADRs; W1–W5 delivered on `main` (API + Angular admin + React customer). Vue reports overview (KYC-080–081) is on `main`. KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), and KYC-094 (frontend 429 + optional login captcha) are done. Remaining Week 6 is [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114) (post-094 review punch-list), seed (KYC-101), runbook (KYC-100), Playwright smoke (KYC-110), and CSP/HTTPS ([#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)).
 
 ## 1. Vision
 

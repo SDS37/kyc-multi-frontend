@@ -16,6 +16,7 @@ Still on the **MVP roadmap** (finish these first; they are not “beyond”):
 |---|---|
 | Demo seed (users per role, cases, files) | [KYC-101](https://github.com/SDS37/kyc-multi-frontend/issues/42) |
 | Colleague runbook polish | [KYC-100](https://github.com/SDS37/kyc-multi-frontend/issues/41) |
+| Post-094 review punch-list (atomic draft/upload, GraphQL auth ops, FE hygiene) | [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114) |
 | CSP / HTTPS redirect outside Development | [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) |
 | Angular Playwright smoke | [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98) |
 | Module Federation **spike** (keep 3 apps if it fails) | W7 / [ADR-005](architecture-decision-records.md) |
