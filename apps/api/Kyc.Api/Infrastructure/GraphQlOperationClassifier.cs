@@ -32,17 +32,32 @@ public static partial class GraphQlOperationClassifier
     public static async Task<GraphQlOperationKind> ClassifyAsync(Stream body, CancellationToken cancellationToken)
     {
         var buffer = new byte[MaxPeekBytes];
-        var read = await body.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+        var read = 0;
+        while (read < buffer.Length)
+        {
+            var chunk = await body.ReadAsync(buffer.AsMemory(read, buffer.Length - read), cancellationToken);
+            if (chunk == 0)
+            {
+                break;
+            }
+
+            read += chunk;
+        }
+
         if (read <= 0)
         {
             return GraphQlOperationKind.Other;
         }
 
         var json = Encoding.UTF8.GetString(buffer.AsSpan(0, read));
-        return ClassifyJson(json);
+        var truncated = read == MaxPeekBytes;
+        return ClassifyJson(json, failClosedWhenUnparsed: truncated);
     }
 
-    public static GraphQlOperationKind ClassifyJson(string json)
+    public static GraphQlOperationKind ClassifyJson(string json) =>
+        ClassifyJson(json, failClosedWhenUnparsed: false);
+
+    private static GraphQlOperationKind ClassifyJson(string json, bool failClosedWhenUnparsed)
     {
         JsonDocument document;
         try
@@ -51,7 +66,8 @@ public static partial class GraphQlOperationClassifier
         }
         catch (JsonException)
         {
-            return GraphQlOperationKind.Other;
+            // Truncated peeks must not fall through to the looser GraphQL bucket (login/register after padding).
+            return failClosedWhenUnparsed ? GraphQlOperationKind.Register : GraphQlOperationKind.Other;
         }
 
         using (document)

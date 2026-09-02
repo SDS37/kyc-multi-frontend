@@ -93,7 +93,23 @@ public sealed class InviteRegistrationTests
         Assert.False(ok.TryGetProperty("errors", out _), ok.ToString());
     }
 
-    private static async Task<string> SeedInviteAsync(ApiFactory factory)
+    [Fact]
+    public async Task Expired_invite_cannot_be_redeemed()
+    {
+        await using var factory = new InviteOnlyFactory();
+        await factory.InitializeAsync();
+        using var client = factory.CreateClient();
+        var code = await SeedInviteAsync(factory, DateTimeOffset.UtcNow.AddMinutes(-1));
+
+        var payload = await PostRegisterAsync(client, UniqueSlug("exp"), code);
+
+        Assert.Contains(
+            RegisterTenantService.RegistrationDisabledMessage,
+            payload.GetProperty("errors").ToString(),
+            StringComparison.Ordinal);
+    }
+
+    private static async Task<string> SeedInviteAsync(ApiFactory factory, DateTimeOffset? expiresAt = null)
     {
         var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
         using var scope = factory.Services.CreateScope();
@@ -102,7 +118,8 @@ public sealed class InviteRegistrationTests
         {
             Id = Guid.NewGuid(),
             CodeHash = InviteCodeHasher.Hash(code),
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = expiresAt
         });
         await db.SaveChangesAsync();
         return code;

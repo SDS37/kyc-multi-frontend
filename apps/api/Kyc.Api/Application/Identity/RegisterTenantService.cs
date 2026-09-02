@@ -109,16 +109,17 @@ public sealed class RegisterTenantService(
                 db.Users.Add(admin);
                 if (inviteId is { } id)
                 {
+                    var redeemAt = DateTimeOffset.UtcNow;
                     var row = await db.RegistrationInvites.FirstOrDefaultAsync(
                         i => i.Id == id && i.RedeemedAt == null,
                         cancellationToken);
-                    if (row is null)
+                    if (row is null || (row.ExpiresAt is { } expires && expires <= redeemAt))
                     {
                         inviteLost = true;
                         return;
                     }
 
-                    row.RedeemedAt = now;
+                    row.RedeemedAt = redeemAt;
                     row.RedeemedTenantId = tenant.Id;
                 }
 
