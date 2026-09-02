@@ -142,9 +142,6 @@ export function toLoginFailedError(err: unknown): LoginFailedError {
   if (err instanceof TypeError) {
     return new LoginFailedError(LOGIN_MESSAGES.networkFailed, 'NETWORK');
   }
-  if (err instanceof Error && /GraphQL HTTP 429\b/.test(err.message)) {
-    return new LoginFailedError(LOGIN_MESSAGES.rateLimited, RATE_LIMITED_CODE);
-  }
   if (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message)) {
     return new LoginFailedError(LOGIN_MESSAGES.networkFailed, 'NETWORK');
   }
