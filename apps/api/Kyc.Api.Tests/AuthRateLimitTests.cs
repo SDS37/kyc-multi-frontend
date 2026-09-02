@@ -165,7 +165,7 @@ public sealed class AuthRateLimitTests
         await using var factory = new ApiFactory();
         await factory.InitializeAsync();
         using var client = factory.CreateClient();
-        var body = $$"""
+        const string body = """
             [
               { "query": "mutation($input: LoginRequestInput!) { login(input: $input) { accessToken } }", "variables": { "input": { "tenantSlug": "x", "email": "a@example.com", "password": "ChangeMe1234" } } },
               { "query": "mutation($input: LoginRequestInput!) { login(input: $input) { accessToken } }", "variables": { "input": { "tenantSlug": "x", "email": "a@example.com", "password": "ChangeMe1234" } } }
