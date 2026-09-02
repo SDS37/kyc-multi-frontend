@@ -81,8 +81,11 @@ export function CaseList(): ReactElement {
     }
   }, []);
 
-  useEffect((): void => {
+  useEffect((): (() => void) => {
     void loadCases(statusFilter);
+    return (): void => {
+      loadSeq.current += 1;
+    };
   }, [loadCases, statusFilter]);
 
   const isEmpty: boolean = !loading && loadError === null && items.length === 0;
@@ -137,7 +140,7 @@ export function CaseList(): ReactElement {
   }
 
   return (
-    <main className={styles['cases']}>
+    <section className={styles['cases']}>
       <header className={styles['header']}>
         <div>
           <h1 id="cases-heading" className={styles['title']}>
@@ -183,6 +186,6 @@ export function CaseList(): ReactElement {
           onSubmit={onCreateSubmit}
         />
       ) : null}
-    </main>
+    </section>
   );
 }

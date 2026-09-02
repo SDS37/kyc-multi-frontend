@@ -11,6 +11,18 @@ public enum GraphQlOperationKind
     Register = 2
 }
 
+/// <summary>
+/// Result of peeking a GraphQL POST. Field counts cover aliases and JSON batches so one HTTP
+/// request cannot multiply <c>login</c> / <c>registerTenant</c> (KYC-095).
+/// </summary>
+public readonly record struct GraphQlClassification(
+    GraphQlOperationKind Kind,
+    int LoginFieldCount,
+    int RegisterFieldCount)
+{
+    public bool ExceedsSingleAuthOpLimit => LoginFieldCount > 1 || RegisterFieldCount > 1;
+}
+
 public interface IGraphQlOperationFeature
 {
     GraphQlOperationKind Kind { get; }
@@ -30,7 +42,7 @@ public static partial class GraphQlOperationClassifier
 {
     public const int MaxPeekBytes = 32 * 1024;
 
-    public static async Task<GraphQlOperationKind> ClassifyAsync(Stream body, CancellationToken cancellationToken)
+    public static async Task<GraphQlClassification> ClassifyAsync(Stream body, CancellationToken cancellationToken)
     {
         var buffer = new byte[MaxPeekBytes];
         var read = 0;
@@ -47,18 +59,21 @@ public static partial class GraphQlOperationClassifier
 
         if (read <= 0)
         {
-            return GraphQlOperationKind.Other;
+            return new GraphQlClassification(GraphQlOperationKind.Other, 0, 0);
         }
 
         var json = Encoding.UTF8.GetString(buffer.AsSpan(0, read));
         var truncated = read == MaxPeekBytes;
-        return ClassifyJson(json, failClosedWhenUnparsed: truncated);
+        return ClassifyDocument(json, failClosedWhenUnparsed: truncated);
     }
 
     public static GraphQlOperationKind ClassifyJson(string json) =>
-        ClassifyJson(json, failClosedWhenUnparsed: false);
+        ClassifyDocument(json, failClosedWhenUnparsed: false).Kind;
 
-    private static GraphQlOperationKind ClassifyJson(string json, bool failClosedWhenUnparsed)
+    public static GraphQlClassification ClassifyDocument(string json) =>
+        ClassifyDocument(json, failClosedWhenUnparsed: false);
+
+    private static GraphQlClassification ClassifyDocument(string json, bool failClosedWhenUnparsed)
     {
         JsonDocument document;
         try
@@ -68,7 +83,9 @@ public static partial class GraphQlOperationClassifier
         catch (JsonException)
         {
             // Truncated peeks must not fall through to the looser GraphQL bucket (login/register after padding).
-            return failClosedWhenUnparsed ? GraphQlOperationKind.Register : GraphQlOperationKind.Other;
+            return failClosedWhenUnparsed
+                ? new GraphQlClassification(GraphQlOperationKind.Register, 0, 1)
+                : new GraphQlClassification(GraphQlOperationKind.Other, 0, 0);
         }
 
         using (document)
@@ -77,23 +94,28 @@ public static partial class GraphQlOperationClassifier
             if (root.ValueKind == JsonValueKind.Array)
             {
                 var kind = GraphQlOperationKind.Other;
+                var loginCount = 0;
+                var registerCount = 0;
                 foreach (var item in root.EnumerateArray())
                 {
-                    kind = Max(kind, ClassifyObject(item));
+                    var part = ClassifyObject(item);
+                    kind = Max(kind, part.Kind);
+                    loginCount += part.LoginFieldCount;
+                    registerCount += part.RegisterFieldCount;
                 }
 
-                return kind;
+                return new GraphQlClassification(kind, loginCount, registerCount);
             }
 
             return ClassifyObject(root);
         }
     }
 
-    private static GraphQlOperationKind ClassifyObject(JsonElement element)
+    private static GraphQlClassification ClassifyObject(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object)
         {
-            return GraphQlOperationKind.Other;
+            return new GraphQlClassification(GraphQlOperationKind.Other, 0, 0);
         }
 
         var kind = GraphQlOperationKind.Other;
@@ -114,21 +136,22 @@ public static partial class GraphQlOperationClassifier
         if (!element.TryGetProperty("query", out var queryElement) ||
             queryElement.ValueKind != JsonValueKind.String)
         {
-            return kind;
+            return new GraphQlClassification(kind, 0, 0);
         }
 
         var query = queryElement.GetString() ?? string.Empty;
-        if (RegisterField().IsMatch(query))
+        var loginCount = LoginField().Count(query);
+        var registerCount = RegisterField().Count(query);
+        if (registerCount > 0)
         {
-            return Max(kind, GraphQlOperationKind.Register);
+            kind = Max(kind, GraphQlOperationKind.Register);
+        }
+        else if (loginCount > 0)
+        {
+            kind = Max(kind, GraphQlOperationKind.Login);
         }
 
-        if (LoginField().IsMatch(query))
-        {
-            return Max(kind, GraphQlOperationKind.Login);
-        }
-
-        return kind;
+        return new GraphQlClassification(kind, loginCount, registerCount);
     }
 
     private static GraphQlOperationKind Max(GraphQlOperationKind left, GraphQlOperationKind right) =>

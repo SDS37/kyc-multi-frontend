@@ -17,7 +17,7 @@ Document **upload**, **list**, and **download** for KYC cases. GraphQL carries m
 | `InMemoryObjectStorage` | Tests / blank Provider / design-time (`dotnet ef`). |
 | `ObjectStorageOptions` | Config section `ObjectStorage`. Blank or `InMemory` → in-process; `Minio` needs endpoint + keys. |
 | `DocumentUploadValidation` | Filename sanitize, content-type allow-list, magic bytes, 10 MB, storage key shape. |
-| `UploadDocumentService` | Customer-only; Draft\|Submitted; owner only → `NOT_FOUND`; put then DB insert; compensate delete on DB fail. |
+| `UploadDocumentService` | Customer-only; Draft\|Submitted; owner only → `NOT_FOUND`; put then DB insert **only if status is still Draft/Submitted**; compensate delete on DB fail (logs document/case ids, not the storage key). |
 | `ListDocumentsService` | KYC-041: same visibility as `case` / `cases`; metadata only; shared `LoadMetadataAsync` for detail. |
 | `DownloadDocumentService` | KYC-042: same visibility as list; streams bytes via REST; never returns keys/URLs. |
 

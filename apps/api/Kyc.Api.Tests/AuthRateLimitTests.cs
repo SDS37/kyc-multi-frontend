@@ -139,6 +139,46 @@ public sealed class AuthRateLimitTests
         Assert.Contains("AUTH_FAILED", loginBody, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Aliased_double_login_returns_generic_429()
+    {
+        await using var factory = new ApiFactory();
+        await factory.InitializeAsync();
+        using var client = factory.CreateClient();
+        const string body = """
+            {
+              "query": "mutation { a: login(input: { tenantSlug: \"x\", email: \"a@example.com\", password: \"ChangeMe1234\" }) { accessToken } b: login(input: { tenantSlug: \"x\", email: \"a@example.com\", password: \"ChangeMe1234\" }) { accessToken } }"
+            }
+            """;
+
+        using var response = await PostGraphqlAsync(client, body);
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, response.StatusCode);
+        var text = await response.Content.ReadAsStringAsync();
+        Assert.Contains(AuthRateLimiting.TooManyRequestsMessage, text, StringComparison.Ordinal);
+        Assert.DoesNotContain("accessToken", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Json_batch_of_two_logins_returns_generic_429()
+    {
+        await using var factory = new ApiFactory();
+        await factory.InitializeAsync();
+        using var client = factory.CreateClient();
+        var body = $$"""
+            [
+              { "query": "mutation($input: LoginRequestInput!) { login(input: $input) { accessToken } }", "variables": { "input": { "tenantSlug": "x", "email": "a@example.com", "password": "ChangeMe1234" } } },
+              { "query": "mutation($input: LoginRequestInput!) { login(input: $input) { accessToken } }", "variables": { "input": { "tenantSlug": "x", "email": "a@example.com", "password": "ChangeMe1234" } } }
+            ]
+            """;
+
+        using var response = await PostGraphqlAsync(client, body);
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, response.StatusCode);
+        var text = await response.Content.ReadAsStringAsync();
+        Assert.Contains(AuthRateLimiting.TooManyRequestsMessage, text, StringComparison.Ordinal);
+    }
+
     private static StringContent Json(string jsonBody) =>
         new(jsonBody, Encoding.UTF8, "application/json");
 

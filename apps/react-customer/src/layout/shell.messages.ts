@@ -5,6 +5,7 @@ export interface ShellMessages {
   readonly brand: string;
   readonly casesNav: string;
   readonly primaryNavAria: string;
+  readonly skipToContent: string;
   readonly signOut: string;
   readonly tenantIdTitlePrefix: string;
 }
@@ -13,6 +14,7 @@ export const SHELL_MESSAGES: ShellMessages = {
   brand: UI_MESSAGES.brand,
   casesNav: 'My cases',
   primaryNavAria: 'Primary',
+  skipToContent: 'Skip to main content',
   signOut: UI_MESSAGES.signOut,
   tenantIdTitlePrefix: 'Tenant id: ',
 };

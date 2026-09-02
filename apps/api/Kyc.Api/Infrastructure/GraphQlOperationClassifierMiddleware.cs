@@ -9,11 +9,19 @@ public sealed class GraphQlOperationClassifierMiddleware(RequestDelegate next)
             context.Request.Path.StartsWithSegments("/graphql"))
         {
             context.Request.EnableBuffering();
-            var kind = await GraphQlOperationClassifier.ClassifyAsync(
+            var classification = await GraphQlOperationClassifier.ClassifyAsync(
                 context.Request.Body,
                 context.RequestAborted);
             context.Request.Body.Position = 0;
-            context.Features.Set<IGraphQlOperationFeature>(new GraphQlOperationFeature(kind));
+            context.Features.Set<IGraphQlOperationFeature>(new GraphQlOperationFeature(classification.Kind));
+            if (classification.ExceedsSingleAuthOpLimit)
+            {
+                context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                await context.Response.WriteAsJsonAsync(
+                    new { error = AuthRateLimiting.TooManyRequestsMessage },
+                    context.RequestAborted);
+                return;
+            }
         }
 
         await next(context);

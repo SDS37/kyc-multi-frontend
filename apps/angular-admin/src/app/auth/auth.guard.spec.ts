@@ -127,4 +127,13 @@ describe('guestGuard', () => {
     );
     expect(result).toEqual(router.createUrlTree(['/cases']));
   });
+
+  it('clears a Customer JWT on the login route', (): void => {
+    tokens.setAccessToken(testAccessToken('Customer'));
+    const result: MaybeAsync<GuardResult> = TestBed.runInInjectionContext(
+      (): MaybeAsync<GuardResult> => guestGuard(routeSnapshot(), stateSnapshot('/login')),
+    );
+    expect(result).toBe(true);
+    expect(tokens.getAccessToken()).toBeNull();
+  });
 });

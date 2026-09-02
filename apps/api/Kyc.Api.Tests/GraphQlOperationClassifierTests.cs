@@ -75,6 +75,45 @@ public sealed class GraphQlOperationClassifierTests
     }
 
     [Fact]
+    public void Aliased_double_login_exceeds_single_op_limit()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation { a: login(input: {}) { accessToken } b: login(input: {}) { accessToken } }" }
+            """);
+
+        Assert.Equal(2, classified.LoginFieldCount);
+        Assert.True(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
+    public void Json_batch_of_two_logins_exceeds_single_op_limit()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            [
+              { "query": "mutation { login(input: {}) { accessToken } }" },
+              { "query": "mutation { login(input: {}) { accessToken } }" }
+            ]
+            """);
+
+        Assert.Equal(2, classified.LoginFieldCount);
+        Assert.Equal(GraphQlOperationKind.Login, classified.Kind);
+        Assert.True(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
+    public void One_login_and_one_register_does_not_exceed_per_field_limit()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation { login(input: {}) { accessToken } registerTenant(input: {}) { tenantSlug } }" }
+            """);
+
+        Assert.Equal(1, classified.LoginFieldCount);
+        Assert.Equal(1, classified.RegisterFieldCount);
+        Assert.False(classified.ExceedsSingleAuthOpLimit);
+        Assert.Equal(GraphQlOperationKind.Register, classified.Kind);
+    }
+
+    [Fact]
     public async Task Truncated_peek_fails_closed_to_register_bucket()
     {
         var pad = new string('x', GraphQlOperationClassifier.MaxPeekBytes);
@@ -84,7 +123,7 @@ public sealed class GraphQlOperationClassifierTests
         var kind = await GraphQlOperationClassifier.ClassifyAsync(stream, CancellationToken.None);
 
         Assert.True(json.Length > GraphQlOperationClassifier.MaxPeekBytes);
-        Assert.Equal(GraphQlOperationKind.Register, kind);
+        Assert.Equal(GraphQlOperationKind.Register, kind.Kind);
     }
 
     [Fact]
@@ -96,7 +135,7 @@ public sealed class GraphQlOperationClassifierTests
 
         var kind = await GraphQlOperationClassifier.ClassifyAsync(stream, CancellationToken.None);
 
-        Assert.Equal(GraphQlOperationKind.Login, kind);
+        Assert.Equal(GraphQlOperationKind.Login, kind.Kind);
     }
 
     [Fact]

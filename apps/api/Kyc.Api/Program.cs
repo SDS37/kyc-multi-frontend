@@ -212,6 +212,21 @@ lockoutOptions.Validate();
 builder.Services.Configure<CaptchaOptions>(builder.Configuration.GetSection(CaptchaOptions.SectionName));
 builder.Services.PostConfigure<CaptchaOptions>(options =>
     options.ApplyEnvironment(builder.Environment));
+var captchaStartup = builder.Configuration
+    .GetSection(CaptchaOptions.SectionName)
+    .Get<CaptchaOptions>() ?? new CaptchaOptions();
+if (string.Equals(captchaStartup.Provider, CaptchaOptions.TestProvider, StringComparison.OrdinalIgnoreCase))
+{
+    var allowTestOutsideDev =
+        builder.Configuration.GetValue("Captcha:AllowTestOutsideDevelopment", false);
+    if (!builder.Environment.IsDevelopment() &&
+        !builder.Environment.IsEnvironment("Testing") &&
+        !allowTestOutsideDev)
+    {
+        throw new InvalidOperationException(
+            "Captcha:Provider test is only allowed in Development or Testing. Use none or turnstile for other environments.");
+    }
+}
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ILoginLockoutStore, MemoryLoginLockoutStore>();

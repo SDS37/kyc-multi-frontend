@@ -256,8 +256,13 @@ export function resolveReportsNavigation(
     };
   }
 
-  if (to.meta.guestOnly === true && allowed) {
-    return { path: '/reports', replace: true, clearSession: false };
+  if (to.meta.guestOnly === true) {
+    if (allowed) {
+      return { path: '/reports', replace: true, clearSession: false };
+    }
+    if (session !== null) {
+      return { path: '/login', replace: true, clearSession: true };
+    }
   }
 
   return null;

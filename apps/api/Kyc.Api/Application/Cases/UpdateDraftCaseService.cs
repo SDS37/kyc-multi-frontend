@@ -69,24 +69,53 @@ public sealed class UpdateDraftCaseService(
             return (null, validationErrors, false, null, null);
         }
 
-        entity.Title = request.Title.Trim();
+        var title = request.Title.Trim();
         // null FormData = leave unchanged; whitespace / provided value normalized like create.
-        if (request.FormData is not null)
+        var formData = request.FormData is not null
+            ? CaseDraftValidation.NormalizeFormData(request.FormData)
+            : entity.FormData;
+        var now = DateTimeOffset.UtcNow;
+        var rows = await AuditRecorder.ExecuteUpdateWithAuditAsync(
+            db,
+            ct => db.Cases
+                .Where(c =>
+                    c.Id == entity.Id &&
+                    c.CustomerUserId == customerUserId.Value &&
+                    c.Status == CaseStatus.Draft)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(c => c.Title, title)
+                        .SetProperty(c => c.FormData, formData)
+                        .SetProperty(c => c.UpdatedAt, now),
+                    ct),
+            () => AuditRecorder.Append(
+                db,
+                tenantId.Value,
+                customerUserId.Value,
+                AuditEntityTypes.Case,
+                entity.Id,
+                AuditActions.CaseUpdated,
+                now),
+            cancellationToken);
+
+        if (rows == 0)
         {
-            entity.FormData = CaseDraftValidation.NormalizeFormData(request.FormData);
+            db.Entry(entity).State = EntityState.Detached;
+            var current = await db.Cases
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == entity.Id, cancellationToken);
+            if (current is null || current.CustomerUserId != customerUserId.Value)
+            {
+                return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
+            }
+
+            return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
         }
 
-        entity.UpdatedAt = DateTimeOffset.UtcNow;
-        AuditRecorder.Append(
-            db,
-            tenantId.Value,
-            customerUserId.Value,
-            AuditEntityTypes.Case,
-            entity.Id,
-            AuditActions.CaseUpdated,
-            entity.UpdatedAt);
-        await db.SaveChangesAsync(cancellationToken);
-
+        db.Entry(entity).State = EntityState.Detached;
+        entity.Title = title;
+        entity.FormData = formData;
+        entity.UpdatedAt = now;
         var customerEmail = await CreateDraftCaseService.GetCustomerEmailAsync(
             db,
             customerUserId.Value,

@@ -5,6 +5,7 @@ export const SHELL_MESSAGES = {
   brand: UI_MESSAGES.brand,
   casesNav: 'Cases',
   primaryNavAria: 'Primary',
+  skipToContent: 'Skip to main content',
   signOut: 'Sign out',
   tenantIdTitlePrefix: 'Tenant id: ',
 } as const;

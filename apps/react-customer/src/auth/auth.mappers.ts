@@ -119,10 +119,26 @@ export function parseLoginSuccess(
 
 /** Pure: safe in-app return URL after login (blocks open redirects). */
 export function resolvePostLoginUrl(returnUrl: string | null): string {
-  if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+  if (isSafeInAppPath(returnUrl)) {
     return returnUrl;
   }
   return DEFAULT_POST_LOGIN_URL;
+}
+
+/** Pure: login path that keeps a safe returnUrl (same allow-list as resolvePostLoginUrl). */
+export function loginPathWithReturnUrl(returnUrl: string): string {
+  if (!isSafeInAppPath(returnUrl)) {
+    return '/login';
+  }
+  return `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+}
+
+function isSafeInAppPath(returnUrl: string | null): returnUrl is string {
+  return (
+    typeof returnUrl === 'string' &&
+    returnUrl.startsWith('/') &&
+    !returnUrl.startsWith('//')
+  );
 }
 
 /** Pure: map transport / unknown errors to LoginFailedError. */

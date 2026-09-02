@@ -229,6 +229,23 @@ describe('auth.mappers', () => {
     });
   });
 
+  it('resolveReportsNavigation clears a Customer JWT on /login', (): void => {
+    const redirect = resolveReportsNavigation(
+      { fullPath: '/login', meta: { guestOnly: true } },
+      {
+        tenantSlug: 'acme',
+        tenantId: 'tid',
+        email: 'c@acme.example',
+        role: 'Customer',
+      },
+    );
+    expect(redirect).toEqual({
+      path: '/login',
+      replace: true,
+      clearSession: true,
+    });
+  });
+
   it('resolveReportsNavigation keeps Reviewer/TenantAdmin on reports', (): void => {
     expect(
       resolveReportsNavigation(

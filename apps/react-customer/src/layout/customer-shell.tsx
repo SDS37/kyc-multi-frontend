@@ -35,6 +35,9 @@ export function CustomerShell(): ReactElement {
 
   return (
     <div className={styles['shell']}>
+      <a className={styles['skip']} href="#main">
+        {copy.skipToContent}
+      </a>
       <header className={styles['header']}>
         <div className={styles['brandBlock']}>
           <p className={styles['brand']}>{copy.brand}</p>
@@ -74,9 +77,9 @@ export function CustomerShell(): ReactElement {
         </div>
       </header>
 
-      <div className={styles['content']}>
+      <main id="main" className={styles['content']} tabIndex={-1}>
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }

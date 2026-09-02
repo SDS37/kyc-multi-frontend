@@ -5,6 +5,7 @@ import {
   parseAccessTokenClaims,
   parseLoginSuccess,
   resolvePostLoginUrl,
+  loginPathWithReturnUrl,
   toLoginFailedError,
   toLoginMutationInput,
   toShellSession,
@@ -104,6 +105,12 @@ describe('auth.mappers', () => {
     expect(resolvePostLoginUrl('//evil.example')).toBe('/cases');
     expect(resolvePostLoginUrl('https://evil.example')).toBe('/cases');
     expect(resolvePostLoginUrl(null)).toBe('/cases');
+  });
+
+  it('loginPathWithReturnUrl keeps a safe returnUrl', (): void => {
+    expect(loginPathWithReturnUrl('/cases?x=1')).toBe('/login?returnUrl=%2Fcases%3Fx%3D1');
+    expect(loginPathWithReturnUrl('//evil.example')).toBe('/login');
+    expect(loginPathWithReturnUrl('https://evil.example')).toBe('/login');
   });
 
   it('toLoginFailedError maps network failures', (): void => {

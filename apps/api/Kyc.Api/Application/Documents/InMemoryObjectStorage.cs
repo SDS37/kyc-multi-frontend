@@ -30,7 +30,7 @@ public sealed class InMemoryObjectStorage : IObjectStorage
         if (bytes.LongLength > DocumentUploadValidation.MaxFileBytes)
         {
             throw new InvalidOperationException(
-                $"Object '{key}' exceeds maximum size of {DocumentUploadValidation.MaxFileBytes} bytes.");
+                $"Object exceeds maximum size of {DocumentUploadValidation.MaxFileBytes} bytes.");
         }
 
         return Task.FromResult<Stream?>(new MemoryStream(bytes, writable: false));
@@ -43,4 +43,6 @@ public sealed class InMemoryObjectStorage : IObjectStorage
     }
 
     public bool Contains(string key) => _objects.ContainsKey(key);
+
+    public int ObjectCount => _objects.Count;
 }

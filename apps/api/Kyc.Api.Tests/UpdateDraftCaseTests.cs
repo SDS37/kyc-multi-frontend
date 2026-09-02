@@ -394,6 +394,65 @@ public sealed class UpdateDraftCaseTests(ApiFactory factory) : IClassFixture<Api
         Assert.Contains(CreateDraftCaseService.GenericAuthFailure, errors, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Concurrent_submit_does_not_change_title_on_submitted_case()
+    {
+        Authenticate(_ownerId);
+        const string originalTitle = "Race draft";
+        var raceId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Cases.Add(new Case
+            {
+                Id = raceId,
+                TenantId = _tenantId,
+                CustomerUserId = _ownerId,
+                Title = originalTitle,
+                Status = CaseStatus.Draft,
+                FormData = """
+                    {
+                      "fullName": "Ada Lovelace",
+                      "dateOfBirth": "1815-12-10",
+                      "nationality": "British",
+                      "address": "12 Analytical Engine Rd"
+                    }
+                    """,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
+        const string newTitle = "Should not stick if submitted";
+        var updateJson = $$"""
+            {
+              "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id title status } }",
+              "variables": { "input": { "id": "{{raceId}}", "title": "{{newTitle}}" } }
+            }
+            """;
+        var submitJson = $$"""
+            {
+              "query": "mutation($input: SubmitCaseRequestInput!) { submitCase(input: $input) { id status } }",
+              "variables": { "input": { "id": "{{raceId}}" } }
+            }
+            """;
+
+        await Task.WhenAll(
+            _client.PostAsync("/graphql", new StringContent(updateJson, Encoding.UTF8, "application/json")),
+            _client.PostAsync("/graphql", new StringContent(submitJson, Encoding.UTF8, "application/json")));
+
+        using var verify = factory.Services.CreateScope();
+        var stored = await verify.ServiceProvider.GetRequiredService<AppDbContext>()
+            .Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == raceId);
+        if (stored.Status != CaseStatus.Draft)
+        {
+            Assert.Equal(originalTitle, stored.Title);
+            Assert.NotEqual(newTitle, stored.Title);
+        }
+    }
+
     private void Authenticate(Guid userId) => AuthenticateRole(UserRole.Customer, userId);
 
     private void AuthenticateRole(UserRole role, Guid userId)

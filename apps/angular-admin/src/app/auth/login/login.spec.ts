@@ -115,6 +115,12 @@ describe('Login', () => {
     });
     submitForm(fixture);
 
+    fixture.detectChanges();
+    const busyButton: HTMLButtonElement | null = fixture.nativeElement.querySelector(
+      'button[type="submit"]',
+    );
+    expect(busyButton?.getAttribute('aria-busy')).toBe('true');
+
     httpTesting.expectOne(graphqlUrl).flush({
       data: {
         login: {

@@ -67,7 +67,7 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
             if (response.ContentLength > DocumentUploadValidation.MaxFileBytes)
             {
                 throw new InvalidOperationException(
-                    $"Object '{key}' exceeds maximum size of {DocumentUploadValidation.MaxFileBytes} bytes.");
+                    $"Object exceeds maximum size of {DocumentUploadValidation.MaxFileBytes} bytes.");
             }
 
             return await CopyBoundedAsync(
@@ -123,7 +123,7 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
         }
         catch (Exception ex)
         {
-            LogDeleteFailed(_logger, ex, key);
+            LogDeleteFailed(_logger, ex, StorageKeyLog.Hash(key));
         }
     }
 
@@ -163,6 +163,6 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
         return ValueTask.CompletedTask;
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to delete object {StorageKey}")]
-    private static partial void LogDeleteFailed(ILogger logger, Exception ex, string storageKey);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to delete object {StorageKeyHash}")]
+    private static partial void LogDeleteFailed(ILogger logger, Exception ex, string storageKeyHash);
 }

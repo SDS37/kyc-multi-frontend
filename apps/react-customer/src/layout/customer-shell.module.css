@@ -8,6 +8,24 @@
   font-family: var(--kyc-font-sans);
 }
 
+.skip {
+  position: absolute;
+  left: var(--kyc-space-3);
+  top: -100%;
+  z-index: 2;
+  padding: var(--kyc-space-2) var(--kyc-space-3);
+  background: var(--kyc-color-surface-raised);
+  color: var(--kyc-color-text);
+  border-radius: var(--kyc-radius-sm);
+  font-size: var(--kyc-text-sm);
+  font-weight: 600;
+}
+
+.skip:focus,
+.skip:focus-visible {
+  top: var(--kyc-space-3);
+}
+
 .header {
   display: flex;
   flex-wrap: wrap;
@@ -124,6 +142,10 @@
 
 .content {
   flex: 1 1 auto;
+}
+
+.content:focus {
+  outline: none;
 }
 
 @media (max-width: 640px) {

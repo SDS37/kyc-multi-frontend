@@ -2,8 +2,8 @@
 
 **Product**: KYC Compliance Platform
 **Version**: MVP
-**Last updated**: 2026-09-01
-**Status**: Aligned with accepted ADRs; W1–W5 delivered on `main` (API + Angular admin + React customer). Vue reports overview (KYC-080–081) is on `main`. KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), KYC-094 (frontend 429 + optional login captcha), KYC-100 (runbook), KYC-101 (demo seed), and [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) are done. Remaining Week 6 is [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114) (post-094 review punch-list) and Playwright smoke (KYC-110).
+**Last updated**: 2026-09-02
+**Status**: Aligned with accepted ADRs; W1–W5 delivered on `main` (API + Angular admin + React customer). Vue reports overview (KYC-080–081) is on `main`. KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), KYC-094 (frontend 429 + optional login captcha), KYC-095 (post-094 review punch-list), KYC-100 (runbook), KYC-101 (demo seed), and [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) are done. Remaining Week 6 is Playwright smoke (KYC-110).
 
 ## 1. Vision
 
