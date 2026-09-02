@@ -47,7 +47,7 @@ This monorepo is a portfolio project. **Today:** three independent frontends on 
 | Vue Reports | Ready (KYC-080–081: login, shell, status counts, latest-10 table) |
 | Vue CI (`npm` build / test) | Ready (`vue-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 
-**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6 is seed data and security hardening — see the [roadmap](docs/roadmap.md).
+**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6: [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114), seed ([KYC-101](https://github.com/SDS37/kyc-multi-frontend/issues/42)), this runbook ([KYC-100](https://github.com/SDS37/kyc-multi-frontend/issues/41)), Playwright ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)), CSP/HTTPS ([#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)). See the [roadmap](docs/roadmap.md).
 
 ## Tech stack (today)
 
@@ -86,9 +86,17 @@ kyc-multi-frontend/
 └── README.md
 ```
 
-## Getting Started
+## Colleague runbook
 
-**Prerequisites:** Docker Desktop and the .NET 10 SDK matching [`global.json`](global.json) (for the API).
+Copy-paste from the **repository root**. Local **HTTP** only — documented Compose passwords, not real secrets. App-specific detail: [API](apps/api/README.md) · [Angular](apps/angular-admin/README.md) · [React](apps/react-customer/README.md) · [Vue](apps/vue-reports/README.md) · [Compose](infrastructure/README.md).
+
+### Prerequisites
+
+| Tool | Why |
+|---|---|
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Postgres, Redis (unused by the API), MinIO |
+| [.NET 10 SDK](https://dotnet.microsoft.com/download) matching [`global.json`](global.json) | API (`dotnet --version` should be `10.0.400` or an allowed roll-forward) |
+| [Node.js](https://nodejs.org/) **20.19+** (22 recommended; each app has `.nvmrc`) | Three frontends |
 
 ### 1. Clone
 
@@ -97,9 +105,7 @@ git clone https://github.com/SDS37/kyc-multi-frontend.git
 cd kyc-multi-frontend
 ```
 
-### 2. Start PostgreSQL, Redis, and MinIO
-
-Run these from the repository root (`kyc-multi-frontend/`):
+### 2. Start Docker (Postgres, Redis, MinIO)
 
 ```bash
 cp infrastructure/.env.example infrastructure/.env
@@ -107,62 +113,102 @@ docker compose -f infrastructure/docker-compose.yml up -d
 docker compose -f infrastructure/docker-compose.yml ps
 ```
 
-| Command | What it does |
-|---|---|
-| `cp … .env.example … .env` | Creates a local env file with DB/Redis/MinIO credentials (gitignored; do not commit) |
-| `docker compose … up -d` | Starts PostgreSQL, Redis, and MinIO in the background |
-| `docker compose … ps` | Lists those containers and whether they are running / healthy |
+Wait until `kyc-postgres` is **healthy**. Defaults (local only — change in `infrastructure/.env`):
 
-| Service | Address | Default credentials |
+| Service | Address | Credentials |
 |---|---|---|
 | PostgreSQL | `127.0.0.1:5432` | user `kyc`, password `changeme`, database `kyc_db` |
 | Redis | `127.0.0.1:6379` | password `changeme` |
 | MinIO API | `127.0.0.1:9000` | user `minio`, password `changeme1` |
-| MinIO console | `127.0.0.1:9001` | same as API |
+| MinIO console | `http://127.0.0.1:9001` | same as API |
 
-These defaults are for local development only. Change them in `infrastructure/.env`. Data persists in Docker named volumes.
+Data persists in Docker named volumes. Stop later with `docker compose -f infrastructure/docker-compose.yml down`.
 
-Stop with `docker compose -f infrastructure/docker-compose.yml down`.
-
-### 3. Run the API
-
-See [apps/api/README.md](apps/api/README.md) (config, restore, migrate, `dotnet run`, test). Local HTTP: `http://localhost:5295` (Development only; do not send real secrets over plain HTTP outside local use). PRs that touch the API run GitHub Actions `api-ci`.
-
-### 4. Run Angular Admin (optional)
-
-Requires Node 20.19+ (22 recommended). See [apps/angular-admin/README.md](apps/angular-admin/README.md).
+### 3. Start the API
 
 ```bash
-cd apps/angular-admin
-npm install
-npm start
+cp apps/api/Kyc.Api/appsettings.Development.json.example apps/api/Kyc.Api/appsettings.Development.json
+dotnet tool restore
+dotnet restore apps/api/Kyc.Api.sln
+cd apps/api/Kyc.Api
+dotnet ef database update
+dotnet run
 ```
 
-App: `http://localhost:4200` (CORS already allowed). PRs that touch the Angular app run GitHub Actions `angular-ci`.
-
-### 5. Run React Customer (optional)
-
-Same Node requirement. See [apps/react-customer/README.md](apps/react-customer/README.md).
+Leave this terminal running. Check from another:
 
 ```bash
-cd apps/react-customer
-npm install
-npm start
+curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:5295/health   # 200
+curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:5295/ready    # 200 when Postgres is up
 ```
 
-App: `http://localhost:5173` (CORS already allows this origin). PRs that touch the React app run GitHub Actions `react-ci`.
+- HTTP: `http://localhost:5295`
+- GraphQL IDE (Development only): `http://localhost:5295/graphql`
 
-### 6. Run Vue Reports (optional)
+Do not commit `appsettings.Development.json`. The example file turns **public** `registerTenant` on and **login captcha** off (Development). Tests and extra config: [apps/api/README.md](apps/api/README.md). PRs that touch the API run `api-ci`.
 
-Same Node requirement. See [apps/vue-reports/README.md](apps/vue-reports/README.md).
+### 4. Demo tenant and accounts
+
+`registerTenant` creates **one TenantAdmin**. That role can sign in to **Angular** (review) and **Vue** (reports). **React** needs a **Customer** in the same tenant (no public customer signup; full seed is [KYC-101](https://github.com/SDS37/kyc-multi-frontend/issues/42)).
+
+Create the tenant (skip if `acme` already exists — login still works):
 
 ```bash
-cd apps/vue-reports
-npm install
-npm start
+curl -sS http://127.0.0.1:5295/graphql \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"mutation { registerTenant(input: { tenantName: \"Acme\", tenantSlug: \"acme\", adminEmail: \"admin@acme.example\", adminPassword: \"ChangeMe1234\" }) { tenantId tenantSlug } }"}'
 ```
 
-App: `http://localhost:5174` (CORS already allows this origin). PRs that touch the Vue app run GitHub Actions `vue-ci`.
+Add a Customer that can log into React (copies the admin password hash — same local password `ChangeMe1234`):
+
+```bash
+docker exec kyc-postgres psql -U kyc -d kyc_db -c "
+INSERT INTO users (\"Id\", \"TenantId\", \"Email\", \"PasswordHash\", \"Role\", \"CreatedAt\")
+SELECT gen_random_uuid(), t.\"Id\", 'customer@acme.example', u.\"PasswordHash\", 'Customer', NOW()
+FROM tenants t
+JOIN users u ON u.\"TenantId\" = t.\"Id\" AND u.\"Email\" = 'admin@acme.example'
+WHERE t.\"Slug\" = 'acme'
+ON CONFLICT (\"TenantId\", \"Email\") DO NOTHING;
+"
+```
+
+| App | URL | Role | Tenant slug | Email | Password |
+|---|---|---|---|---|---|
+| Angular admin | http://localhost:4200 | TenantAdmin | `acme` | `admin@acme.example` | `ChangeMe1234` |
+| Vue reports | http://localhost:5174 | TenantAdmin | `acme` | `admin@acme.example` | `ChangeMe1234` |
+| React customer | http://localhost:5173 | Customer | `acme` | `customer@acme.example` | `ChangeMe1234` |
+
+Persona gates: a Customer cannot use Angular or Vue; TenantAdmin/Reviewer cannot create drafts in React. Optional extra Reviewer: same `INSERT` with email `reviewer@acme.example` and role `Reviewer` — not required (TenantAdmin already reviews).
+
+These passwords are **local demo only**.
+
+### 5. Start the frontends
+
+Three terminals. Node **20.19+** (22 recommended).
+
+```bash
+cd apps/angular-admin && npm install && npm start
+```
+
+```bash
+cd apps/react-customer && npm install && npm start
+```
+
+```bash
+cd apps/vue-reports && npm install && npm start
+```
+
+| App | URL | CI workflow |
+|---|---|---|
+| Angular admin | http://localhost:4200 | `angular-ci` |
+| React customer | http://localhost:5173 | `react-ci` |
+| Vue reports | http://localhost:5174 | `vue-ci` |
+
+CORS already allows those origins. Guests land on `/login`.
+
+### 6. Stop
+
+Ctrl+C on the API and each `npm start`. Then `docker compose -f infrastructure/docker-compose.yml down` if you want to stop Postgres/Redis/MinIO (volumes keep data unless you add `-v`).
 
 ## Architecture
 

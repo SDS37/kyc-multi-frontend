@@ -32,6 +32,8 @@ PRs that touch `apps/vue-reports` (or `.github/workflows/vue-ci.yml`) run GitHub
 
 `registerTenant` creates **TenantAdmin** — that role can sign in here. Reviewer users also work. **Customer sessions are rejected** (use the React portal).
 
+Colleague copy-paste (Docker, API, accounts, all three UIs): [root README runbook](../../README.md#colleague-runbook).
+
 ```json
 { "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1234", "tenantName": "Acme" }
 ```
