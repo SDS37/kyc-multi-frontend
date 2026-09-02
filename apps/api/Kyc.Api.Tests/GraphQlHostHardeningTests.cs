@@ -3,11 +3,13 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Kyc.Api.Tests;
 
 /// <summary>
-/// Production host (KYC-105): introspection and SDL off. SQLite still swapped in via <see cref="ApiFactory"/>.
+/// Production host (KYC-105 / issue #108): introspection and SDL off; HTTPS clients so
+/// <c>UseHttpsRedirection</c> does not 307 GraphQL POSTs. SQLite still swapped in via <see cref="ApiFactory"/>.
 /// </summary>
 public sealed class ProductionApiFactory : ApiFactory
 {
@@ -19,6 +21,19 @@ public sealed class ProductionApiFactory : ApiFactory
         builder.UseSetting("ObjectStorage:AllowInMemoryOutsideDevelopment", "true");
         builder.UseSetting("Registration:AllowInProduction", "true");
     }
+
+    public HttpClient CreateHttpsClient() =>
+        CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+    public HttpClient CreateHttpClientNoRedirect() =>
+        CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("http://localhost")
+        });
 }
 
 public sealed class GraphQlHostHardeningTests(ApiFactory development, ProductionApiFactory production) : IClassFixture<ApiFactory>, IClassFixture<ProductionApiFactory>
@@ -40,7 +55,7 @@ public sealed class GraphQlHostHardeningTests(ApiFactory development, Production
     [Fact]
     public async Task Production_rejects_authenticated_introspection()
     {
-        using var client = production.CreateClient();
+        using var client = production.CreateHttpsClient();
         var token = await RegisterAndLoginAsync(client, "prod-intro");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -75,7 +90,7 @@ public sealed class GraphQlHostHardeningTests(ApiFactory development, Production
     [Fact]
     public async Task Production_does_not_serve_schema_sdl()
     {
-        using var client = production.CreateClient();
+        using var client = production.CreateHttpsClient();
         using var response = await client.GetAsync("/graphql?sdl");
         var body = await response.Content.ReadAsStringAsync();
         Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);

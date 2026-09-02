@@ -16,7 +16,6 @@ Still on the **MVP roadmap** (finish these first; they are not “beyond”):
 |---|---|
 | Colleague runbook polish | [KYC-100](https://github.com/SDS37/kyc-multi-frontend/issues/41) (done) |
 | Post-094 review punch-list (atomic draft/upload, GraphQL auth ops, FE hygiene) | [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114) |
-| CSP / HTTPS redirect outside Development | [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) |
 | Angular Playwright smoke | [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98) |
 | Module Federation **spike** (keep 3 apps if it fails) | W7 / [ADR-005](architecture-decision-records.md) |
 
@@ -68,7 +67,7 @@ Do not cache KYC documents or case rows “in Redis.” Bytes stay MinIO; source
 
 | Gap today | Production-shaped | Trigger |
 |---|---|---|
-| Local HTTP; CSP/HTTPS follow-up still open | TLS, redirect, HSTS, CSP on a real host | Leaving localhost ([#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) first) |
+| Local HTTP (certs still yours) | TLS on a real host; API already redirects + HSTS + CSP outside Development | Leaving localhost with a real certificate |
 | Anonymous `/ready` | Bind to loopback / mesh, or a probe token | The API is on a public network |
 | Logs + `/ready` only (KYC-104) | Request traces / APM if you operate it | You cannot debug a failed review in production |
 | GraphQL depth limit only | Cost analyzer when lists/documents grow | Playground or a client can still be expensive |
@@ -88,10 +87,10 @@ These keep the portfolio honest. They do not make KYC “more production.”
 
 ## Suggested order (if you ever execute this)
 
-1. Finish W6 seed + runbook + [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) so a colleague can click through all three roles with files.
+1. Finish W6 KYC-095 + Playwright so a colleague can click through all three roles with files.
 2. `updateDraftCase` CAS + honest upload error mapping (small API; protects React).
 3. User invite/list API if humans must join without SQL.
-4. TLS / CSP on a real deploy; `/ready` not public.
+4. TLS on a real deploy; `/ready` not public.
 5. Redis **only** with a second API instance or token revoke.
 6. W7 MF spike; keep three apps if it is not boringly stable.
 7. Refresh tokens, audit UI, extra Vue pages, i18n — when a demo or operator actually misses them.
