@@ -10,7 +10,7 @@
 
 **W5+ demoable now:** Customer signs in (React), creates a draft, fills FormData, uploads PDF/PNG/JPG (≤10 MB), and submits. Reviewer finishes the case in Angular (W4). Vue reports overview is KYC-081 (counts + latest 10). Remaining W6 is seed + security hardening.
 
-Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. **KYC-103** (readiness / EF retries / timeouts), **KYC-104** (structured logs / request id), **KYC-105** (GraphQL introspection/depth, EF command log level, MinIO pin), **KYC-106** (case NOT_FOUND / FormData caps / atomic status), **KYC-107** (login dummy verify / registerTenant retries), **KYC-108** (api-ci SHA pins + Postgres test slice), **KYC-109** (login password cap, updateDraftCase DOMAIN-before-FormData, status docs), and **KYC-090** (FluentValidation on request DTOs; validation errors stay `VALIDATION`, not HTTP 500) are on the API.
+Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. **KYC-103** (readiness / EF retries / timeouts), **KYC-104** (structured logs / request id), **KYC-105** (GraphQL introspection/depth, EF command log level, MinIO pin), **KYC-106** (case NOT_FOUND / FormData caps / atomic status), **KYC-107** (login dummy verify / registerTenant retries), **KYC-108** (api-ci SHA pins + Postgres test slice), **KYC-109** (login password cap, updateDraftCase DOMAIN-before-FormData, status docs), **KYC-090** (FluentValidation on request DTOs; validation errors stay `VALIDATION`, not HTTP 500), and **KYC-092** (GraphQL register→approve happy path + cross-tenant case isolation) are on the API.
 
 Backlog until the API leaves localhost (do not treat this as “only rate limits”):
 
