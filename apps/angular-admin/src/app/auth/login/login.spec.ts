@@ -13,6 +13,12 @@ import { TokenStorage } from '../token-storage';
 import { Login } from './login';
 
 const graphqlUrl: string = 'http://localhost:5295/graphql';
+const testAppConfig: AppConfig = {
+  apiBaseUrl: 'http://localhost:5295',
+  graphqlUrl,
+  captchaRequiredForLogin: false,
+  turnstileSiteKey: '',
+};
 
 function testAccessToken(role: string = 'Reviewer'): string {
   const header: string = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))
@@ -49,10 +55,7 @@ describe('Login', () => {
         provideRouter([{ path: 'cases', children: [] }]),
         {
           provide: APP_CONFIG,
-          useValue: {
-            apiBaseUrl: 'http://localhost:5295',
-            graphqlUrl,
-          },
+          useValue: testAppConfig,
         },
       ],
     }).compileComponents();

@@ -5,7 +5,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { APP_CONFIG } from '../config/app-config';
+import { APP_CONFIG, AppConfig } from '../config/app-config';
 import { authInterceptor } from '../auth/auth.interceptor';
 import { TokenStorage } from '../auth/token-storage';
 import { CaseListPage, CasesLoadError } from './cases.models';
@@ -13,6 +13,12 @@ import { CasesService } from './cases.service';
 
 const apiBaseUrl: string = 'http://localhost:5295';
 const graphqlUrl: string = `${apiBaseUrl}/graphql`;
+const testAppConfig: AppConfig = {
+  apiBaseUrl,
+  graphqlUrl,
+  captchaRequiredForLogin: false,
+  turnstileSiteKey: '',
+};
 
 describe('CasesService', () => {
   let service: CasesService;
@@ -26,7 +32,7 @@ describe('CasesService', () => {
         provideHttpClientTesting(),
         {
           provide: APP_CONFIG,
-          useValue: { apiBaseUrl, graphqlUrl },
+          useValue: testAppConfig,
         },
       ],
     });

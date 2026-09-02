@@ -5,7 +5,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { APP_CONFIG } from '../config/app-config';
+import { APP_CONFIG, AppConfig } from '../config/app-config';
 import { authInterceptor } from './auth.interceptor';
 import { LOGIN_MESSAGES } from './auth.messages';
 import { LoginFailedError, LoginSuccess } from './auth.models';
@@ -14,6 +14,12 @@ import { TokenStorage } from './token-storage';
 
 const apiBaseUrl: string = 'http://localhost:5295';
 const graphqlUrl: string = `${apiBaseUrl}/graphql`;
+const testAppConfig: AppConfig = {
+  apiBaseUrl,
+  graphqlUrl,
+  captchaRequiredForLogin: false,
+  turnstileSiteKey: '',
+};
 
 function testAccessToken(role: string = 'TenantAdmin'): string {
   const header: string = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))
@@ -47,7 +53,7 @@ describe('LoginService', () => {
         provideHttpClientTesting(),
         {
           provide: APP_CONFIG,
-          useValue: { apiBaseUrl, graphqlUrl },
+          useValue: testAppConfig,
         },
       ],
     });

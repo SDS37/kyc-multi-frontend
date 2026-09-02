@@ -53,8 +53,8 @@ export class Login {
 
   protected readonly copy: typeof LOGIN_MESSAGES = LOGIN_MESSAGES;
   protected readonly brand: string = UI_MESSAGES.brand;
-  protected readonly captchaRequired: boolean = this.config.captchaRequiredForLogin === true;
-  protected readonly turnstileSiteKey: string = this.config.turnstileSiteKey?.trim() ?? '';
+  protected readonly captchaRequired: boolean = this.config.captchaRequiredForLogin;
+  protected readonly turnstileSiteKey: string = this.config.turnstileSiteKey.trim();
 
   protected readonly submitting: WritableSignal<boolean> = signal(false);
   protected readonly formError: WritableSignal<string | null> = signal(null);

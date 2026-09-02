@@ -6,13 +6,19 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { APP_CONFIG } from '../config/app-config';
+import { APP_CONFIG, AppConfig } from '../config/app-config';
 import { authInterceptor } from './auth.interceptor';
 import { SKIP_AUTH } from './skip-auth';
 import { TokenStorage } from './token-storage';
 
 const apiBaseUrl: string = 'http://localhost:5295';
 const graphqlUrl: string = `${apiBaseUrl}/graphql`;
+const testAppConfig: AppConfig = {
+  apiBaseUrl,
+  graphqlUrl,
+  captchaRequiredForLogin: false,
+  turnstileSiteKey: '',
+};
 
 describe('authInterceptor', () => {
   let http: HttpClient;
@@ -27,7 +33,7 @@ describe('authInterceptor', () => {
         provideRouter([{ path: 'login', children: [] }]),
         {
           provide: APP_CONFIG,
-          useValue: { apiBaseUrl, graphqlUrl },
+          useValue: testAppConfig,
         },
       ],
     });

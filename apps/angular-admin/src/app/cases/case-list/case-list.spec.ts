@@ -2,11 +2,17 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { APP_CONFIG } from '../../config/app-config';
+import { APP_CONFIG, AppConfig } from '../../config/app-config';
 import { TokenStorage } from '../../auth/token-storage';
 import { CaseList } from './case-list';
 
 const graphqlUrl: string = 'http://localhost:5295/graphql';
+const testAppConfig: AppConfig = {
+  apiBaseUrl: 'http://localhost:5295',
+  graphqlUrl,
+  captchaRequiredForLogin: false,
+  turnstileSiteKey: '',
+};
 
 describe('CaseList', () => {
   let fixture: ComponentFixture<CaseList>;
@@ -22,10 +28,7 @@ describe('CaseList', () => {
         provideRouter([]),
         {
           provide: APP_CONFIG,
-          useValue: {
-            apiBaseUrl: 'http://localhost:5295',
-            graphqlUrl,
-          },
+          useValue: testAppConfig,
         },
       ],
     }).compileComponents();

@@ -4,11 +4,17 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { APP_CONFIG } from '../../config/app-config';
+import { APP_CONFIG, AppConfig } from '../../config/app-config';
 import { TokenStorage } from '../../auth/token-storage';
 import { CaseReview } from './case-review';
 
 const graphqlUrl: string = 'http://localhost:5295/graphql';
+const testAppConfig: AppConfig = {
+  apiBaseUrl: 'http://localhost:5295',
+  graphqlUrl,
+  captchaRequiredForLogin: false,
+  turnstileSiteKey: '',
+};
 const caseId: string = '11111111-1111-1111-1111-111111111111';
 
 function reviewerToken(): string {
@@ -50,10 +56,7 @@ describe('CaseReview', () => {
         },
         {
           provide: APP_CONFIG,
-          useValue: {
-            apiBaseUrl: 'http://localhost:5295',
-            graphqlUrl,
-          },
+          useValue: testAppConfig,
         },
       ],
     }).compileComponents();
