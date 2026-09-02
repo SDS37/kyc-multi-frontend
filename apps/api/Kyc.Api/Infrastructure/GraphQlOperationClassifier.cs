@@ -82,9 +82,10 @@ public static partial class GraphQlOperationClassifier
         }
         catch (JsonException)
         {
-            // Truncated peeks must not fall through to the looser GraphQL bucket (login/register after padding).
+            // Truncated peeks must not fall through to the looser GraphQL bucket, and counts must
+            // trip ExceedsSingleAuthOpLimit so a padded batch cannot skip the alias/batch 429.
             return failClosedWhenUnparsed
-                ? new GraphQlClassification(GraphQlOperationKind.Register, 0, 1)
+                ? new GraphQlClassification(GraphQlOperationKind.Register, 2, 2)
                 : new GraphQlClassification(GraphQlOperationKind.Other, 0, 0);
         }
 

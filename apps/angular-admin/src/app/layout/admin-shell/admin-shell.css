@@ -122,6 +122,13 @@
   outline: none;
 }
 
+@media (forced-colors: active) {
+  .shell__content:focus {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
 @media (max-width: 640px) {
   .shell__header {
     align-items: flex-start;

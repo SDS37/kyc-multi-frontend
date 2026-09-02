@@ -124,6 +124,7 @@ public sealed class GraphQlOperationClassifierTests
 
         Assert.True(json.Length > GraphQlOperationClassifier.MaxPeekBytes);
         Assert.Equal(GraphQlOperationKind.Register, kind.Kind);
+        Assert.True(kind.ExceedsSingleAuthOpLimit);
     }
 
     [Fact]
