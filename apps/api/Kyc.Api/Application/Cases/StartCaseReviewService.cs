@@ -1,6 +1,8 @@
+using FluentValidation;
 using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
@@ -12,7 +14,8 @@ namespace Kyc.Api.Application.Cases;
 public sealed class StartCaseReviewService(
     AppDbContext db,
     ICurrentTenant currentTenant,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IValidator<StartCaseReviewRequest> validator)
 {
     public const string NotFoundMessage = "Case was not found.";
     public const string NotSubmittedMessage = "Only submitted cases can be moved to in review.";
@@ -21,9 +24,10 @@ public sealed class StartCaseReviewService(
         StartCaseReviewRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Id == Guid.Empty)
+        var idErrors = RequestValidation.Errors(validator, request);
+        if (idErrors.Count > 0)
         {
-            return (null, ["Case id is required."], false, null, null);
+            return (null, idErrors, false, null, null);
         }
 
         var tenantId = currentTenant.TenantId;

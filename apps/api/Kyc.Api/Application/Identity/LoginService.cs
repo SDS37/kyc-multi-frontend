@@ -1,3 +1,5 @@
+using FluentValidation;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -9,7 +11,8 @@ public sealed partial class LoginService(
     AppDbContext db,
     IPasswordHasher<User> passwordHasher,
     JwtTokenService jwtTokenService,
-    ILogger<LoginService> logger)
+    ILogger<LoginService> logger,
+    IValidator<LoginRequest> validator)
 {
     public const string GenericAuthFailure = "Invalid email, password, or tenant.";
     public const string RejectedLog = "Login rejected";
@@ -24,7 +27,7 @@ public sealed partial class LoginService(
         LoginRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationErrors = Validate(request);
+        var validationErrors = RequestValidation.Errors(validator, request);
         if (validationErrors.Count > 0)
         {
             return (null, validationErrors, false);
@@ -64,32 +67,6 @@ public sealed partial class LoginService(
             new LoginResponse(token, "Bearer", expiresInSeconds),
             Array.Empty<string>(),
             false);
-    }
-
-    private static List<string> Validate(LoginRequest request)
-    {
-        var errors = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(request.TenantSlug))
-        {
-            errors.Add("Tenant slug is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Email))
-        {
-            errors.Add("Email is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Password))
-        {
-            errors.Add("Password is required.");
-        }
-        else if (request.Password.Length > MaxPasswordLength)
-        {
-            errors.Add($"Password must be at most {MaxPasswordLength} characters.");
-        }
-
-        return errors;
     }
 
     private void RejectUnverified(string password)

@@ -1,6 +1,8 @@
+using FluentValidation;
 using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
@@ -12,45 +14,58 @@ namespace Kyc.Api.Application.Cases;
 public sealed class CompleteCaseReviewService(
     AppDbContext db,
     ICurrentTenant currentTenant,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IValidator<ApproveCaseRequest> approveValidator,
+    IValidator<RejectCaseRequest> rejectValidator)
 {
     public const int MaxCommentLength = 2000;
     public const string NotFoundMessage = "Case was not found.";
     public const string NotInReviewMessage = "Only cases in review can be approved or rejected.";
     public const string RejectCommentRequiredMessage = "A comment is required when rejecting a case.";
 
-    public Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> ApproveAsync(
+    public async Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> ApproveAsync(
         ApproveCaseRequest request,
-        CancellationToken cancellationToken = default) =>
-        CompleteAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var idErrors = RequestValidation.Errors(approveValidator, request);
+        if (idErrors.Count > 0)
+        {
+            return (null, idErrors, false, null, null);
+        }
+
+        return await CompleteAsync(
             request.Id,
             CaseStatus.Approved,
             request.Comment,
-            commentRequired: false,
+            () => RequestValidation.Errors(approveValidator, request, RequestValidation.CommentSet),
             cancellationToken);
+    }
 
-    public Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> RejectAsync(
+    public async Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> RejectAsync(
         RejectCaseRequest request,
-        CancellationToken cancellationToken = default) =>
-        CompleteAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var idErrors = RequestValidation.Errors(rejectValidator, request);
+        if (idErrors.Count > 0)
+        {
+            return (null, idErrors, false, null, null);
+        }
+
+        return await CompleteAsync(
             request.Id,
             CaseStatus.Rejected,
             request.Comment,
-            commentRequired: true,
+            () => RequestValidation.Errors(rejectValidator, request, RequestValidation.CommentSet),
             cancellationToken);
+    }
 
     private async Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> CompleteAsync(
         Guid caseId,
         CaseStatus targetStatus,
         string? comment,
-        bool commentRequired,
+        Func<List<string>> commentErrors,
         CancellationToken cancellationToken)
     {
-        if (caseId == Guid.Empty)
-        {
-            return (null, ["Case id is required."], false, null, null);
-        }
-
         var tenantId = currentTenant.TenantId;
         var reviewerUserId = currentUser.UserId;
         if (tenantId is null || reviewerUserId is null)
@@ -83,16 +98,13 @@ public sealed class CompleteCaseReviewService(
             return (null, Array.Empty<string>(), false, "DOMAIN", NotInReviewMessage);
         }
 
-        var normalizedComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
-        if (commentRequired && normalizedComment is null)
+        var commentValidation = commentErrors();
+        if (commentValidation.Count > 0)
         {
-            return (null, [RejectCommentRequiredMessage], false, null, null);
+            return (null, commentValidation, false, null, null);
         }
 
-        if (normalizedComment is { Length: > MaxCommentLength })
-        {
-            return (null, [$"Comment must be at most {MaxCommentLength} characters."], false, null, null);
-        }
+        var normalizedComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
 
         var now = DateTimeOffset.UtcNow;
         var action = targetStatus == CaseStatus.Approved
