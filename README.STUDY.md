@@ -18,7 +18,7 @@ One repo holds three frontends, one .NET GraphQL API, local Docker dependencies,
 |---|---|
 | `apps/` | Deployable products. One folder per app so Angular / React / Vue / .NET never share a bundler. |
 | `packages/` | Shared **non-UI-framework** libs (e.g. `design-tokens` CSS). Not a second monorepo app. |
-| `docs/` | Decisions and target architecture. Source of truth for “what we meant.” |
+| `docs/` | Decisions, **today** architecture, after-MVP wishlist. Source of truth for “what we meant.” |
 | `infrastructure/` | Postgres / Redis / MinIO via Compose. Not the API container (API still runs on the host). |
 | `.github/workflows/` | `api-ci` + `angular-ci` + `react-ci` + `vue-ci` — automated proof API and UI apps still build/test. |
 | `.config/` | Local .NET tools (`dotnet-ef`). Analogous to a repo-level `npx` binary pin. |
@@ -60,9 +60,11 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 |---|---|
 | Three UIs + GraphQL API | API is real; **Angular admin** (KYC-060–065), **React customer** (KYC-070–074), **Vue reports** (KYC-080–081) |
 | Modular monolith (Identity, Cases, Documents, Audit) | **Layer folders** inside one .NET project; Documents use-cases exist |
-| CQRS + MediatR | Application **services** called from GraphQL / REST upload (MediatR is target only) |
-| GraphQL as the only public API | Cases are GraphQL; **upload/download are dedicated REST**; login/register still have temporary REST twins |
+| Command/query **services** (no MediatR) | GraphQL / REST call `*Service` classes. MediatR is not planned ([beyond-mvp.md](docs/beyond-mvp.md) §6) |
+| GraphQL as the domain API | Cases are GraphQL; **upload/download are dedicated REST**; login/register still have temporary REST twins |
 | MinIO for KYC files | Compose + API `IObjectStorage` / MinIO (InMemory in tests) |
+| Redis | Compose up, **unused** by the API |
+| Module Federation host | Not MVP. W7 spike; real host only if [beyond-mvp.md](docs/beyond-mvp.md) §2 |
 
 **What you can say with confidence:** “Weeks 1–5 delivered the API plus Angular admin review and React customer create → fill → upload → submit. KYC-080–081 add Vue login/shell and a read-only status-count + latest-10 report on the same JWT contract. Remaining Week 6 work is seed data and security hardening.”
 
@@ -90,6 +92,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 - Frontend-oriented .NET map: [docs/guides/dotnet-api-for-frontend-engineers.md](docs/guides/dotnet-api-for-frontend-engineers.md)
 - How to write C# here: [docs/dotnet-code-standards.md](docs/dotnet-code-standards.md)
 - [Roadmap](docs/roadmap.md) (W1–W5 done; W6 next)
+- [Beyond MVP](docs/beyond-mvp.md) (Redis, MF host, invites — triggers only)
 - [ADR-001 monorepo](docs/architecture-decision-records.md)
 - [ADR-007 tenant from JWT](docs/architecture-decision-records.md)
 - [.NET SDK / global.json](https://learn.microsoft.com/dotnet/core/tools/global-json)

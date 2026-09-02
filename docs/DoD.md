@@ -6,3 +6,5 @@
 - [x] 3 frontends consume the same GraphQL API — Angular + React + Vue **reports overview** (KYC-080–081)
 - [x] Architecture diagrams published (target vs today called out)
 - [x] README allows a colleague to run the system locally (Compose + API + Angular + React + Vue runbooks; `api-ci` / `angular-ci` / `react-ci` / `vue-ci`)
+
+Not in this DoD (seed, CSP/HTTPS, Redis client, MF host, invites): [roadmap.md](roadmap.md) W6–W7 and [beyond-mvp.md](beyond-mvp.md).

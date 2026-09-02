@@ -54,7 +54,7 @@ Keep each folder’s job. New code goes in the existing layer, not a parallel on
 | `Infrastructure/` | Host: middleware, logs, `/ready` | Domain rules |
 | `Program.cs` | Composition root (DI, pipeline, endpoint map) | Use-case logic |
 
-**Today vs target:** architecture.md’s CQRS / MediatR box is the *target*. Today, application **services** are the command/query handlers. Do not add MediatR, `ICaseRepository`, or a second read model unless that is an explicit decision.
+**Today vs target:** application **services** are the command/query handlers. Architecture diagrams must not show a live MediatR bus. Do not add MediatR, `ICaseRepository`, or a second read model unless that is an explicit new ADR. MediatR is listed under “does not belong” in [beyond-mvp.md](beyond-mvp.md).
 
 GraphQL and temporary REST **share** Application models (`LoginRequest` / `LoginResponse`) so both adapters stay identical.
 

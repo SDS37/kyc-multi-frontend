@@ -64,8 +64,8 @@ Tests do **not** need the real port: `WebApplicationFactory<Program>` boots the 
 
 ## Today vs target
 
-- **Today:** one deployable, layered folders, GraphQL cases/documents/audit, REST identity twins, REST upload/download, local CORS.
-- **Target:** still one deployable (not microservices). CQRS / MediatR remains a target, not current. Angular + React UIs are on `main`; Vue reports is W6.
+- **Today:** one deployable, layered folders, GraphQL cases/documents/audit, REST identity twins, REST upload/download, local CORS. Application **services** (no MediatR).
+- **After MVP:** still one deployable. Redis / MF host / invites only with triggers in [beyond-mvp.md](../../docs/beyond-mvp.md). Angular, React, and Vue reports are on `main`.
 
 ## What to skip
 

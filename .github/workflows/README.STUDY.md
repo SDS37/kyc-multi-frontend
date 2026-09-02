@@ -67,8 +67,9 @@ Concurrency: `cancel-in-progress: true` — a new push to the same PR cancels th
 
 ## What CI does *not* prove (so you do not over-claim)
 
-- Full UI / E2E behavior (no Playwright yet)
-- Redis / MinIO
+- Full UI / E2E behavior (no Playwright yet — [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98))
+- Redis (Compose-only, unused by the API)
+- MinIO against a real bucket in CI (tests use InMemory object storage)
 - Production Docker image
 - Rate limits / CORS browser matrix
 - That migrations were applied to a long-lived shared DB (`api-ci` migrates a **fresh** `kyc_test` database)

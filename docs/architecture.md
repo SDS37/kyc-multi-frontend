@@ -1,6 +1,8 @@
 # Architecture – KYC Multi-Frontend (MVP)
 
-This document describes the **target architecture** for the MVP. Implementation follows the [roadmap](roadmap.md): identity and infrastructure first, then GraphQL, cases, documents, and the three frontends.
+This document describes **what runs today** and labels anything that is not wired. Week sequencing: [roadmap.md](roadmap.md). Production-shaped follow-ups (Redis client, MF host, invites, TLS): [beyond-mvp.md](beyond-mvp.md). Decisions: [ADRs](architecture-decision-records.md).
+
+**How to read diagrams:** solid arrows are live. Dotted Redis means Compose is up and the API does **not** connect. There is no MediatR / domain-events box. Module Federation appears only as a labeled W7 spike (§3).
 
 **Today on `main`:** Compose (Postgres / Redis / MinIO — Redis is Compose-only; the API does not connect yet); .NET API with EF Core, Tenant/User/Case/Document/AuditEntry, JWT login, fail-closed `ICurrentTenant` / `ICurrentUser` + `ITenantScoped` EF filters; Hot Chocolate `/graphql` + `/health` (GraphQL IDE, introspection, and SDL in Development; depth limit 10 — KYC-105); GraphQL deny-by-default JWT auth with anonymous `login` / `registerTenant` (KYC-021; login password max 128 — KYC-109); Customer create/update/submit + Reviewer/TenantAdmin review lifecycle + authenticated `cases` / `case` detail (incl. `customerEmail`) + `documents(caseId)` metadata list + Customer document upload to MinIO + authenticated document download stream + append-only audit writes + Reviewer/TenantAdmin `caseAuditEntries` (KYC-022 / KYC-031–037 / KYC-040–042 / KYC-050–051; non-owner update/submit → `NOT_FOUND`, FormData 64 KiB / depth 8, atomic status — KYC-106); temporary REST register/login on the same anonymous allow-list; CORS allow-list for `http://localhost:4200`, `http://localhost:5173`, and `http://localhost:5174` (KYC-091); API readiness/liveness + EF retries (KYC-103); dummy password verify on login miss paths (KYC-107); public-auth abuse controls — env-specific IP rate limits, lockout, captcha, invites (KYC-093); frontend login HTTP 429 + optional captcha (KYC-094); `apps/api/Kyc.Api.sln` + tests; GitHub Actions `api-ci` with SHA-pinned actions and a Postgres test slice (KYC-102 / KYC-108). **Angular admin** (KYC-060–065), **React customer** (KYC-070–074), and **Vue reports** (KYC-080–081: login, shell, status counts, latest-10 table) against the same API; shared UX tokens in `packages/design-tokens`. Object-store failures on upload and download return `STORAGE` (HTTP 502), not `VALIDATION`. ObjectStorage provider is fail-closed (empty → startup throw; explicit `InMemory` / `Minio` only).
 
@@ -8,7 +10,7 @@ This document describes the **target architecture** for the MVP. Implementation 
 
 **Observability (KYC-104):** JSON stdout logs include a `RequestId` (`X-Request-Id`). Auth and readiness failures are logged without secrets. MVP signals are those logs plus `/ready`; no APM vendor.
 
-**MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Share `@kyc/design-tokens` + auth/GraphQL contract + a11y rules — not cross-framework UI components (see §3). Section 3’s shell diagram is the **Week 7 target** (Angular composing remotes); it is not required for the first release.
+**MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Share `@kyc/design-tokens` + auth/GraphQL contract + a11y rules — not cross-framework UI components (see §3). Section 3’s host/remotes diagram is a **W7 spike**, not DoD. Redis on the context diagram is **dotted / unused**. When to wire Redis, a real MF host, invites, or TLS: [beyond-mvp.md](beyond-mvp.md).
 
 ## 1. System Context
 
@@ -19,25 +21,27 @@ flowchart LR
     Reports["Tenant Admin / Reviewer<br/>Vue Reports"]
     GQL["GraphQL API<br/>Hot Chocolate + .NET"]
     DB[(PostgreSQL)]
-    Cache[(Redis)]
-    Files[(Object Storage)]
+    Cache["Redis<br/>(Compose, unused)"]
+    Files[(MinIO)]
 
     Admin --> GQL
     Customer --> GQL
     Reports --> GQL
     GQL --> DB
-    GQL --> Cache
     GQL --> Files
+    GQL -.-> Cache
 ```
+
+Redis is a Compose service only ([ADR-006](architecture-decision-records.md)). Wire it only when [beyond-mvp.md](beyond-mvp.md) §4 triggers apply.
 
 ## 2. Container View
 
 ```mermaid
 flowchart TB
     subgraph Clients
-        Shell["Angular Shell + Admin"]
-        ReactApp["React Customer Portal"]
-        VueApp["Vue Reports Portal"]
+        Shell["Angular Admin<br/>:4200"]
+        ReactApp["React Customer<br/>:5173"]
+        VueApp["Vue Reports<br/>:5174"]
     end
 
     subgraph Backend
@@ -50,7 +54,7 @@ flowchart TB
 
     subgraph Data
         PG[(PostgreSQL)]
-        Redis[(Redis)]
+        Redis["Redis :6379<br/>(Compose, unused)"]
         Minio[(MinIO)]
     end
 
@@ -66,8 +70,10 @@ flowchart TB
     DocsMod --> PG
     DocsMod --> Minio
     Audit --> PG
-    API --> Redis
+    API -.-> Redis
 ```
+
+The API host is **not** a Compose service. Redis has no client. Adding either is [beyond-mvp.md](beyond-mvp.md) (API-in-Compose / Redis triggers).
 
 ## 3. Frontend Composition
 
@@ -115,9 +121,9 @@ flowchart TB
 - [react-customer README](../apps/react-customer/README.md#component-tree-kyc-074) — component tree  
 - [vue-reports README](../apps/vue-reports/README.md#component-tree-kyc-081) — component tree  
 
-### Target after Module Federation spike (Week 7)
+### Week 7 spike — Module Federation (not required)
 
-The diagram below is the intended shell composition **if** the Week 7 federation spike succeeds (ADR-005). It is not required for the first release.
+The diagram below is composition **if** the W7 spike succeeds ([ADR-005](architecture-decision-records.md)). MVP and DoD are three independent apps. A real one-URL host after a stable spike is [beyond-mvp.md](beyond-mvp.md) §2.
 
 ```mermaid
 flowchart TB
@@ -172,36 +178,37 @@ Details: [ADR-005](architecture-decision-records.md), [frontend-code-standards.m
 
 ## 4. Backend Module Structure
 
-**Target** diagram (MediatR / domain events are not implemented yet — application **services** are today’s command/query handlers). See [dotnet-code-standards.md](dotnet-code-standards.md).
+**Today:** one host, folder modules, **application services** as command/query handlers. There is no MediatR bus and no domain-events pipeline. Do not add them to match an old diagram ([dotnet-code-standards.md](dotnet-code-standards.md), [beyond-mvp.md](beyond-mvp.md) §6).
 
 ```mermaid
 flowchart TB
     subgraph API["API Host"]
         GQL["Hot Chocolate GraphQL"]
-        Middleware["Auth / Tenant Middleware"]
+        Rest["REST upload / download<br/>+ register/login twins"]
+        Middleware["JWT / tenant middleware"]
     end
 
-    subgraph Modules
+    subgraph Application["Application services"]
         Identity["Identity & Tenancy"]
-        Cases["Cases Module"]
-        Documents["Documents Module"]
-        Audit["Audit Module"]
+        Cases["Cases"]
+        Documents["Documents"]
+        Audit["Audit"]
     end
 
-    subgraph CrossCutting["Cross-Cutting"]
-        CQRS["MediatR CQRS"]
-        Events["Domain Events"]
-    end
+    PG[(PostgreSQL)]
+    Minio[(MinIO)]
 
     GQL --> Middleware
+    Rest --> Middleware
     Middleware --> Identity
     Middleware --> Cases
     Middleware --> Documents
     Middleware --> Audit
-    Cases --> CQRS
-    Documents --> CQRS
-    Audit --> CQRS
-    CQRS --> Events
+    Identity --> PG
+    Cases --> PG
+    Documents --> PG
+    Documents --> Minio
+    Audit --> PG
 ```
 
 ## 5. Request Flow
@@ -217,12 +224,14 @@ sequenceDiagram
     UI->>GQL: Query or Mutation + JWT
     GQL->>Auth: Validate token and tenant
     Auth-->>GQL: User and Tenant context
-    GQL->>App: Command or Query
-    App->>DB: Persist or Read
+    GQL->>App: Query or mutation (application service)
+    App->>DB: Persist or read
     DB-->>App: Data
     App-->>GQL: Result
     GQL-->>UI: Typed payload
 ```
+
+Document **bytes** use REST (`POST`/`GET /api/cases/.../documents`), not GraphQL. GraphQL carries metadata only. MinIO is on that REST path; Redis is not on any path.
 
 ## 6. Case Lifecycle
 
@@ -236,3 +245,11 @@ stateDiagram-v2
     Approved --> [*]
     Rejected --> [*]
 ```
+
+## 7. Related docs
+
+- [Roadmap](roadmap.md) — W1–W7
+- [Beyond MVP](beyond-mvp.md) — Redis, MF host, invites, TLS (triggers)
+- [DoD](DoD.md)
+- [ADRs](architecture-decision-records.md)
+- [Frontend code standards](frontend-code-standards.md) · [.NET code standards](dotnet-code-standards.md)
