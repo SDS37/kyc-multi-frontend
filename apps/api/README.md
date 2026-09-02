@@ -84,6 +84,8 @@ cd apps/api/Kyc.Api
 dotnet run
 ```
 
+Development seeds **Acme** and **Globex** (all three roles, cases in every status, PNG on non-draft cases) unless `Seed:Enabled` is `false`. Idempotent; never runs outside Development. Accounts: [root README runbook](../../README.md#colleague-runbook).
+
 - HTTP: `http://localhost:5295`
 - Health (liveness): `GET http://localhost:5295/health`
 - Ready (Postgres): `GET http://localhost:5295/ready`
@@ -116,7 +118,7 @@ Login example:
 
 Successful login returns `{ "accessToken", "tokenType": "Bearer", "expiresInSeconds" }`. Invalid credentials or an inactive tenant return **401** with a generic error. See `Kyc.Api.http`.
 
-Colleague copy-paste (Docker → migrate → run → demo accounts including Customer SQL): [root README runbook](../../README.md#colleague-runbook).
+Colleague copy-paste (Docker → migrate → run; demo accounts are seeded): [root README runbook](../../README.md#colleague-runbook).
 
 GraphQL smoke (anonymous mutations + authenticated query — or use the IDE at `/graphql`):
 
@@ -268,5 +270,6 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-091 | CORS allow-list `http://localhost:4200`, `http://localhost:5173`, and `http://localhost:5174` (`Cors:AllowedOrigins`); preflight on GraphQL and document REST; basic headers + non-Dev HSTS. CSP / HTTPS redirect → [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) |
 | KYC-092 | GraphQL `HappyPathAndIsolationTests`: register → login → create → submit → review → approve; tenant B cannot read tenant A’s case |
 | KYC-093 | Env-specific IP buckets: login 120/10 per min (Dev / non-Dev), register 30/3, other GraphQL 120/60. GraphQL `login` / `registerTenant` share the REST buckets. HTTP 429 generic body. In-memory lockout (5 failures / 15 min, same generic login error). CAPTCHA on register outside Development (`test` or Turnstile). Invite-only when public registration is off; hashed single-use `registration_invites`. Slug collisions stay generic |
+| KYC-101 | Development startup seed: tenants `acme` and `globex`; TenantAdmin / Reviewer / Customer each; one case per status; PNG on non-draft cases. Idempotent. `Seed:Enabled` (default true in Development). Tests set `Seed:Enabled=false` |
 
 Auth abuse controls (KYC-093): Development stays generous so local UIs keep working without captcha or invite codes. Non-Development defaults require an invite for `registerTenant` (or a valid unused invite when public registration is off) and a captcha token. Leaving `Captcha:Provider` as `none` (the committed default) fail-closes every register — including a valid unused invite — with `Captcha is not configured.` Set `Captcha:Provider` `turnstile` + `Captcha:Secret` (or `test` + `Captcha:BypassToken` in automated hosts) before invite redeem can succeed. Excess login/register traffic is HTTP 429 `{ "error": "Too many requests." }` — not a GraphQL `AUTH_FAILED` that would distinguish accounts. Lockout and failed login still use `Invalid email, password, or tenant.` Set `AuthLimits:*PermitPerMinute` to override environment defaults (`0` in committed `appsettings.json` means “use the default”). Invites are inserted as SHA-256 hashes of high-entropy codes (no public create-invite API). Forwarded headers trusted in Development for client IP. Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are on; HSTS outside Development. Local HTTP is for Development only.

@@ -58,5 +58,6 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("Captcha:RequiredForRegister", "false");
         builder.UseSetting("Captcha:RequiredForLogin", "false");
         builder.UseSetting("Captcha:Provider", "none");
+        builder.UseSetting("Seed:Enabled", "false");
     }
 }

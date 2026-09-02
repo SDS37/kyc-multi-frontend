@@ -23,12 +23,12 @@ GraphQL (dev env): `http://localhost:5295/graphql`
 
 ## Demo login
 
-`registerTenant` creates **TenantAdmin** — that role can sign in here (and on Vue reports). **Customer sessions are rejected** (use the React portal).
+Development seed (KYC-101) creates **TenantAdmin** and **Reviewer** for `acme` / `globex`. **Customer sessions are rejected** (use the React portal).
 
 Colleague copy-paste (Docker, API, accounts, all three UIs): [root README runbook](../../README.md#colleague-runbook).
 
 ```json
-{ "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1234", "tenantName": "Acme" }
+{ "tenantSlug": "acme", "email": "admin@acme.example", "password": "ChangeMe1234" }
 ```
 
 ```bash

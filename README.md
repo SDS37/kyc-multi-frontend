@@ -46,8 +46,9 @@ This monorepo is a portfolio project. **Today:** three independent frontends on 
 | React CI (`npm` build / test) | Ready (`react-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 | Vue Reports | Ready (KYC-080–081: login, shell, status counts, latest-10 table) |
 | Vue CI (`npm` build / test) | Ready (`vue-ci`; Node from `.nvmrc`; SHA-pinned actions) |
+| Demo seed (KYC-101) | Ready — Development `dotnet run` inserts Acme + Globex (all roles, cases in every status) |
 
-**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6: [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114), seed ([KYC-101](https://github.com/SDS37/kyc-multi-frontend/issues/42)), this runbook ([KYC-100](https://github.com/SDS37/kyc-multi-frontend/issues/41)), Playwright ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)), CSP/HTTPS ([#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)). See the [roadmap](docs/roadmap.md).
+**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6: [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114), Playwright ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)), CSP/HTTPS ([#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)). See the [roadmap](docs/roadmap.md).
 
 ## Tech stack (today)
 
@@ -147,41 +148,23 @@ curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:5295/ready    # 200 w
 
 Do not commit `appsettings.Development.json`. The example file turns **public** `registerTenant` on and **login captcha** off (Development). Tests and extra config: [apps/api/README.md](apps/api/README.md). PRs that touch the API run `api-ci`.
 
-### 4. Demo tenant and accounts
+### 4. Demo accounts (seeded on API start)
 
-`registerTenant` creates **one TenantAdmin**. That role can sign in to **Angular** (review) and **Vue** (reports). **React** needs a **Customer** in the same tenant (no public customer signup; full seed is [KYC-101](https://github.com/SDS37/kyc-multi-frontend/issues/42)).
+Development `dotnet run` inserts **Acme** and **Globex** when they are missing (`Seed:Enabled`, default on in Development). It is idempotent: existing emails keep their password hashes (so a tenant you already registered stays). Opt out with `"Seed": { "Enabled": false }` in `appsettings.Development.json`. Seed never runs outside Development.
 
-Create the tenant (skip if `acme` already exists — login still works):
-
-```bash
-curl -sS http://127.0.0.1:5295/graphql \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"mutation { registerTenant(input: { tenantName: \"Acme\", tenantSlug: \"acme\", adminEmail: \"admin@acme.example\", adminPassword: \"ChangeMe1234\" }) { tenantId tenantSlug } }"}'
-```
-
-Add a Customer that can log into React (copies the admin password hash — same local password `ChangeMe1234`):
-
-```bash
-docker exec kyc-postgres psql -U kyc -d kyc_db -c "
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-INSERT INTO users (\"Id\", \"TenantId\", \"Email\", \"PasswordHash\", \"Role\", \"CreatedAt\")
-SELECT gen_random_uuid(), t.\"Id\", 'customer@acme.example', u.\"PasswordHash\", 'Customer', NOW()
-FROM tenants t
-JOIN users u ON u.\"TenantId\" = t.\"Id\" AND u.\"Email\" = 'admin@acme.example'
-WHERE t.\"Slug\" = 'acme'
-ON CONFLICT (\"TenantId\", \"Email\") DO NOTHING;
-"
-```
+Each tenant gets TenantAdmin, Reviewer, and Customer, plus one case in every status (`Draft` / `Submitted` / `InReview` / `Approved` / `Rejected`). Non-draft cases include a tiny PNG in MinIO.
 
 | App | URL | Role | Tenant slug | Email | Password |
 |---|---|---|---|---|---|
 | Angular admin | http://localhost:4200 | TenantAdmin | `acme` | `admin@acme.example` | `ChangeMe1234` |
+| Angular admin | http://localhost:4200 | Reviewer | `acme` | `reviewer@acme.example` | `ChangeMe1234` |
 | Vue reports | http://localhost:5174 | TenantAdmin | `acme` | `admin@acme.example` | `ChangeMe1234` |
 | React customer | http://localhost:5173 | Customer | `acme` | `customer@acme.example` | `ChangeMe1234` |
+| (isolation) | same apps | same roles | `globex` | `admin@globex.example` / `reviewer@globex.example` / `customer@globex.example` | `ChangeMe1234` |
 
-Persona gates: a Customer cannot use Angular or Vue; TenantAdmin/Reviewer cannot create drafts in React. Optional extra Reviewer: same `INSERT` with email `reviewer@acme.example` and role `Reviewer` — not required (TenantAdmin already reviews).
+Persona gates: a Customer cannot use Angular or Vue; TenantAdmin/Reviewer cannot create drafts in React.
 
-These passwords are **local demo only**.
+These passwords are **local demo only**. You do not need `registerTenant` or SQL for a first login. `registerTenant` still works if you want a third tenant.
 
 ### 5. Start the frontends
 
