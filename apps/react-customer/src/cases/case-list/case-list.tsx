@@ -121,19 +121,26 @@ export function CaseList(): ReactElement {
       return;
     }
 
+    const seq: number = loadSeq.current;
     createLock.current = true;
     creatingRef.current = true;
     setCreating(true);
     try {
       const created: CreatedDraftCase = await createDraftCase({ title: createTitle });
       creatingRef.current = false;
-      setCreating(false);
       createLock.current = false;
+      if (loadSeq.current !== seq) {
+        return;
+      }
+      setCreating(false);
       setCreateOpen(false);
       void navigate(`/cases/${created.id}`);
     } catch (err: unknown) {
       creatingRef.current = false;
       createLock.current = false;
+      if (loadSeq.current !== seq) {
+        return;
+      }
       setCreating(false);
       setCreateError(toCreateDraftError(err).message);
     }
