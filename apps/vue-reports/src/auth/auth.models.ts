@@ -4,7 +4,19 @@ export interface LoginCredentials {
   tenantSlug: string;
   email: string;
   password: string;
+  captchaToken?: string;
 }
+
+/** GraphQL `login` variables. Omit `captchaToken` when the user did not supply one. */
+export interface LoginMutationInput {
+  readonly tenantSlug: string;
+  readonly email: string;
+  readonly password: string;
+  readonly captchaToken?: string;
+}
+
+export const RATE_LIMITED_HTTP_STATUS: number = 429;
+export const RATE_LIMITED_CODE: string = 'RATE_LIMITED';
 
 export interface LoginSuccess {
   accessToken: string;
@@ -49,6 +61,7 @@ export interface LoginFieldErrors {
   readonly tenantSlug?: string;
   readonly email?: string;
   readonly password?: string;
+  readonly captchaToken?: string;
 }
 
 /** User-facing login failure (validation, AUTH_FAILED, or transport). */

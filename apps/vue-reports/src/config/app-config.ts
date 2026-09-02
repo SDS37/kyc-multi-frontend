@@ -7,6 +7,10 @@ function nonEmptyEnv(value: string | undefined, fallback: string): string {
   return fallback;
 }
 
+function envFlag(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() === 'true';
+}
+
 /**
  * Runtime config from Vite env (KYC-080). Defaults target local API.
  * Vite only statically inlines literal `import.meta.env.VITE_*` reads.
@@ -17,4 +21,6 @@ export const appConfig: AppConfig = {
     import.meta.env.VITE_GRAPHQL_URL,
     'http://localhost:5295/graphql',
   ),
+  captchaRequiredForLogin: envFlag(import.meta.env.VITE_CAPTCHA_REQUIRED_FOR_LOGIN),
+  turnstileSiteKey: nonEmptyEnv(import.meta.env.VITE_TURNSTILE_SITE_KEY, ''),
 };

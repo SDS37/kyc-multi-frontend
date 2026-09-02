@@ -12,6 +12,7 @@ import {
   type NavigateFunction,
   type SetURLSearchParams,
 } from 'react-router';
+import { appConfig } from '../../config/app-config';
 import { UI_MESSAGES } from '../../shared/ui.messages';
 import {
   hasLoginFieldErrors,
@@ -22,6 +23,7 @@ import {
 import { LOGIN_MESSAGES, type LoginMessages } from '../auth.messages';
 import type { LoginCredentials, LoginFieldErrors } from '../auth.models';
 import { login } from '../login-api';
+import { LoginCaptcha, type LoginCaptchaHandle } from './login-captcha';
 import styles from './login-page.module.css';
 
 /**
@@ -34,27 +36,35 @@ export function LoginPage(): ReactElement {
   const navigate: NavigateFunction = useNavigate();
   const [searchParams]: [URLSearchParams, SetURLSearchParams] = useSearchParams();
   const submittingLock: RefObject<boolean> = useRef(false);
+  const captchaRef: RefObject<LoginCaptchaHandle | null> = useRef(null);
+  const captchaRequired: boolean = appConfig.captchaRequiredForLogin;
+  const turnstileSiteKey: string = appConfig.turnstileSiteKey;
 
   const [tenantSlug, setTenantSlug] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [captchaToken, setCaptchaToken] = useState<string>('');
   const [touched, setTouched] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fieldErrors: LoginFieldErrors = validateLoginForm({
-    tenantSlug,
-    email,
-    password,
-  });
+  const fieldErrors: LoginFieldErrors = validateLoginForm(
+    {
+      tenantSlug,
+      email,
+      password,
+      captchaToken,
+    },
+    { captchaRequired },
+  );
 
   async function onSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setFormError(null);
     setTouched(true);
 
-    const credentials: LoginCredentials = { tenantSlug, email, password };
-    if (hasLoginFieldErrors(validateLoginForm(credentials)) || submittingLock.current) {
+    const credentials: LoginCredentials = { tenantSlug, email, password, captchaToken };
+    if (hasLoginFieldErrors(validateLoginForm(credentials, { captchaRequired })) || submittingLock.current) {
       return;
     }
 
@@ -62,12 +72,14 @@ export function LoginPage(): ReactElement {
     setSubmitting(true);
     try {
       await login(credentials);
+      submittingLock.current = false;
       setSubmitting(false);
       const returnUrl: string | null = searchParams.get('returnUrl');
       void navigate(resolvePostLoginUrl(returnUrl), { replace: true });
     } catch (err: unknown) {
       submittingLock.current = false;
       setSubmitting(false);
+      captchaRef.current?.reset();
       setFormError(toLoginFailedError(err).message);
     }
   }
@@ -169,6 +181,20 @@ export function LoginPage(): ReactElement {
               </p>
             ) : null}
           </div>
+
+          {captchaRequired ? (
+            <LoginCaptcha
+              ref={captchaRef}
+              siteKey={turnstileSiteKey}
+              disabled={submitting}
+              invalid={touched && fieldErrors.captchaToken !== undefined}
+              value={captchaToken}
+              onTokenChange={setCaptchaToken}
+              onLoadFailed={(): void => {
+                setFormError(copy.captchaUnavailable);
+              }}
+            />
+          ) : null}
 
           <button
             type="submit"

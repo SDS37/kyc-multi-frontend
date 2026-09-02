@@ -1,0 +1,181 @@
+import {
+  type ChangeEvent,
+  type ReactElement,
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from 'react';
+import { LOGIN_MESSAGES, type LoginMessages } from '../auth.messages';
+import { loadTurnstileWidget, type TurnstileWidgetApi } from '../turnstile-loader';
+import styles from './login-captcha.module.css';
+
+export interface LoginCaptchaHandle {
+  reset: () => void;
+}
+
+export interface LoginCaptchaProps {
+  readonly siteKey: string;
+  readonly disabled: boolean;
+  readonly invalid: boolean;
+  readonly value: string;
+  readonly onTokenChange: (token: string) => void;
+  readonly onLoadFailed: () => void;
+}
+
+/**
+ * Presentational login captcha (KYC-094).
+ * Turnstile widget when a site key is set; otherwise a labeled token field (API `test` provider).
+ */
+export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
+  function LoginCaptcha(
+    { siteKey, disabled, invalid, value, onTokenChange, onLoadFailed }: LoginCaptchaProps,
+    ref,
+  ): ReactElement {
+    const copy: LoginMessages = LOGIN_MESSAGES;
+    const usesWidget: boolean = siteKey.trim().length > 0;
+    const hostRef = useRef<HTMLDivElement | null>(null);
+    const apiRef = useRef<TurnstileWidgetApi | null>(null);
+    const widgetIdRef = useRef<string | null>(null);
+    const onTokenChangeRef = useRef(onTokenChange);
+    const onLoadFailedRef = useRef(onLoadFailed);
+    const disabledRef = useRef(disabled);
+    const unmountedRef = useRef(false);
+
+    useEffect((): void => {
+      onTokenChangeRef.current = onTokenChange;
+      onLoadFailedRef.current = onLoadFailed;
+      disabledRef.current = disabled;
+    });
+
+    useEffect((): (() => void) => {
+      unmountedRef.current = false;
+      return (): void => {
+        unmountedRef.current = true;
+      };
+    }, []);
+
+    useImperativeHandle(ref, (): LoginCaptchaHandle => {
+      return {
+        reset: (): void => {
+          if (apiRef.current && widgetIdRef.current) {
+            apiRef.current.reset(widgetIdRef.current);
+          }
+          onTokenChangeRef.current('');
+        },
+      };
+    }, []);
+
+    useEffect((): (() => void) | void => {
+      if (!usesWidget) {
+        return;
+      }
+      let cancelled: boolean = false;
+      const site: string = siteKey.trim();
+      void loadTurnstileWidget()
+        .then((api: TurnstileWidgetApi): void => {
+          if (cancelled) {
+            return;
+          }
+          const host: HTMLDivElement | null = hostRef.current;
+          if (!host) {
+            onLoadFailedRef.current();
+            return;
+          }
+          apiRef.current = api;
+          widgetIdRef.current = api.render(host, {
+            sitekey: site,
+            callback: (token: string): void => {
+              if (cancelled || unmountedRef.current || disabledRef.current) {
+                return;
+              }
+              onTokenChangeRef.current(token);
+            },
+            'expired-callback': (): void => {
+              if (cancelled || unmountedRef.current || disabledRef.current) {
+                return;
+              }
+              onTokenChangeRef.current('');
+            },
+            'error-callback': (): void => {
+              if (cancelled || unmountedRef.current || disabledRef.current) {
+                return;
+              }
+              onTokenChangeRef.current('');
+            },
+            theme: 'auto',
+          });
+        })
+        .catch((): void => {
+          if (!cancelled && !unmountedRef.current) {
+            onLoadFailedRef.current();
+          }
+        });
+
+      return (): void => {
+        cancelled = true;
+        if (apiRef.current && widgetIdRef.current) {
+          apiRef.current.remove(widgetIdRef.current);
+        }
+        apiRef.current = null;
+        widgetIdRef.current = null;
+      };
+    }, [usesWidget, siteKey]);
+
+    if (usesWidget) {
+      const widgetClass: string = disabled
+        ? `${styles['widget'] ?? ''} ${styles['widgetDisabled'] ?? ''}`.trim()
+        : (styles['widget'] ?? '');
+      return (
+        <div className={styles['captcha']}>
+          <p className={styles['label']} id="login-captcha-label">
+            {copy.captchaLabel}
+          </p>
+          <div
+            ref={hostRef}
+            className={widgetClass}
+            role="group"
+            aria-labelledby="login-captcha-label"
+            aria-disabled={disabled || undefined}
+            aria-invalid={invalid || undefined}
+            aria-describedby={invalid ? 'captcha-error' : undefined}
+          />
+          {invalid ? (
+            <p id="captcha-error" className={styles['error']}>
+              {copy.captchaRequired}
+            </p>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles['captcha']}>
+        <label htmlFor="captchaToken">{copy.captchaLabel}</label>
+        <input
+          id="captchaToken"
+          name="captchaToken"
+          type="text"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={2048}
+          disabled={disabled}
+          value={value}
+          onChange={(event: ChangeEvent<HTMLInputElement>): void => {
+            onTokenChange(event.target.value);
+          }}
+          aria-invalid={invalid}
+          aria-describedby={invalid ? 'captcha-error' : 'captcha-help'}
+        />
+        <p id="captcha-help" className={styles['help']}>
+          {copy.captchaHelp}
+        </p>
+        {invalid ? (
+          <p id="captcha-error" className={styles['error']}>
+            {copy.captchaRequired}
+          </p>
+        ) : null}
+      </div>
+    );
+  },
+);

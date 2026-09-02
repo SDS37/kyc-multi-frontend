@@ -1,4 +1,4 @@
-import type { GraphqlError } from '../shared/graphql.models';
+import { GraphqlHttpError, type GraphqlError } from '../shared/graphql.models';
 import type { GraphqlResponse } from '../shared/graphql.models';
 import { LOGIN_MESSAGES } from './auth.messages';
 import {
@@ -6,8 +6,11 @@ import {
   type GraphqlLoginBody,
   type LoginCredentials,
   type LoginFieldErrors,
+  type LoginMutationInput,
   LoginFailedError,
   type LoginSuccess,
+  RATE_LIMITED_CODE,
+  RATE_LIMITED_HTTP_STATUS,
   type ReportsNavigationRedirect,
   type ReportsRouteMeta,
   type ShellSession,
@@ -20,21 +23,45 @@ export { appRoleLabel } from './auth.messages';
 const DEFAULT_POST_LOGIN_URL: string = '/reports';
 const EMAIL_PATTERN: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Pure: trim slug/email; password unchanged. */
+/** Pure: trim slug/email; password unchanged; omit empty captcha. */
 export function normalizeLoginCredentials(credentials: LoginCredentials): LoginCredentials {
+  const captchaToken: string | undefined = credentials.captchaToken?.trim();
   return {
     tenantSlug: credentials.tenantSlug.trim(),
     email: credentials.email.trim(),
     password: credentials.password,
+    ...(captchaToken ? { captchaToken } : {}),
+  };
+}
+
+/** Pure: GraphQL login variables — captchaToken only when the user supplied one. */
+export function toLoginMutationInput(credentials: LoginCredentials): LoginMutationInput {
+  const normalized: LoginCredentials = normalizeLoginCredentials(credentials);
+  if (normalized.captchaToken) {
+    return {
+      tenantSlug: normalized.tenantSlug,
+      email: normalized.email,
+      password: normalized.password,
+      captchaToken: normalized.captchaToken,
+    };
+  }
+  return {
+    tenantSlug: normalized.tenantSlug,
+    email: normalized.email,
+    password: normalized.password,
   };
 }
 
 /** Pure: client-side field validation (mirrors Angular/React login validators). */
-export function validateLoginForm(credentials: LoginCredentials): LoginFieldErrors {
+export function validateLoginForm(
+  credentials: LoginCredentials,
+  options: { readonly captchaRequired?: boolean } = {},
+): LoginFieldErrors {
   const errors: {
     tenantSlug?: string;
     email?: string;
     password?: string;
+    captchaToken?: string;
   } = {};
 
   if (!credentials.tenantSlug.trim()) {
@@ -57,6 +84,10 @@ export function validateLoginForm(credentials: LoginCredentials): LoginFieldErro
     errors.password = LOGIN_MESSAGES.passwordMaxLength;
   }
 
+  if (options.captchaRequired === true && !credentials.captchaToken?.trim()) {
+    errors.captchaToken = LOGIN_MESSAGES.captchaRequired;
+  }
+
   return errors;
 }
 
@@ -64,7 +95,8 @@ export function hasLoginFieldErrors(errors: LoginFieldErrors): boolean {
   return (
     errors.tenantSlug !== undefined ||
     errors.email !== undefined ||
-    errors.password !== undefined
+    errors.password !== undefined ||
+    errors.captchaToken !== undefined
   );
 }
 
@@ -100,6 +132,12 @@ export function resolvePostLoginUrl(returnUrl: string | null): string {
 export function toLoginFailedError(err: unknown): LoginFailedError {
   if (err instanceof LoginFailedError) {
     return err;
+  }
+  if (err instanceof GraphqlHttpError) {
+    if (err.status === RATE_LIMITED_HTTP_STATUS) {
+      return new LoginFailedError(LOGIN_MESSAGES.rateLimited, RATE_LIMITED_CODE);
+    }
+    return new LoginFailedError(LOGIN_MESSAGES.networkFailed, 'NETWORK');
   }
   if (err instanceof TypeError) {
     return new LoginFailedError(LOGIN_MESSAGES.networkFailed, 'NETWORK');

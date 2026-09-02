@@ -72,6 +72,22 @@ describe('graphqlRequest', () => {
     expect(tokenStorage.getAccessToken()).toBeNull();
   });
 
+  it('throws GraphqlHttpError on HTTP 429 without clearing the session', async (): Promise<void> => {
+    tokenStorage.setSession('secret-jwt', 'acme');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async (): Promise<{ error: string }> => ({ error: 'Too many requests.' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(graphqlRequest('{ apiStatus }')).rejects.toMatchObject({
+      name: 'GraphqlHttpError',
+      status: 429,
+    });
+    expect(tokenStorage.getAccessToken()).toBe('secret-jwt');
+  });
+
   it('parses GraphQL errors when extensions is not an object', async (): Promise<void> => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

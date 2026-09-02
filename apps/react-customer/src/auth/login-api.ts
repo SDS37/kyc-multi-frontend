@@ -1,10 +1,10 @@
 import { graphqlRequest } from '../shared/http';
 import {
-  normalizeLoginCredentials,
   parseLoginSuccess,
   toLoginFailedError,
+  toLoginMutationInput,
 } from './auth.mappers';
-import type { LoginCredentials, LoginSuccess } from './auth.models';
+import type { LoginCredentials, LoginMutationInput, LoginSuccess } from './auth.models';
 import { tokenStorage } from './token-storage';
 
 const LOGIN_MUTATION: string = `
@@ -22,7 +22,7 @@ const LOGIN_MUTATION: string = `
  * Pure parse/normalize in auth.mappers; token write is the intentional side effect.
  */
 export async function login(credentials: LoginCredentials): Promise<LoginSuccess> {
-  const input: LoginCredentials = normalizeLoginCredentials(credentials);
+  const input: LoginMutationInput = toLoginMutationInput(credentials);
 
   try {
     const body = await graphqlRequest<{ login?: LoginSuccess | null }>(

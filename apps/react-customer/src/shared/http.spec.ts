@@ -69,6 +69,22 @@ describe('graphqlRequest', () => {
     await graphqlRequest('{ apiStatus }');
     expect(tokenStorage.getAccessToken()).toBeNull();
   });
+
+  it('throws GraphqlHttpError on HTTP 429 without clearing the session', async (): Promise<void> => {
+    tokenStorage.setSession('secret-jwt', 'acme');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: 'Too many requests.' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(graphqlRequest('{ apiStatus }')).rejects.toMatchObject({
+      name: 'GraphqlHttpError',
+      status: 429,
+    });
+    expect(tokenStorage.getAccessToken()).toBe('secret-jwt');
+  });
 });
 
 describe('apiFetch', () => {

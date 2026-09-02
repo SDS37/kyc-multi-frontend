@@ -1,0 +1,40 @@
+<div class="captcha">
+  @if (usesWidget()) {
+    <p class="captcha__label" id="login-captcha-label">{{ copy.captchaLabel }}</p>
+    <div
+      #widgetHost
+      class="captcha__widget"
+      role="group"
+      aria-labelledby="login-captcha-label"
+      [class.captcha__widget--disabled]="disabled()"
+      [attr.aria-disabled]="disabled() ? true : null"
+      [attr.aria-invalid]="showInvalid() ? true : null"
+      [attr.aria-describedby]="showInvalid() ? 'captcha-error' : null"
+    ></div>
+    @if (showInvalid()) {
+      <p id="captcha-error" class="captcha__error">{{ copy.captchaRequired }}</p>
+    }
+  } @else {
+    <mat-form-field appearance="outline" class="captcha__field">
+      <mat-label>{{ copy.captchaLabel }}</mat-label>
+      <input
+        matInput
+        type="text"
+        name="captchaToken"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength="2048"
+        [value]="token()"
+        [disabled]="disabled()"
+        [attr.aria-invalid]="showInvalid()"
+        [attr.aria-describedby]="showInvalid() ? 'captcha-error' : 'captcha-help'"
+        (input)="onTokenInput($event)"
+        (blur)="markTouched()"
+      />
+      <mat-hint id="captcha-help">{{ copy.captchaHelp }}</mat-hint>
+    </mat-form-field>
+    @if (showInvalid()) {
+      <p id="captcha-error" class="captcha__error">{{ copy.captchaRequired }}</p>
+    }
+  }
+</div>

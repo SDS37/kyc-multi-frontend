@@ -164,4 +164,82 @@ describe('LoginService', () => {
     expect(error).toBeInstanceOf(LoginFailedError);
     expect((error as LoginFailedError).code).toBe('NETWORK');
   });
+
+  it('omits captchaToken when absent and includes it when present', (): void => {
+    const adminToken: string = testAccessToken('Reviewer');
+    service
+      .login({
+        tenantSlug: 'acme',
+        email: 'reviewer@acme.test',
+        password: 'secret',
+      })
+      .subscribe();
+
+    const withoutCaptcha: TestRequest = httpTesting.expectOne(graphqlUrl);
+    expect(withoutCaptcha.request.body.variables.input).toEqual({
+      tenantSlug: 'acme',
+      email: 'reviewer@acme.test',
+      password: 'secret',
+    });
+    expect(
+      Object.prototype.hasOwnProperty.call(withoutCaptcha.request.body.variables.input, 'captchaToken'),
+    ).toBe(false);
+    withoutCaptcha.flush({
+      data: {
+        login: {
+          accessToken: adminToken,
+          tokenType: 'Bearer',
+          expiresInSeconds: 3600,
+        },
+      },
+    });
+    tokens.clearSession();
+
+    service
+      .login({
+        tenantSlug: 'acme',
+        email: 'reviewer@acme.test',
+        password: 'secret',
+        captchaToken: ' turnstile-token ',
+      })
+      .subscribe();
+
+    const withCaptcha: TestRequest = httpTesting.expectOne(graphqlUrl);
+    expect(withCaptcha.request.body.variables.input).toEqual({
+      tenantSlug: 'acme',
+      email: 'reviewer@acme.test',
+      password: 'secret',
+      captchaToken: 'turnstile-token',
+    });
+    withCaptcha.flush({
+      data: {
+        login: {
+          accessToken: adminToken,
+          tokenType: 'Bearer',
+          expiresInSeconds: 3600,
+        },
+      },
+    });
+  });
+
+  it('maps HTTP 429 to a dedicated rate-limit error without storing a token', (): void => {
+    let error: unknown;
+    service
+      .login({ tenantSlug: 'acme', email: 'a@b.c', password: 'x' })
+      .subscribe({
+        error: (err: unknown): void => {
+          error = err;
+        },
+      });
+
+    httpTesting.expectOne(graphqlUrl).flush(
+      { error: 'Too many requests.' },
+      { status: 429, statusText: 'Too Many Requests' },
+    );
+
+    expect(error).toBeInstanceOf(LoginFailedError);
+    expect((error as LoginFailedError).code).toBe('RATE_LIMITED');
+    expect((error as LoginFailedError).message).toBe(LOGIN_MESSAGES.rateLimited);
+    expect(tokens.getAccessToken()).toBeNull();
+  });
 });

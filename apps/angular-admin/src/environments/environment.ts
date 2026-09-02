@@ -6,4 +6,6 @@ export const environment: AppConfig & { readonly production: boolean } = {
   apiBaseUrl: 'http://localhost:5295',
   /** Hot Chocolate endpoint used by the admin app. */
   graphqlUrl: 'http://localhost:5295/graphql',
+  captchaRequiredForLogin: false,
+  turnstileSiteKey: '',
 };

@@ -19,6 +19,11 @@ export interface LoginMessages {
   readonly passwordMaxLength: string;
   readonly signInFailed: string;
   readonly networkFailed: string;
+  readonly rateLimited: string;
+  readonly captchaLabel: string;
+  readonly captchaRequired: string;
+  readonly captchaHelp: string;
+  readonly captchaUnavailable: string;
 }
 
 export const LOGIN_MESSAGES: LoginMessages = {
@@ -39,6 +44,11 @@ export const LOGIN_MESSAGES: LoginMessages = {
   passwordMaxLength: 'Password must be at most 128 characters.',
   signInFailed: 'Sign-in failed. Check your details and try again.',
   networkFailed: 'Unable to reach the sign-in service. Try again in a moment.',
+  rateLimited: 'Too many sign-in attempts. Wait a minute and try again.',
+  captchaLabel: 'Verification',
+  captchaRequired: 'Complete the verification check.',
+  captchaHelp: 'Paste the verification token from your sign-in provider.',
+  captchaUnavailable: 'Verification could not load. Refresh the page and try again.',
 };
 
 /** Shell role labels (display only). */

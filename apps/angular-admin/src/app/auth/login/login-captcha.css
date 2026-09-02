@@ -1,0 +1,29 @@
+.captcha {
+  width: 100%;
+}
+
+.captcha__field {
+  width: 100%;
+}
+
+.captcha__label {
+  margin: 0 0 var(--kyc-space-1);
+  font-size: var(--kyc-text-sm);
+  font-weight: 600;
+  color: var(--kyc-color-text);
+}
+
+.captcha__widget {
+  min-height: 65px;
+  overflow-x: auto;
+}
+
+.captcha__widget--disabled {
+  pointer-events: none;
+}
+
+.captcha__error {
+  margin: var(--kyc-space-1) 0 0;
+  color: var(--kyc-color-danger);
+  font-size: var(--kyc-text-sm);
+}

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { GraphqlHttpError } from '../shared/graphql.models';
 import {
   normalizeLoginCredentials,
   parseAccessTokenClaims,
@@ -6,10 +7,17 @@ import {
   resolvePostLoginUrl,
   resolveReportsNavigation,
   toLoginFailedError,
+  toLoginMutationInput,
   toShellSession,
   validateLoginForm,
 } from './auth.mappers';
-import { LoginFailedError } from './auth.models';
+import { LOGIN_MESSAGES } from './auth.messages';
+import {
+  LoginFailedError,
+  RATE_LIMITED_CODE,
+  type LoginCredentials,
+  type LoginFieldErrors,
+} from './auth.models';
 
 function testJwt(claims: Record<string, unknown>): string {
   const payload: string = btoa(
@@ -40,7 +48,7 @@ describe('auth.mappers', () => {
   });
 
   it('validateLoginForm reports required fields', (): void => {
-    const errors = validateLoginForm({
+    const errors: LoginFieldErrors = validateLoginForm({
       tenantSlug: '',
       email: '',
       password: '',
@@ -48,6 +56,22 @@ describe('auth.mappers', () => {
     expect(errors.tenantSlug).toBeDefined();
     expect(errors.email).toBeDefined();
     expect(errors.password).toBeDefined();
+  });
+
+  it('validateLoginForm requires a trimmed captcha token when captcha is required', (): void => {
+    const filled: LoginCredentials = {
+      tenantSlug: 'acme',
+      email: 'a@b.c',
+      password: 'secret',
+      captchaToken: '   ',
+    };
+    const missing: LoginFieldErrors = validateLoginForm(filled, { captchaRequired: true });
+    expect(missing.captchaToken).toBe(LOGIN_MESSAGES.captchaRequired);
+    const present: LoginFieldErrors = validateLoginForm(
+      { ...filled, captchaToken: 'token-1' },
+      { captchaRequired: true },
+    );
+    expect(present.captchaToken).toBeUndefined();
   });
 
   it('parseLoginSuccess returns the login payload', (): void => {
@@ -86,6 +110,50 @@ describe('auth.mappers', () => {
   it('toLoginFailedError maps network failures', (): void => {
     const mapped: LoginFailedError = toLoginFailedError(new TypeError('Failed to fetch'));
     expect(mapped.code).toBe('NETWORK');
+  });
+
+  it('toLoginFailedError maps HTTP 429 to the rate-limit message', (): void => {
+    const mapped: LoginFailedError = toLoginFailedError(new GraphqlHttpError(429));
+    expect(mapped.code).toBe(RATE_LIMITED_CODE);
+    expect(mapped.message).toBe(LOGIN_MESSAGES.rateLimited);
+  });
+
+  it('toLoginMutationInput omits captchaToken when absent and includes it when present', (): void => {
+    expect(
+      toLoginMutationInput({
+        tenantSlug: 'acme',
+        email: 'a@b.c',
+        password: 'secret',
+      }),
+    ).toEqual({
+      tenantSlug: 'acme',
+      email: 'a@b.c',
+      password: 'secret',
+    });
+    expect(
+      toLoginMutationInput({
+        tenantSlug: 'acme',
+        email: 'a@b.c',
+        password: 'secret',
+        captchaToken: '  token-1  ',
+      }),
+    ).toEqual({
+      tenantSlug: 'acme',
+      email: 'a@b.c',
+      password: 'secret',
+      captchaToken: 'token-1',
+    });
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        toLoginMutationInput({
+          tenantSlug: 'acme',
+          email: 'a@b.c',
+          password: 'secret',
+          captchaToken: '   ',
+        }),
+        'captchaToken',
+      ),
+    ).toBe(false);
   });
 
   it('parseAccessTokenClaims reads email role and tenant_id', (): void => {

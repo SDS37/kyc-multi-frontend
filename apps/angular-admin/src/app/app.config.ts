@@ -16,6 +16,8 @@ export const appConfig: ApplicationConfig = {
       useValue: {
         apiBaseUrl: environment.apiBaseUrl,
         graphqlUrl: environment.graphqlUrl,
+        captchaRequiredForLogin: environment.captchaRequiredForLogin,
+        turnstileSiteKey: environment.turnstileSiteKey,
       },
     },
   ],
