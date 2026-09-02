@@ -535,10 +535,7 @@ public partial class Program
             return;
         }
 
-        app.Lifetime.ApplicationStarted.Register(() =>
-        {
-            _ = RepairSeedBlobsAfterStartAsync(app);
-        });
+        app.Lifetime.ApplicationStarted.Register(() => _ = RepairSeedBlobsAfterStartAsync(app));
     }
 
     private static async Task RepairSeedBlobsAfterStartAsync(WebApplication app)
