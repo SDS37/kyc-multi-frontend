@@ -38,7 +38,7 @@ This folder is the architecture decision log you wish every Angular repo kept: A
 
 ## Today vs target
 
-Architecture diagrams include Angular/React/Vue and Audit **modules**. API + Angular admin + React customer + Vue reports **overview** (counts + latest 10) are real. Remaining Week 6 work is seed + security hardening — not more Vue screens.
+Architecture diagrams include Angular/React/Vue and Audit **modules**. API + Angular admin + React customer + Vue reports **overview** (counts + latest 10) are real. Week 6 Playwright smokes are on `main`.
 
 ADR-008: no formal AI context packs for MVP. `README.STUDY.md` files are a **tour of the tree**, not a versioned agent context pack — they do not contradict that ADR. Keep them aligned with the code; delete them from the repo when they are no longer useful.
 

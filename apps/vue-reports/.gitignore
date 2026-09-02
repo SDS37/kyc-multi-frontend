@@ -19,3 +19,7 @@ dist-ssr
 # Test / TS
 coverage
 *.tsbuildinfo
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

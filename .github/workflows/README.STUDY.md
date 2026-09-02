@@ -2,17 +2,17 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** KYC-060 (`angular-ci`) + KYC-070 (`react-ci`) + KYC-080 (`vue-ci`).
+**Aligned with:** KYC-060 (`angular-ci`) + KYC-070 (`react-ci`) + KYC-080 (`vue-ci`) + KYC-110 (`angular-e2e` / `react-e2e` / `vue-e2e`).
 
 ## Purpose
 
 This folder is **automated proof on GitHub**, not local DX. Workflows answer: “Did this PR break the API, Angular admin, React customer, or Vue reports app?”
 
-They do **not** deploy, do not run Compose from `infrastructure/`, and do not run Playwright/E2E yet.
+They do **not** deploy and do not run Compose from `infrastructure/`. Playwright smokes (`*-e2e`) start Postgres + the Development API (KYC-101 seed) and serve **one** UI — they do not replace `test:ci`.
 
 ## Why these files exist
 
-GitHub Actions looks for YAML under `.github/workflows/`. Path filters mean a README-only docs PR does **not** burn a build (unless it also touches the filtered app paths or the workflow file).
+GitHub Actions looks for YAML under `.github/workflows/`. Path filters mean a README-only docs PR does **not** burn a build (unless it also touches the filtered app paths or the workflow file). Three e2e workflows (not one matrix) so an Angular-only PR does not pay for React/Vue Playwright.
 
 | File | Job |
 |---|---|
@@ -20,6 +20,10 @@ GitHub Actions looks for YAML under `.github/workflows/`. Path filters mean a RE
 | `angular-ci.yml` | On PR + push to `main` (path-filtered): `npm ci`, `npm run build`, `npm run test:ci` |
 | `react-ci.yml` | On PR + push to `main` (path-filtered on `apps/react-customer` + design-tokens): same npm pipeline |
 | `vue-ci.yml` | On PR + push to `main` (path-filtered on `apps/vue-reports` + design-tokens): lint, `vue-tsc`/build, `test:ci` |
+| `e2e-app.yml` | Reusable: Postgres → migrate → Development API + seed (`InMemory` storage) → `npm run test:e2e` |
+| `angular-e2e.yml` | Path-filtered caller for Angular Playwright Chromium |
+| `react-e2e.yml` | Path-filtered caller for React Playwright Chromium |
+| `vue-e2e.yml` | Path-filtered caller for Vue Playwright Chromium |
 
 ## UI CI analog
 
@@ -65,14 +69,16 @@ flowchart TB
 
 Concurrency: `cancel-in-progress: true` — a new push to the same PR cancels the old run.
 
+Failed `*-e2e` jobs dump `api-e2e.log` and upload Playwright `test-results` / `playwright-report`. **Do not** add `angular-e2e` / `react-e2e` / `vue-e2e` as required checks: GitHub path filters skip the workflow, so the check never reports and the PR cannot merge.
+
 ## What CI does *not* prove (so you do not over-claim)
 
-- Full UI / E2E behavior (no Playwright yet — [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98))
+- Full UI matrix (Playwright is one happy path per app — [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98))
 - Redis (Compose-only, unused by the API)
-- MinIO against a real bucket in CI (tests use InMemory object storage)
+- MinIO against a real bucket in CI (unit tests and e2e use InMemory object storage)
 - Production Docker image
 - Rate limits / CORS browser matrix
-- That migrations were applied to a long-lived shared DB (`api-ci` migrates a **fresh** `kyc_test` database)
+- That migrations were applied to a long-lived shared DB (`api-ci` migrates a **fresh** `kyc_test` database; e2e uses `kyc_e2e`)
 
 Local `dotnet test` without Compose still proves SQLite isolation tests. CI adds jsonb + `MigrateAsync`.
 
@@ -80,7 +86,7 @@ Local `dotnet test` without Compose still proves SQLite isolation tests. CI adds
 
 ## Today vs target
 
-Vue CI (`vue-ci`) landed with KYC-080. Keep API isolation tests in `api-ci` — do not move tenant proof to e2e only.
+Playwright smokes landed with KYC-110. Keep API isolation tests in `api-ci` — do not move tenant proof to e2e only.
 
 ## What to skip
 
@@ -91,7 +97,12 @@ Vue CI (`vue-ci`) landed with KYC-080. Keep API isolation tests in `api-ci` — 
 
 - [api-ci.yml](api-ci.yml)
 - [angular-ci.yml](angular-ci.yml)
+- [angular-e2e.yml](angular-e2e.yml)
+- [react-ci.yml](react-ci.yml)
+- [react-e2e.yml](react-e2e.yml)
 - [vue-ci.yml](vue-ci.yml)
+- [vue-e2e.yml](vue-e2e.yml)
+- [e2e-app.yml](e2e-app.yml)
 - [Vue reports README](../../apps/vue-reports/README.md)
 - [Tests STUDY](../../apps/api/Kyc.Api.Tests/README.STUDY.md)
 - [Angular admin README](../../apps/angular-admin/README.md)

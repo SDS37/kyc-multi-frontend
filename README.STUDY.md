@@ -66,7 +66,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 | Redis | Compose up, **unused** by the API |
 | Module Federation host | Not MVP. W7 spike; real host only if [beyond-mvp.md](docs/beyond-mvp.md) §2 |
 
-**What you can say with confidence:** “Weeks 1–5 delivered the API plus Angular admin review and React customer create → fill → upload → submit. KYC-080–081 add Vue login/shell and a read-only status-count + latest-10 report on the same JWT contract. Remaining Week 6 work is seed data and security hardening.”
+**What you can say with confidence:** “Weeks 1–6 delivered the API plus Angular admin review, React customer create → fill → upload → submit, Vue reports overview, and Playwright Chromium smokes per app.”
 
 ## Suggested reading order
 
@@ -76,7 +76,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 4. [apps/api/README.STUDY.md](apps/api/README.STUDY.md) — solution vs project vs tests.
 5. Follow **one mutation** through [Kyc.Api](apps/api/Kyc.Api/README.STUDY.md) → [GraphQL](apps/api/Kyc.Api/GraphQL/README.STUDY.md) → [Application](apps/api/Kyc.Api/Application/README.STUDY.md) → [Domain](apps/api/Kyc.Api/Domain/README.STUDY.md) → [Data](apps/api/Kyc.Api/Data/README.STUDY.md). Then skim [Documents](apps/api/Kyc.Api/Application/Documents/README.STUDY.md) for the REST upload path.
 6. [Tests](apps/api/Kyc.Api.Tests/README.STUDY.md) — especially tenant isolation. This is the sentence isolation conversations hang on.
-7. [Workflows](.github/workflows/README.STUDY.md) — what `api-ci` / `angular-ci` / `react-ci` / `vue-ci` prove.
+7. [Workflows](.github/workflows/README.STUDY.md) — what `api-ci` / `angular-ci` / `react-ci` / `vue-ci` and the `*-e2e` Playwright jobs prove.
 8. Frontends: [angular-admin](apps/angular-admin/README.STUDY.md), [react-customer](apps/react-customer/README.STUDY.md), [vue-reports](apps/vue-reports/README.STUDY.md).
 
 ## What to skip

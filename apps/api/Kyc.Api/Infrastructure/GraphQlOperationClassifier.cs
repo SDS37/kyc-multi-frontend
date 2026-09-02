@@ -39,6 +39,9 @@ public sealed class GraphQlOperationFeature(GraphQlOperationKind kind) : IGraphQ
 /// Inspects <c>operationName</c> and the <c>query</c> document only — never variable values.
 /// The stricter of the two wins so a login <c>operationName</c> cannot hide <c>registerTenant</c>.
 /// GraphQL <c>#</c> comments are stripped before field counts so <c>login # x\\n(</c> still hits the login bucket.
+/// String and block-string contents are blanked so a default like <c>"login("</c> is not a field.
+/// Named operations (<c>mutation Login(...) { login(...) }</c>) are stripped before those counts so
+/// the operation name is not treated as a second auth field.
 /// </summary>
 public static partial class GraphQlOperationClassifier
 {
@@ -146,7 +149,9 @@ public static partial class GraphQlOperationClassifier
             return new GraphQlClassification(kind, 0, 0);
         }
 
-        var query = StripGraphQlComments(queryElement.GetString() ?? string.Empty);
+        var query = StripNamedOperations(
+            BlankGraphQlStringContents(
+                StripGraphQlComments(queryElement.GetString() ?? string.Empty)));
         var loginCount = LoginField().Count(query);
         var registerCount = RegisterField().Count(query);
         if (registerCount > 0)
@@ -163,6 +168,72 @@ public static partial class GraphQlOperationClassifier
 
     private static GraphQlOperationKind Max(GraphQlOperationKind left, GraphQlOperationKind right) =>
         left > right ? left : right;
+
+    /// <summary>
+    /// Drops <c>mutation Login</c> / <c>query Foo</c> names so field regexes do not count
+    /// the operation name as a second <c>login(</c> / <c>registerTenant(</c>. All three UIs
+    /// send <c>mutation Login($input: ...) { login(...) }</c>.
+    /// </summary>
+    [GeneratedRegex(
+        @"\b(mutation|query|subscription)\s+[A-Za-z_]\w*",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex NamedOperation();
+
+    private static string StripNamedOperations(string query) =>
+        NamedOperation().Replace(query, "${1}");
+
+    /// <summary>
+    /// Blanks GraphQL string and block-string interiors so field regexes ignore
+    /// <c>"login("</c> in defaults or argument values.
+    /// </summary>
+    private static string BlankGraphQlStringContents(string query)
+    {
+        var output = new StringBuilder(query.Length);
+        var i = 0;
+        while (i < query.Length)
+        {
+            if (i + 2 < query.Length && query[i] == '"' && query[i + 1] == '"' && query[i + 2] == '"')
+            {
+                output.Append("\"\"\"\"\"\"");
+                var end = query.IndexOf("\"\"\"", i + 3, StringComparison.Ordinal);
+                if (end < 0)
+                {
+                    break;
+                }
+
+                i = end + 3;
+                continue;
+            }
+
+            if (query[i] == '"')
+            {
+                output.Append("\"\"");
+                i++;
+                while (i < query.Length)
+                {
+                    var c = query[i];
+                    if (c == '\\' && i + 1 < query.Length)
+                    {
+                        i += 2;
+                        continue;
+                    }
+
+                    i++;
+                    if (c == '"')
+                    {
+                        break;
+                    }
+                }
+
+                continue;
+            }
+
+            output.Append(query[i]);
+            i++;
+        }
+
+        return output.ToString();
+    }
 
     /// <summary>
     /// Drops GraphQL <c>#</c> line comments so field regexes still see <c>login(</c> / <c>registerTenant(</c>.
@@ -231,12 +302,10 @@ public static partial class GraphQlOperationClassifier
     }
 
     private static bool IsLoginName(string? name) =>
-        string.Equals(name, "login", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(name, "Login", StringComparison.Ordinal);
+        string.Equals(name, "login", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsRegisterName(string? name) =>
-        string.Equals(name, "registerTenant", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(name, "RegisterTenant", StringComparison.Ordinal);
+        string.Equals(name, "registerTenant", StringComparison.OrdinalIgnoreCase);
 
     [GeneratedRegex(@"\bregisterTenant\s*[\({]", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex RegisterField();

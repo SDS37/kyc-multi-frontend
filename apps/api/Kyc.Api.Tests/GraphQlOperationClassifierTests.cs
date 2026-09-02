@@ -16,6 +16,54 @@ public sealed class GraphQlOperationClassifierTests
     }
 
     [Fact]
+    public void Named_login_operation_is_one_login_field()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation Login($input: LoginRequestInput!) { login(input: $input) { accessToken tokenType expiresInSeconds } }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Login, classified.Kind);
+        Assert.Equal(1, classified.LoginFieldCount);
+        Assert.False(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
+    public void Login_string_default_is_not_a_second_field()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation Login($x: String = \"login(\") { login(input: $input) { accessToken } }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Login, classified.Kind);
+        Assert.Equal(1, classified.LoginFieldCount);
+        Assert.False(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
+    public void Frontend_multiline_login_is_one_login_field()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "\n  mutation Login($input: LoginRequestInput!) {\n    login(input: $input) {\n      accessToken\n    }\n  }\n" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Login, classified.Kind);
+        Assert.Equal(1, classified.LoginFieldCount);
+        Assert.False(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
+    public void Named_register_operation_is_one_register_field()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation RegisterTenant($input: RegisterTenantRequestInput!) { registerTenant(input: $input) { tenantSlug } }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Register, classified.Kind);
+        Assert.Equal(1, classified.RegisterFieldCount);
+        Assert.False(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
     public void Register_mutation_is_register()
     {
         var kind = GraphQlOperationClassifier.ClassifyJson("""
@@ -79,6 +127,17 @@ public sealed class GraphQlOperationClassifierTests
     {
         var classified = GraphQlOperationClassifier.ClassifyDocument("""
             { "query": "mutation { a: login(input: {}) { accessToken } b: login(input: {}) { accessToken } }" }
+            """);
+
+        Assert.Equal(2, classified.LoginFieldCount);
+        Assert.True(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
+    public void Named_operation_with_aliased_double_login_still_exceeds()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation Login { a: login(input: {}) { accessToken } b: login(input: {}) { accessToken } }" }
             """);
 
         Assert.Equal(2, classified.LoginFieldCount);
