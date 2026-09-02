@@ -163,6 +163,7 @@ Add a Customer that can log into React (copies the admin password hash — same 
 
 ```bash
 docker exec kyc-postgres psql -U kyc -d kyc_db -c "
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 INSERT INTO users (\"Id\", \"TenantId\", \"Email\", \"PasswordHash\", \"Role\", \"CreatedAt\")
 SELECT gen_random_uuid(), t.\"Id\", 'customer@acme.example', u.\"PasswordHash\", 'Customer', NOW()
 FROM tenants t
