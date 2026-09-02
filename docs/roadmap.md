@@ -5,10 +5,10 @@
 | **W3** | Done | Documents + Audit | KYC-040 to KYC-051 | Upload/download + audit entries exist |
 | **W4** | Done | Angular Admin | KYC-060 to KYC-065; **KYC-091 CORS** (local origins — prerequisite) | Reviewer can finish a case in Angular |
 | **W5** | Done | React Customer | KYC-070 to KYC-074 | Customer happy path works in React |
-| **W6** | Next | Security + Seed | KYC-095, KYC-100, KYC-101, KYC-110, [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) | Isolation tests green; demo seed; leave-localhost hardening |
+| **W6** | Next | Security + Seed | KYC-095, KYC-100, KYC-101, KYC-110, [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect — **done**) | Isolation tests green; demo seed; leave-localhost hardening |
 | **W7** | Planned | Federation attempt, polish, docs | leftover + Module Federation spike | Public README and architecture complete |
 
-**W5+ demoable now:** Customer signs in (React), creates a draft, fills FormData, uploads PDF/PNG/JPG (≤10 MB), and submits. Reviewer finishes the case in Angular (W4). Vue reports overview is KYC-081 (counts + latest 10). Remaining W6 is KYC-095 (review punch-list), Playwright smoke, and #108.
+**W5+ demoable now:** Customer signs in (React), creates a draft, fills FormData, uploads PDF/PNG/JPG (≤10 MB), and submits. Reviewer finishes the case in Angular (W4). Vue reports overview is KYC-081 (counts + latest 10). Remaining W6 is KYC-095 (review punch-list) and Playwright smoke.
 
 Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `global.json` SDK pin) landed after W1. **KYC-103** (readiness / EF retries / timeouts), **KYC-104** (structured logs / request id), **KYC-105** (GraphQL introspection/depth, EF command log level, MinIO pin), **KYC-106** (case NOT_FOUND / FormData caps / atomic status), **KYC-107** (login dummy verify / registerTenant retries), **KYC-108** (api-ci SHA pins + Postgres test slice), **KYC-109** (login password cap, updateDraftCase DOMAIN-before-FormData, status docs), **KYC-090** (FluentValidation on request DTOs; validation errors stay `VALIDATION`, not HTTP 500), **KYC-092** (GraphQL register→approve happy path + cross-tenant case isolation), and **KYC-093** (auth abuse controls) are on the API. **KYC-094** (login 429 + optional captcha in the three UIs) is done.
 
@@ -20,8 +20,8 @@ Backlog until the API leaves localhost (do not treat this as “only rate limits
 - **KYC-101** — **Done.** Development demo seed: two tenants (`acme`, `globex`), users for each role, cases in every status, PNG on non-draft cases. Idempotent; `Seed:Enabled` (default true in Development).
 - **KYC-095** — **Open.** Post-094 review punch-list: atomic `updateDraftCase` / upload status, GraphQL login/register op limits (aliases/batches), captcha `test` blocked outside Testing, in-process lockout atomicity, Angular prod API URL, React unmount + guest JWT + skip links. Not Redis, not [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108).
 - **KYC-091** — **Done.** CORS allow-list for local UIs (`http://localhost:4200`, `http://localhost:5173`, `http://localhost:5174`). Basic headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) and non-Dev HSTS. No secrets in git. Closed as delivered.
-- **[#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)** — Follow-up from KYC-091 (not a KYC-108 story): CSP, HTTPS redirect **outside Development** only, Vite preview origins if those ports are used.
-- TLS / HTTPS redirect and HSTS on any non-local deploy (same follow-up as #108)
+- **[#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)** — **Done.** Follow-up from KYC-091 (not a KYC-108 story): CSP on the API, HTTPS redirect **outside Development** only, Vite preview origins `4173` / `4174` (React / Vue `vite preview`).
+- TLS certificates on a real host (HSTS + redirect already on outside Development)
 - Production log levels (EF SQL already Warning in committed `appsettings.json`; keep host noise down)
 - Bind or authenticate `GET /ready` (liveness `/health` can stay anonymous)
 - GraphQL cost analyzer when document/list volume grows (post KYC-036 / W3); depth limit is KYC-105

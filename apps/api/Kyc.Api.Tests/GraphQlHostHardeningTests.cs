@@ -3,14 +3,21 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Kyc.Api.Tests;
 
 /// <summary>
-/// Production host (KYC-105): introspection and SDL off. SQLite still swapped in via <see cref="ApiFactory"/>.
+/// Production host (KYC-105 / issue #108): introspection and SDL off. Default client is HTTPS
+/// so <c>UseHttpsRedirection</c> does not 307 GraphQL POSTs. SQLite still swapped in via <see cref="ApiFactory"/>.
 /// </summary>
 public sealed class ProductionApiFactory : ApiFactory
 {
+    public ProductionApiFactory()
+    {
+        ClientOptions.BaseAddress = new Uri("https://localhost");
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         base.ConfigureWebHost(builder);
@@ -19,6 +26,13 @@ public sealed class ProductionApiFactory : ApiFactory
         builder.UseSetting("ObjectStorage:AllowInMemoryOutsideDevelopment", "true");
         builder.UseSetting("Registration:AllowInProduction", "true");
     }
+
+    public HttpClient CreateHttpClientNoRedirect() =>
+        CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("http://localhost")
+        });
 }
 
 public sealed class GraphQlHostHardeningTests(ApiFactory development, ProductionApiFactory production) : IClassFixture<ApiFactory>, IClassFixture<ProductionApiFactory>

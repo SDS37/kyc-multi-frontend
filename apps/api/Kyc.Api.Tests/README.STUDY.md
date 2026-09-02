@@ -60,7 +60,9 @@ flowchart LR
 | `ListDocumentsTests` | KYC-041 `documents(caseId)`; owner / peer NOT_FOUND / reviewer+admin; metadata only (no storage key); newest first. |
 | `UploadDocumentTests` | Customer multipart upload; Draft/Submitted; peer `NOT_FOUND`; reviewer 403; magic/size `VALIDATION`; InMemory object store via `ObjectStorage:Provider=InMemory` on factories. |
 | `FailingStorageUploadTests` | MinIO/put failure → `STORAGE` 502, not `VALIDATION`. |
-| `CorsTests` | Local origins preflight GraphQL + document GET; denied origin has no ACAO. |
+| `CorsTests` | Local + Vite preview origins preflight GraphQL + document GET; denied origin has no ACAO. |
+| `SecurityHeadersTests` | CSP on `/health`; Production HTTP GraphQL → HTTPS 307; probes and `X-Forwarded-Proto: https` do not redirect. |
+| `HttpsRedirectTests` | Probe paths and forwarded TLS skip HTTPS redirect. |
 | `DownloadDocumentTests` | KYC-042 `GET /api/cases/{caseId}/documents/{documentId}`; owner / reviewer / admin; peer+cross-tenant `NOT_FOUND`; no redirect/presign; missing blob `NOT_FOUND`. |
 | `AuditRecordTests` | KYC-050 append-only rows for create/update/submit/start/approve/reject/upload; tenant filter fail-closed; no audit mutations in schema. |
 | `ListCaseAuditTests` | KYC-051 `caseAuditEntries`; reviewer/admin OK; customer `AUTH_NOT_AUTHORIZED`; newest first; includes document uploads; cross-tenant `NOT_FOUND`. |

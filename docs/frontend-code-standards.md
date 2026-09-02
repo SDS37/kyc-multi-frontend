@@ -38,6 +38,7 @@ Rules in this section apply to **Angular, React, and Vue**. Framework sections o
 | **View bindings** | Do **not** call expensive functions from templates / JSX for derived display — see [View bindings: no expensive calls](#view-bindings-no-expensive-calls) |
 | **UI copy** | No hard-coded user-facing English in views — use `*.messages.ts` catalogs. See [UI copy and localization](#ui-copy-and-localization) |
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
+| **CSP (UIs)** | API CSP does not constrain the SPA document. When a host adds CSP, allow `connect-src` to the API origin and Turnstile — [Content Security Policy](#content-security-policy-all-frontends) |
 | Commits | [Conventional Commits](commits.md) with scopes like `angular`, `react`, `vue`, `docs` |
 | CI | Path-filtered GitHub Actions per app (`angular-ci`, `react-ci`, `vue-ci`): `npm ci`, build, `test:ci` |
 
@@ -73,6 +74,22 @@ smart route / screen
 Framework-specific CD / reconciliation notes live under each framework section. **Detailed mermaid inventories** belong in app READMEs — not here — so this file does not become a second architecture doc.
 
 See also: [architecture.md — Frontend composition](architecture.md#3-frontend-composition).
+
+### Content Security Policy (all frontends)
+
+The API sends `Content-Security-Policy` on its own responses ([issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108)). That header does **not** apply to Angular / React / Vue documents (separate origins). When a static host or nginx adds CSP for a UI, allow at least:
+
+| Directive | Allow | Why |
+|---|---|---|
+| `default-src` | `'self'` | App shell, CSS, bundles |
+| `connect-src` | `'self'` plus the API origin (`http://localhost:5295` in Development; HTTPS in a real deploy) | GraphQL + document upload/download |
+| `script-src` | `'self'` and `https://challenges.cloudflare.com` | Turnstile loader (`turnstile-loader.ts`) |
+| `frame-src` | `https://challenges.cloudflare.com` | Turnstile widget iframe |
+| `img-src` | `'self'` `data:` `blob:` | Tokens, document object URLs |
+| `style-src` | `'self'` `'unsafe-inline'` | Angular Material / Vite-injected styles |
+| `frame-ancestors` | `'none'` | Same clickjacking stance as the API |
+
+Do not copy the API’s `default-src 'none'` onto a UI — that would block the app shell.
 
 ### Hard TypeScript (all frontends)
 
@@ -403,7 +420,7 @@ Follow official [react.dev](https://react.dev) ([Learn](https://react.dev/learn)
 | App entry | `src/main.tsx` → `createRoot` | Alternate entry layouts without a reason |
 | UI code | Under `src/` | Dump feature code at the app root |
 | Design tokens | Import `@kyc/design-tokens/tokens.css` in `src/styles.css` (or `main.tsx`) | Fork a second palette |
-| Dev origin | Vite default `http://localhost:5173` (API CORS already allows it) | Invent a port not on the API allow-list without updating CORS |
+| Dev origin | Vite `http://localhost:5173`; preview `http://localhost:4173` (API CORS allows both) | Invent a port not on the API allow-list without updating CORS |
 
 ### Naming and structure
 
@@ -475,7 +492,7 @@ Follow official [vuejs.org](https://vuejs.org) ([Guide](https://vuejs.org/guide/
 | App entry | `src/main.ts` → `createApp(App).use(router).mount('#app')` | Mount Vue on a node that may contain untrusted HTML |
 | UI code | Under `src/` as SFCs + `*.ts` modules | Dump feature code at the app root |
 | Design tokens | Import `@kyc/design-tokens/tokens.css` in `src/styles.css` | Fork a second palette; add Bootstrap |
-| Dev origin | `http://localhost:5174` (API CORS already allows it) | Invent a port not on the API allow-list without updating CORS |
+| Dev origin | `http://localhost:5174`; preview `http://localhost:4174` (API CORS allows both) | Invent a port not on the API allow-list without updating CORS |
 | UI kit | CSS modules + tokens (same visual language as React customer) | A second component library in MVP |
 
 ### Naming and structure

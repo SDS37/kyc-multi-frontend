@@ -266,9 +266,27 @@ var authLimits = AuthLimitsOptions.Bind(builder.Configuration, builder.Environme
 authLimits.Validate();
 builder.Services.AddRateLimiter(options => AuthRateLimiting.Configure(options, authLimits));
 
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHttpsRedirection(options =>
+    {
+        options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+        options.HttpsPort = 443;
+    });
+}
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.Headers.ContentSecurityPolicy = SecurityHeaders.ContentSecurityPolicy;
+    await next();
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -276,16 +294,9 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    app.UseWhen(HttpsRedirect.ShouldRedirect, branch => branch.UseHttpsRedirection());
     app.UseHsts();
 }
-
-app.Use(async (context, next) =>
-{
-    context.Response.Headers.XContentTypeOptions = "nosniff";
-    context.Response.Headers.XFrameOptions = "DENY";
-    context.Response.Headers["Referrer-Policy"] = "no-referrer";
-    await next();
-});
 
 app.UseMiddleware<RequestCorrelationMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();

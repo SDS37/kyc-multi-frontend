@@ -7,6 +7,8 @@ public sealed class CorsTests(ApiFactory factory) : IClassFixture<ApiFactory>
     private const string AllowedOrigin = "http://localhost:4200";
     private const string OtherLocalOrigin = "http://localhost:5173";
     private const string VueOrigin = "http://localhost:5174";
+    private const string ReactPreviewOrigin = "http://localhost:4173";
+    private const string VuePreviewOrigin = "http://localhost:4174";
     private const string DeniedOrigin = "http://evil.example";
 
     [Fact]
@@ -57,6 +59,36 @@ public sealed class CorsTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         Assert.Equal(VueOrigin, response.Headers.GetValues("Access-Control-Allow-Origin").Single());
+    }
+
+    [Fact]
+    public async Task React_preview_origin_preflight_to_graphql_is_ok()
+    {
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/graphql");
+        request.Headers.Add("Origin", ReactPreviewOrigin);
+        request.Headers.Add("Access-Control-Request-Method", "POST");
+        request.Headers.Add("Access-Control-Request-Headers", "authorization,content-type");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(ReactPreviewOrigin, response.Headers.GetValues("Access-Control-Allow-Origin").Single());
+    }
+
+    [Fact]
+    public async Task Vue_preview_origin_preflight_to_graphql_is_ok()
+    {
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/graphql");
+        request.Headers.Add("Origin", VuePreviewOrigin);
+        request.Headers.Add("Access-Control-Request-Method", "POST");
+        request.Headers.Add("Access-Control-Request-Headers", "authorization,content-type");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(VuePreviewOrigin, response.Headers.GetValues("Access-Control-Allow-Origin").Single());
     }
 
     [Fact]

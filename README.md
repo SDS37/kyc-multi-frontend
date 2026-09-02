@@ -38,7 +38,7 @@ This monorepo is a portfolio project. **Today:** three independent frontends on 
 | GraphQL auth (deny by default) | Ready (KYC-021; login dummy verify — KYC-107; login password max 128 — KYC-109) |
 | GraphQL role authorization | Ready (KYC-022; Customer + Reviewer/TenantAdmin case mutations) |
 | Case mutation hardening | Ready (KYC-106; non-owner → `NOT_FOUND`; FormData 64 KiB / depth 8) |
-| CORS + basic headers (local UIs) | Ready (KYC-091: `localhost:4200`, `5173`, `5174`; CSP/HTTPS → [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108)) |
+| CORS + security headers (local UIs) | Ready (KYC-091 + [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108): CSP; HTTPS redirect outside Development; preview `:4173`/`:4174`) |
 | Angular Admin foundation | Ready (KYC-060: Angular 22+, routing, GraphQL env, auth interceptor) |
 | Shared UX design tokens | Ready (`packages/design-tokens`; Angular + React + Vue) |
 | Angular Admin | Ready (KYC-060–065: login, shell, case list, review) |
@@ -48,7 +48,7 @@ This monorepo is a portfolio project. **Today:** three independent frontends on 
 | Vue CI (`npm` build / test) | Ready (`vue-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 | Demo seed (KYC-101) | Ready — Development `dotnet run` inserts Acme + Globex (all roles, cases in every status) |
 
-**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6: [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114), Playwright ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)), CSP/HTTPS ([#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)). See the [roadmap](docs/roadmap.md).
+**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6: [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114), Playwright ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)). See the [roadmap](docs/roadmap.md).
 
 ## Tech stack (today)
 
