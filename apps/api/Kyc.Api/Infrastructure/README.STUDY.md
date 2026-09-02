@@ -21,7 +21,7 @@ Angular analog: HTTP interceptors + `ErrorHandler` + a health endpoint you would
 | `PostgresReadyHealthCheck` | `SELECT 1` with 2s timeout | Readiness ≠ liveness |
 | `ResilienceOptions` | Binds `Resilience` section: command timeout, EF retries, request timeout | Config object used from `Program.cs` |
 
-No email sender, no Redis client, no MinIO client yet. Empty-looking folder is honest.
+No email sender, no Redis client. **MinIO** lives under Application document adapters (`IObjectStorage`), not this folder. Empty-looking host folder is honest.
 
 ## Middleware vs Angular interceptors
 

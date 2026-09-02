@@ -32,7 +32,7 @@ Splitting Identity vs Tenancy matches the conversation “authn vs tenant contex
 | Angular `CanActivate` + `CanMatch` | Role checks happen **twice**: Hot Chocolate `[Authorize(Roles=…)]` then the service still reads `ICurrentUser`. Defense in depth. |
 | `HttpInterceptor` attaching `Authorization` | Backend equivalent of “who is calling?” is `IHttpContextAccessor` → claims → `HttpCurrentUser` / `HttpCurrentTenant`. |
 
-**CQRS vocabulary (use carefully):** list/detail are queries; mutations are commands. There is **no MediatR**, no separate read model. Architecture.md’s CQRS box is the **target**. Today: “application services with command-like and query-like methods.”
+**CQRS vocabulary (use carefully):** list/detail are queries; mutations are commands. There is **no MediatR**, no separate read model. [architecture.md](../../../../docs/architecture.md) §4 shows **application services**. MediatR is not a follow-up ([beyond-mvp.md](../../../../docs/beyond-mvp.md) §6).
 
 ## What is inside (Identity & Tenancy)
 
@@ -93,7 +93,7 @@ Services return tuples `(result, validationErrors, unauthorized, errorCode, …)
 ## Today vs target
 
 - Services + `DbContext` = transaction script / modest application layer. Fine.
-- Documents **copied this pattern** (service + port/adapter for MinIO). Download (KYC-042) follows the same; audit (KYC-050) should keep mirroring — not introduce MediatR unless CQRS is an explicit decision.
+- Documents **copied this pattern** (service + port/adapter for MinIO). Download (KYC-042) follows the same; audit (KYC-050) should keep mirroring — not introduce MediatR.
 
 ## What to skip until you need it
 

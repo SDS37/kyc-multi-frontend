@@ -267,7 +267,7 @@ smart route / feature service
 
 #### What we never take from that site for MVP
 
-- Module Federation / micro-frontend host (ADR-005 — W7 spike only)
+- Module Federation / micro-frontend host (ADR-005 — W7 **spike** only; a real host is [beyond-mvp.md](beyond-mvp.md) §2)
 - Agentic UI, A2UI, AG-UI, CopilotKit, MCP Apps, “AI coding agent” stop-hooks
 - Formal `AGENTS.md` architecture packs as a second source of truth (ADR-008). **This file** stays the contract.
 - Classic global NgRx Store “because enterprise”

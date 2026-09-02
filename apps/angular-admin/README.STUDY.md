@@ -79,7 +79,7 @@ Auth header: `Authorization: Bearer <accessToken>` via interceptor. Tenant id is
 
 ## Module Federation
 
-ADR-005: MVP is **three independent apps**. Do not design this app as a federation host in W4.
+ADR-005: MVP is **three independent apps**. Do not design this app as a federation host. W7 is a spike; a production shell is [beyond-mvp.md](../../docs/beyond-mvp.md).
 
 Local URL: `http://localhost:4200`. CORS: KYC-091.
 
@@ -95,7 +95,7 @@ Local URL: `http://localhost:4200`. CORS: KYC-091.
 | Case review product | Yes (063) |
 | Shell chrome (tenant/user, Cases nav, logout) | Yes (064) |
 | Review `rxResource` + Signal Form + panes | Yes (065) |
-| Angular shell composing remotes | Not required for MVP |
+| Angular shell composing remotes | Not MVP. W7 spike / [beyond-mvp.md](../../docs/beyond-mvp.md) |
 
 ## What to skip
 

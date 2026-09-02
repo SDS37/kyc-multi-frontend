@@ -38,3 +38,5 @@ At the end of every week, answer:
 - If Vue is late, keep Reports as a **single read-only page**.
 - If document storage is slow, use local disk in dev and keep the same interface.
 - Do not add notifications, billing, OCR, or custom workflows.
+
+After Definition of Done, production-shaped follow-ups (Redis, invites, MF host, TLS, …) live in [beyond-mvp.md](beyond-mvp.md). That file is a **triggered wishlist**, not W6/W7 work.

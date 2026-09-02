@@ -17,7 +17,7 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 | Hot Chocolate `/graphql` + `/health` + `/ready`; JSON logs; deny-by-default JWT; introspection/SDL Development-only | |
 | `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` / `angular-ci` / `react-ci` / `vue-ci`; SDK in `global.json` | |
 
-The **target** remains one GraphQL API, CQRS modular monolith, JWT tenant context, and three frontends — see [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md).
+The **shape today** is one GraphQL API, a modular monolith of application services, JWT tenant context, and three frontends — [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md). After DoD: [beyond-mvp.md](../beyond-mvp.md).
 
 KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an ORM). Identity stories built on that scaffold.
 
@@ -42,7 +42,7 @@ KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an
 
 **You need Docker Desktop**, not a native Postgres install. Compose starts PostgreSQL (and Redis/MinIO). For the API, only **Postgres** on `127.0.0.1:5432` is required today. Start Docker Desktop until it is running, then `docker version` and `docker compose version` should work.
 
-**You do not need** pgAdmin or Redis GUIs for the first slice. The API runs on the host and connects to Postgres on localhost. Inside Compose the hostname is `postgres`; **from your machine it is `127.0.0.1`**. Mixing those up is the usual connection error.
+**You do not need** pgAdmin or Redis GUIs. Redis is unused by the API. The API runs on the host and connects to Postgres on localhost. Inside Compose the hostname is `postgres`; **from your machine it is `127.0.0.1`**. Mixing those up is the usual connection error.
 
 ## What the API project is
 

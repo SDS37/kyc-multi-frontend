@@ -13,9 +13,9 @@ A multi-tenant platform that allows companies to manage KYC (Know Your Customer)
 
 | Role | Description |
 |---|---|
-| Tenant Admin | Manages users and settings within a tenant |
-| Reviewer | Reviews and decides on KYC cases |
-| Customer | Submits KYC information and documents |
+| Tenant Admin | Same review mutations as Reviewer (Angular). Read-only Vue overview. **User invite/list is not in MVP** ([beyond-mvp.md](beyond-mvp.md)). |
+| Reviewer | Reviews and decides on KYC cases (Angular) |
+| Customer | Submits KYC information and documents (React) |
 
 ## 3. Core Business Requirements (MVP)
 
@@ -68,12 +68,17 @@ A multi-tenant platform that allows companies to manage KYC (Know Your Customer)
 - Native mobile applications
 - Automated document verification / OCR / liveness
 - MFA
-- Multi-language support
-- Module Federation (Week 7 spike only)
+- Multi-language runtime (English `*.messages.ts` catalogs only; second locale is [beyond-mvp.md](beyond-mvp.md))
+- Module Federation as a product host (Week 7 **spike** only; keep three apps if it fails)
+- User management UI / invite API beyond seed ([KYC-101](https://github.com/SDS37/kyc-multi-frontend/issues/42) / [beyond-mvp.md](beyond-mvp.md))
+- Redis-backed cache, rate limits, or JWT denylist (Compose Redis is unused)
+- JWT refresh / server-side logout
+
+Production-shaped follow-ups after DoD: [beyond-mvp.md](beyond-mvp.md).
 
 ## 5. Success Criteria for MVP
 
 - A complete happy path works end-to-end:
   Customer creates a case → uploads documents → submits → Reviewer reviews and approves/rejects.
 - Tenant isolation is correctly enforced.
-- The solution has a clean architecture that can evolve into a real product.
+- The solution has a clean architecture that can evolve into a real product (see [beyond-mvp.md](beyond-mvp.md) — not in this DoD).

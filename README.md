@@ -5,13 +5,13 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This monorepo is a portfolio project. The **target** architecture is three frontends on one GraphQL API and auth contract (ADRs). Module Federation is a later spike (ADR-005), not a Week 1 requirement.
+This monorepo is a portfolio project. **Today:** three independent frontends on one GraphQL API (ADR-005). Module Federation is a **W7 spike**, not a requirement. Redis runs in Compose and is **unused** by the API. After DoD, see [beyond-mvp.md](docs/beyond-mvp.md).
 
 ## Current status (what works today)
 
 | Area | Status |
 |---|---|
-| Docker Compose (Postgres, Redis, MinIO) | Ready |
+| Docker Compose (Postgres, Redis, MinIO) | Ready — API uses Postgres + MinIO; Redis unused |
 | .NET API host + EF Core | Ready (`apps/api`) |
 | Tenant + User models | Ready |
 | Public `POST /api/register-tenant` | Ready (anonymous allow-list; GraphQL `registerTenant` preferred) |
@@ -49,17 +49,17 @@ This monorepo is a portfolio project. The **target** architecture is three front
 
 **Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6 is seed data and security hardening — see the [roadmap](docs/roadmap.md).
 
-## Target tech stack
+## Tech stack (today)
 
 | Layer | Technology |
 |---|---|
-| Admin / Shell | Angular |
-| Customer Portal | React |
-| Reports | Vue |
-| API | Hot Chocolate GraphQL on .NET |
-| Backend | Modular monolith, CQRS, multi-tenancy |
-| Data | PostgreSQL, Redis, MinIO |
-| Local run | Docker Compose |
+| Admin / Reviewer | Angular (`localhost:4200`) |
+| Customer portal | React (`localhost:5173`) |
+| Reports | Vue (`localhost:5174`) |
+| API | Hot Chocolate GraphQL on .NET (host `dotnet run`, not Compose) |
+| Backend | Modular monolith, **application services**, JWT tenancy |
+| Data | PostgreSQL + MinIO. Redis is Compose-only (no API client) — [beyond-mvp.md](docs/beyond-mvp.md) |
+| Local run | Docker Compose for deps; API and UIs on the host |
 
 ## Repository structure
 
@@ -166,7 +166,7 @@ App: `http://localhost:5174` (CORS already allows this origin). PRs that touch t
 
 ## Architecture
 
-Diagrams in [docs/architecture.md](docs/architecture.md) describe the **target end state**. Decisions and sequencing live in [ADRs](docs/architecture-decision-records.md).
+Diagrams in [docs/architecture.md](docs/architecture.md) describe **today** (solid arrows). Dotted Redis = unused. W7 MF and production follow-ups: [beyond-mvp.md](docs/beyond-mvp.md). Decisions: [ADRs](docs/architecture-decision-records.md).
 
 ```mermaid
 flowchart TB
@@ -178,28 +178,29 @@ flowchart TB
 
     GQL["GraphQL API<br/>.NET / Hot Chocolate"]
     DB[(PostgreSQL)]
-    Cache[(Redis)]
+    Cache["Redis<br/>(Compose, unused)"]
     Files[(MinIO)]
 
     Admin --> GQL
     Customer --> GQL
     Reports --> GQL
     GQL --> DB
-    GQL --> Cache
     GQL --> Files
+    GQL -.-> Cache
 ```
 
 - **Multi-tenancy:** tenant and role come from the JWT, never from client-supplied IDs (ADR-007).
-- **CQRS:** commands and queries are separate in the application layer (target; applied as modules grow).
-- **GraphQL:** one schema for all three clients (ADR-002; KYC-020).
-- **Frontends:** independent apps for MVP; Module Federation is deferred (ADR-005).
-- **Files:** KYC documents go to MinIO (ADR-006).
+- **Application layer:** command-like and query-like **services** (no MediatR). CQRS vocabulary only.
+- **GraphQL:** one schema for all three clients (ADR-002; KYC-020). Document bytes are REST.
+- **Frontends:** independent apps for MVP; Module Federation is a W7 spike (ADR-005).
+- **Files:** KYC documents go to MinIO (ADR-006). Redis is not on the request path.
 
 ## Documentation
 
 - [Business Requirements](docs/business-requirements.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
+- [After MVP (production wishlist)](docs/beyond-mvp.md)
 - [Definition of Done](docs/DoD.md)
 - [Architecture Decision Records](docs/architecture-decision-records.md)
 - [Commit Convention](docs/commits.md)

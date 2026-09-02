@@ -79,7 +79,7 @@ The domain has clear modules: Identity, Cases, Documents and Audit. The project 
 ### Decision
 Build one .NET deployable with internal modules and clear boundaries. Use CQRS inside the application layer. Do not split into microservices for MVP.
 
-**Today:** command/query **application services** (`*Service` classes). MediatR / domain events remain the target — see [dotnet-code-standards.md](dotnet-code-standards.md).
+**Today:** command/query **application services** (`*Service` classes). That is the CQRS shape for this repo. MediatR / domain events are **not** a committed follow-up — see [beyond-mvp.md](beyond-mvp.md) §6 and [dotnet-code-standards.md](dotnet-code-standards.md).
 
 ### Alternatives
 - Microservices from day one
@@ -128,7 +128,7 @@ Status: Accepted
 The original target is a shell that loads Angular, React and Vue remotes. Module Federation adds setup risk and can delay the business MVP.
 
 ### Decision
-Ship three independent apps against the same GraphQL API and auth contract. Treat Module Federation as a Week 7 spike. If it is not stable, keep separate apps for MVP.
+Ship three independent apps against the same GraphQL API and auth contract. Treat Module Federation as a Week 7 **spike**. If it is not stable, keep separate apps for MVP. A production one-URL host is [beyond-mvp.md](beyond-mvp.md) §2 — only after the spike is boringly stable.
 
 **Sharing rule (MVP and if MF lands):** share design tokens (`@kyc/design-tokens`), GraphQL/JWT contract, and a11y docs — not framework component libraries or compiled UI across Angular/React/Vue. See [architecture.md §3](architecture.md) and [ux-design-tokens.md](ux-design-tokens.md).
 
@@ -156,7 +156,7 @@ Status: Accepted
 The system needs relational data for tenants, users, cases and audit, plus file storage for KYC documents. Local development must be simple.
 
 ### Decision
-Use PostgreSQL for business data and MinIO as S3-compatible object storage. Redis may be used later for cache or tokens, but is not required for the first vertical slice.
+Use PostgreSQL for business data and MinIO as S3-compatible object storage. Redis may be used later for cache or tokens ([beyond-mvp.md](beyond-mvp.md) §4), but is **not** required for MVP and has **no API client** today.
 
 ### Alternatives
 - SQL Server only
