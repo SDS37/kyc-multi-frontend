@@ -79,7 +79,7 @@ public sealed class GraphQlOperationClassifierTests
     {
         var pad = new string('x', GraphQlOperationClassifier.MaxPeekBytes);
         var json = $$"""{ "variables": { "pad": "{{pad}}" }, "query": "mutation { login(input: {}) { accessToken } }" }""";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
 
         var kind = await GraphQlOperationClassifier.ClassifyAsync(stream, CancellationToken.None);
 
@@ -92,7 +92,7 @@ public sealed class GraphQlOperationClassifierTests
     {
         const string json =
             """{ "query": "mutation { login(input: {}) { accessToken } }" }""";
-        using var stream = new OneByteReadStream(Encoding.UTF8.GetBytes(json));
+        await using var stream = new OneByteReadStream(Encoding.UTF8.GetBytes(json));
 
         var kind = await GraphQlOperationClassifier.ClassifyAsync(stream, CancellationToken.None);
 
