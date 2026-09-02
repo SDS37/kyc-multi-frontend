@@ -63,7 +63,7 @@ Every HTTP call, including GraphQL. Application services do not reference these 
 
 ## Today vs target
 
-No OpenTelemetry exporters, no Prometheus scrape, no APM (KYC-104: logs + `/ready` are the MVP signals). CORS for local UIs is registered in `Program.cs` from `Cors:AllowedOrigins` (KYC-091 W4). Security headers / HSTS and rate limits (KYC-093) stay W6.
+No OpenTelemetry exporters, no Prometheus scrape, no APM (KYC-104: logs + `/ready` are the MVP signals). CORS for local UIs is registered in `Program.cs` from `Cors:AllowedOrigins` (KYC-091, done). Basic headers + non-Dev HSTS already ship. CSP / HTTPS redirect are [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108). GraphQL login/register rate limits stay KYC-093.
 
 ## What to skip
 

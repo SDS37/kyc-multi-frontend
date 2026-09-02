@@ -1,7 +1,7 @@
 namespace Kyc.Api.Infrastructure;
 
 /// <summary>
-/// Browser origins allowed to call the API (W4 KYC-091 slice). Empty = CORS not registered.
+/// Browser origins allowed to call the API (KYC-091). Empty = CORS not registered.
 /// </summary>
 public sealed class CorsOptions
 {

@@ -38,7 +38,7 @@ This monorepo is a portfolio project. The **target** architecture is three front
 | GraphQL auth (deny by default) | Ready (KYC-021; login dummy verify — KYC-107; login password max 128 — KYC-109) |
 | GraphQL role authorization | Ready (KYC-022; Customer + Reviewer/TenantAdmin case mutations) |
 | Case mutation hardening | Ready (KYC-106; non-owner → `NOT_FOUND`; FormData 64 KiB / depth 8) |
-| CORS (local UIs) | Ready (KYC-091 W4 slice: `localhost:4200`, `localhost:5173`, `localhost:5174`) |
+| CORS + basic headers (local UIs) | Ready (KYC-091: `localhost:4200`, `5173`, `5174`; CSP/HTTPS → [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108)) |
 | Angular Admin foundation | Ready (KYC-060: Angular 22+, routing, GraphQL env, auth interceptor) |
 | Shared UX design tokens | Ready (`packages/design-tokens`; Angular + React + Vue) |
 | Angular Admin | Ready (KYC-060–065: login, shell, case list, review) |

@@ -5,7 +5,7 @@
 | **W3** | Done | Documents + Audit | KYC-040 to KYC-051 | Upload/download + audit entries exist |
 | **W4** | Done | Angular Admin | KYC-060 to KYC-065; **KYC-091 CORS** (local origins — prerequisite) | Reviewer can finish a case in Angular |
 | **W5** | Done | React Customer | KYC-070 to KYC-074 | Customer happy path works in React |
-| **W6** | Next | Security + Seed | KYC-091 remainder (CSP / HTTPS redirect / preview origins), KYC-093 (GraphQL login/register on the auth bucket), KYC-100, KYC-101, KYC-110 | Isolation tests green; demo seed; leave-localhost hardening |
+| **W6** | Next | Security + Seed | KYC-093 (GraphQL login/register on the auth bucket), KYC-100, KYC-101, KYC-110, [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) | Isolation tests green; demo seed; leave-localhost hardening |
 | **W7** | Planned | Federation attempt, polish, docs | leftover + Module Federation spike | Public README and architecture complete |
 
 **W5+ demoable now:** Customer signs in (React), creates a draft, fills FormData, uploads PDF/PNG/JPG (≤10 MB), and submits. Reviewer finishes the case in Angular (W4). Vue reports overview is KYC-081 (counts + latest 10). Remaining W6 is seed + security hardening.
@@ -15,8 +15,9 @@ Hardening outside the weekly product slices: **KYC-102** (`api-ci` workflow + `g
 Backlog until the API leaves localhost (do not treat this as “only rate limits”):
 
 - **KYC-093** — REST `login` / `registerTenant` already use policy `auth` (30/min/IP). GraphQL `login` / `registerTenant` still share the looser `graphql` bucket (60/min non-Dev). Put those mutations on the auth bucket and add 429 tests.
-- **KYC-091** — CORS allow-list for local UIs is on the API (`http://localhost:4200`, `http://localhost:5173`, `http://localhost:5174`). Basic headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) and non-Dev HSTS already ship. Remainder: CSP, HTTPS redirect, Vite preview origins if needed.
-- TLS / HTTPS redirect and HSTS on any non-local deploy
+- **KYC-091** — **Done.** CORS allow-list for local UIs (`http://localhost:4200`, `http://localhost:5173`, `http://localhost:5174`). Basic headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) and non-Dev HSTS. No secrets in git. Closed as delivered.
+- **[#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)** — Follow-up from KYC-091 (not a KYC-108 story): CSP, HTTPS redirect **outside Development** only, Vite preview origins if those ports are used.
+- TLS / HTTPS redirect and HSTS on any non-local deploy (same follow-up as #108)
 - Production log levels (EF SQL already Warning in committed `appsettings.json`; keep host noise down)
 - Bind or authenticate `GET /ready` (liveness `/health` can stay anonymous)
 - Abuse controls on public `registerTenant` beyond login throttling (KYC-093)

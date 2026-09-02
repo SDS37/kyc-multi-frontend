@@ -144,7 +144,7 @@ GraphQL returns HTTP 200 with `errors[].extensions.code`. Use these codes only:
 
 REST document **upload and download** use `STORAGE` (HTTP 502) for MinIO/object-store failures — never map those to `VALIDATION`.
 
-Local browser UIs are allowed via `Cors:AllowedOrigins` (`http://localhost:4200`, `http://localhost:5173`, `http://localhost:5174`). Do not add `*` or reflect the request Origin. Basic security headers and non-Dev HSTS already ship; CSP / HTTPS redirect remain KYC-091.
+Local browser UIs are allowed via `Cors:AllowedOrigins` (`http://localhost:4200`, `http://localhost:5173`, `http://localhost:5174`). Do not add `*` or reflect the request Origin. Basic security headers and non-Dev HSTS already ship (KYC-091). CSP / HTTPS redirect are follow-up [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108), not KYC-091.
 
 Do not invent `FORBIDDEN`, `CONFLICT`, or leak emails / existence on login. Login failures stay generic (`LoginService.GenericAuthFailure`).
 
