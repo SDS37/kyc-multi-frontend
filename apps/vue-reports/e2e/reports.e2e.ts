@@ -18,11 +18,11 @@ async function fillLogin(
 }
 
 async function expectSeededStatusCount(counts: Locator, label: string): Promise<void> {
-  const card: Locator = counts.getByRole('listitem').filter({
-    has: counts.getByText(label, { exact: true }),
-  });
-  await expect(card).toBeVisible();
-  const raw: string = (await card.locator('span').nth(1).innerText()).trim();
+  const labelNode: Locator = counts.getByText(label, { exact: true });
+  await expect(labelNode).toBeVisible();
+  const valueNode: Locator = labelNode.locator('xpath=following-sibling::*[1]');
+  await expect(valueNode).toBeVisible();
+  const raw: string = (await valueNode.innerText()).trim();
   const count: number = Number.parseInt(raw, 10);
   expect(Number.isInteger(count) && count > 0).toBe(true);
 }

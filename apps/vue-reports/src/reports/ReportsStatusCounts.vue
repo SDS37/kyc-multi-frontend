@@ -1,6 +1,6 @@
 <template>
   <section :class="$style['counts']" :aria-labelledby="labelledBy">
-    <ul :class="$style['list']">
+    <ul :class="$style['list']" role="list">
       <li
         v-for="item in counts"
         :key="item.status"
