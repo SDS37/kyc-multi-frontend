@@ -70,22 +70,36 @@ public sealed class UpdateDraftCaseService(
         }
 
         var title = request.Title.Trim();
-        // null FormData = leave unchanged; whitespace / provided value normalized like create.
-        var formData = request.FormData is not null
-            ? CaseDraftValidation.NormalizeFormData(request.FormData)
-            : entity.FormData;
+        // null FormData = leave unchanged (do not SET the read-time snapshot — a concurrent
+        // FormData save would otherwise be overwritten). Whitespace / provided value like create.
+        string formData;
+        var replaceFormData = false;
+        if (request.FormData is { } providedFormData)
+        {
+            formData = CaseDraftValidation.NormalizeFormData(providedFormData);
+            replaceFormData = true;
+        }
+        else
+        {
+            formData = entity.FormData;
+        }
         var now = DateTimeOffset.UtcNow;
+        var draftRow = db.Cases.Where(c =>
+            c.Id == entity.Id &&
+            c.CustomerUserId == customerUserId.Value &&
+            c.Status == CaseStatus.Draft);
         var rows = await AuditRecorder.ExecuteUpdateWithAuditAsync(
             db,
-            ct => db.Cases
-                .Where(c =>
-                    c.Id == entity.Id &&
-                    c.CustomerUserId == customerUserId.Value &&
-                    c.Status == CaseStatus.Draft)
-                .ExecuteUpdateAsync(
+            ct => replaceFormData
+                ? draftRow.ExecuteUpdateAsync(
                     setters => setters
                         .SetProperty(c => c.Title, title)
                         .SetProperty(c => c.FormData, formData)
+                        .SetProperty(c => c.UpdatedAt, now),
+                    ct)
+                : draftRow.ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(c => c.Title, title)
                         .SetProperty(c => c.UpdatedAt, now),
                     ct),
             () => AuditRecorder.Append(

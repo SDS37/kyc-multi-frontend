@@ -101,7 +101,7 @@ public sealed class GraphQlOperationClassifierTests
     }
 
     [Fact]
-    public void One_login_and_one_register_does_not_exceed_per_field_limit()
+    public void One_login_and_one_register_exceeds_single_op_limit()
     {
         var classified = GraphQlOperationClassifier.ClassifyDocument("""
             { "query": "mutation { login(input: {}) { accessToken } registerTenant(input: {}) { tenantSlug } }" }
@@ -109,8 +109,52 @@ public sealed class GraphQlOperationClassifierTests
 
         Assert.Equal(1, classified.LoginFieldCount);
         Assert.Equal(1, classified.RegisterFieldCount);
-        Assert.False(classified.ExceedsSingleAuthOpLimit);
+        Assert.True(classified.ExceedsSingleAuthOpLimit);
         Assert.Equal(GraphQlOperationKind.Register, classified.Kind);
+    }
+
+    [Fact]
+    public void Login_with_hash_comment_before_args_is_login()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation { login # x\n(input: {}) { accessToken } }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Login, classified.Kind);
+        Assert.Equal(1, classified.LoginFieldCount);
+        Assert.False(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
+    public void Register_with_hash_comment_before_args_is_register()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation { registerTenant # x\n(input: {}) { tenantSlug } }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Register, classified.Kind);
+        Assert.Equal(1, classified.RegisterFieldCount);
+    }
+
+    [Fact]
+    public void Hash_comment_containing_login_is_not_login()
+    {
+        var kind = GraphQlOperationClassifier.ClassifyJson("""
+            { "query": "query { apiStatus # login(input: {})\n }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Other, kind);
+    }
+
+    [Fact]
+    public void Hash_inside_string_does_not_strip_login()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation { login(input: { tenantSlug: \"acme#x\" }) { accessToken } }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Login, classified.Kind);
+        Assert.Equal(1, classified.LoginFieldCount);
     }
 
     [Fact]

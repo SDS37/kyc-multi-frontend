@@ -194,3 +194,176 @@ public sealed class UpdateDraftCaseRaceTests(UpdateDraftRaceFactory factory)
         Assert.Equal(OriginalTitle, stored.Title);
     }
 }
+
+public sealed class FlipFormDataOnPayloadValidator(
+    IValidator<UpdateDraftCaseRequest> inner,
+    IServiceScopeFactory scopes,
+    UpdateDraftFormDataRaceState state) : IValidator<UpdateDraftCaseRequest>
+{
+    public ValidationResult Validate(UpdateDraftCaseRequest instance) => inner.Validate(instance);
+
+    public Task<ValidationResult> ValidateAsync(
+        UpdateDraftCaseRequest instance,
+        CancellationToken cancellation = default) =>
+        inner.ValidateAsync(instance, cancellation);
+
+    public ValidationResult Validate(IValidationContext context)
+    {
+        FlipFormData();
+        return ((IValidator)inner).Validate(context);
+    }
+
+    public Task<ValidationResult> ValidateAsync(
+        IValidationContext context,
+        CancellationToken cancellation = default)
+    {
+        FlipFormData();
+        return ((IValidator)inner).ValidateAsync(context, cancellation);
+    }
+
+    public IValidatorDescriptor CreateDescriptor() => inner.CreateDescriptor();
+
+    public bool CanValidateInstancesOfType(Type type) => inner.CanValidateInstancesOfType(type);
+
+    private void FlipFormData()
+    {
+        if (state.CaseId == Guid.Empty)
+        {
+            return;
+        }
+
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Cases
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == state.CaseId && c.Status == CaseStatus.Draft)
+            .ExecuteUpdate(setters => setters.SetProperty(c => c.FormData, state.NewerFormData));
+    }
+}
+
+public sealed class UpdateDraftFormDataRaceState
+{
+    public Guid CaseId { get; set; }
+
+    public string NewerFormData { get; set; } = """{"keep":false,"v":2}""";
+}
+
+public sealed class UpdateDraftFormDataRaceFactory : ApiFactory
+{
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        base.ConfigureWebHost(builder);
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddSingleton<UpdateDraftFormDataRaceState>();
+            services.RemoveAll<IValidator<UpdateDraftCaseRequest>>();
+            services.AddScoped<IValidator<UpdateDraftCaseRequest>>(sp =>
+                new FlipFormDataOnPayloadValidator(
+                    new UpdateDraftCaseRequestValidator(),
+                    sp.GetRequiredService<IServiceScopeFactory>(),
+                    sp.GetRequiredService<UpdateDraftFormDataRaceState>()));
+        });
+    }
+}
+
+public sealed class UpdateDraftFormDataOmitTests(UpdateDraftFormDataRaceFactory factory)
+    : IClassFixture<UpdateDraftFormDataRaceFactory>, IAsyncLifetime
+{
+    private const string OriginalFormData = """{"keep":true}""";
+    private const string NewerFormData = """{"keep":false,"v":2}""";
+
+    private HttpClient _client = null!;
+    private Guid _tenantId;
+    private Guid _customerId;
+    private Guid _draftCaseId;
+
+    public async Task InitializeAsync()
+    {
+        _client = factory.CreateClient();
+        _tenantId = Guid.NewGuid();
+        _customerId = Guid.NewGuid();
+        _draftCaseId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Tenants.Add(new Tenant
+        {
+            Id = _tenantId,
+            Name = "Form Race Co",
+            Slug = $"ffrace-{_tenantId:N}"[..20],
+            IsActive = true,
+            CreatedAt = now
+        });
+        db.Users.Add(new User
+        {
+            Id = _customerId,
+            TenantId = _tenantId,
+            Email = "c@ffrace.example",
+            PasswordHash = "unused",
+            Role = UserRole.Customer,
+            CreatedAt = now
+        });
+        db.Cases.Add(new Case
+        {
+            Id = _draftCaseId,
+            TenantId = _tenantId,
+            CustomerUserId = _customerId,
+            Title = "Original title",
+            Status = CaseStatus.Draft,
+            FormData = OriginalFormData,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        await db.SaveChangesAsync();
+        var state = scope.ServiceProvider.GetRequiredService<UpdateDraftFormDataRaceState>();
+        state.CaseId = _draftCaseId;
+        state.NewerFormData = NewerFormData;
+    }
+
+    public Task DisposeAsync()
+    {
+        _client.Dispose();
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task Title_only_update_does_not_clobber_formData_changed_after_read()
+    {
+        using var jwtScope = factory.Services.CreateScope();
+        var jwt = jwtScope.ServiceProvider.GetRequiredService<JwtTokenService>();
+        var user = new User
+        {
+            Id = _customerId,
+            TenantId = _tenantId,
+            Email = "c@ffrace.example",
+            PasswordHash = "unused",
+            Role = UserRole.Customer,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        var (token, _) = jwt.CreateAccessToken(user);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using var response = await _client.PostAsync(
+            "/graphql",
+            new StringContent(
+                $$"""
+                {
+                  "query": "mutation($input: UpdateDraftCaseRequestInput!) { updateDraftCase(input: $input) { id title formData } }",
+                  "variables": { "input": { "id": "{{_draftCaseId}}", "title": "Title only" } }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"));
+
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.False(document.RootElement.TryGetProperty("errors", out _), document.RootElement.ToString());
+
+        using var verify = factory.Services.CreateScope();
+        var stored = await verify.ServiceProvider.GetRequiredService<AppDbContext>()
+            .Cases.IgnoreQueryFilters().SingleAsync(c => c.Id == _draftCaseId);
+        Assert.Equal("Title only", stored.Title);
+        Assert.Equal(NewerFormData, stored.FormData);
+    }
+}

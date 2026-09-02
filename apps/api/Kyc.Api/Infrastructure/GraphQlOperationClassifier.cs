@@ -13,14 +13,15 @@ public enum GraphQlOperationKind
 
 /// <summary>
 /// Result of peeking a GraphQL POST. Field counts cover aliases and JSON batches so one HTTP
-/// request cannot multiply <c>login</c> / <c>registerTenant</c> (KYC-095).
+/// request cannot multiply <c>login</c> / <c>registerTenant</c> (KYC-095). Mixed login+register
+/// in one request also exceeds the limit (login would otherwise skip the login bucket).
 /// </summary>
 public readonly record struct GraphQlClassification(
     GraphQlOperationKind Kind,
     int LoginFieldCount,
     int RegisterFieldCount)
 {
-    public bool ExceedsSingleAuthOpLimit => LoginFieldCount > 1 || RegisterFieldCount > 1;
+    public bool ExceedsSingleAuthOpLimit => LoginFieldCount + RegisterFieldCount > 1;
 }
 
 public interface IGraphQlOperationFeature
@@ -37,10 +38,15 @@ public sealed class GraphQlOperationFeature(GraphQlOperationKind kind) : IGraphQ
 /// Classifies a GraphQL POST so login/register can use the auth buckets instead of the general GraphQL limiter.
 /// Inspects <c>operationName</c> and the <c>query</c> document only — never variable values.
 /// The stricter of the two wins so a login <c>operationName</c> cannot hide <c>registerTenant</c>.
+/// GraphQL <c>#</c> comments are stripped before field counts so <c>login # x\\n(</c> still hits the login bucket.
 /// </summary>
 public static partial class GraphQlOperationClassifier
 {
-    public const int MaxPeekBytes = 32 * 1024;
+    /// <summary>
+    /// Peek cap must exceed max FormData (64 KiB) plus GraphQL envelope so a valid
+    /// <c>updateDraftCase</c> is not fail-closed to 429. Larger padded bodies still truncate.
+    /// </summary>
+    public const int MaxPeekBytes = 96 * 1024;
 
     public static async Task<GraphQlClassification> ClassifyAsync(Stream body, CancellationToken cancellationToken)
     {
@@ -140,7 +146,7 @@ public static partial class GraphQlOperationClassifier
             return new GraphQlClassification(kind, 0, 0);
         }
 
-        var query = queryElement.GetString() ?? string.Empty;
+        var query = StripGraphQlComments(queryElement.GetString() ?? string.Empty);
         var loginCount = LoginField().Count(query);
         var registerCount = RegisterField().Count(query);
         if (registerCount > 0)
@@ -157,6 +163,72 @@ public static partial class GraphQlOperationClassifier
 
     private static GraphQlOperationKind Max(GraphQlOperationKind left, GraphQlOperationKind right) =>
         left > right ? left : right;
+
+    /// <summary>
+    /// Drops GraphQL <c>#</c> line comments so field regexes still see <c>login(</c> / <c>registerTenant(</c>.
+    /// Leaves <c>#</c> inside strings and block strings alone.
+    /// </summary>
+    private static string StripGraphQlComments(string query)
+    {
+        var output = new StringBuilder(query.Length);
+        var i = 0;
+        while (i < query.Length)
+        {
+            if (i + 2 < query.Length && query[i] == '"' && query[i + 1] == '"' && query[i + 2] == '"')
+            {
+                var end = query.IndexOf("\"\"\"", i + 3, StringComparison.Ordinal);
+                if (end < 0)
+                {
+                    output.Append(query.AsSpan(i));
+                    break;
+                }
+
+                output.Append(query.AsSpan(i, end + 3 - i));
+                i = end + 3;
+                continue;
+            }
+
+            if (query[i] == '"')
+            {
+                output.Append('"');
+                i++;
+                while (i < query.Length)
+                {
+                    var c = query[i];
+                    output.Append(c);
+                    if (c == '\\' && i + 1 < query.Length)
+                    {
+                        output.Append(query[i + 1]);
+                        i += 2;
+                        continue;
+                    }
+
+                    i++;
+                    if (c == '"')
+                    {
+                        break;
+                    }
+                }
+
+                continue;
+            }
+
+            if (query[i] == '#')
+            {
+                while (i < query.Length && query[i] != '\n' && query[i] != '\r')
+                {
+                    i++;
+                }
+
+                continue;
+            }
+
+            output.Append(query[i]);
+            i++;
+        }
+
+        return output.ToString();
+    }
 
     private static bool IsLoginName(string? name) =>
         string.Equals(name, "login", StringComparison.OrdinalIgnoreCase) ||

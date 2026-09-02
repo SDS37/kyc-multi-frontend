@@ -15,7 +15,7 @@ One class per action keeps PRs and tests aligned with stories (KYC-031, 032, …
 | File | Story | Who | What it does |
 |---|---|---|---|
 | `CreateDraftCaseService` + `CreateDraftCaseModels` | KYC-031 | Customer | New row, status `Draft`. `TenantId` / `CustomerUserId` from JWT. Empty FormData → `"{}"`. |
-| `UpdateDraftCaseService` | KYC-032 / 106 / 109 / 095 | Customer | Own draft only. **DOMAIN (not draft) before FormData validation**. **Atomic** `ExecuteUpdate` where `Status = Draft` so a concurrent submit cannot change Title/FormData. |
+| `UpdateDraftCaseService` | KYC-032 / 106 / 109 / 095 | Customer | Own draft only. **DOMAIN (not draft) before FormData validation**. **Atomic** `ExecuteUpdate` where `Status = Draft`. Title-only updates omit `FormData` from the SET so a concurrent FormData save is not overwritten. |
 | `SubmitCaseService` | KYC-033 / 106 | Customer | Draft → Submitted. Required FormData fields. **Atomic** `ExecuteUpdate` so two tabs cannot double-submit. |
 | `StartCaseReviewService` | KYC-034 | Reviewer / TenantAdmin | Submitted → InReview. Sets `ReviewedBy`. |
 | `CompleteCaseReviewService` | KYC-035 | Reviewer / TenantAdmin | Approve (comment optional) or reject (comment required). InReview only. |
