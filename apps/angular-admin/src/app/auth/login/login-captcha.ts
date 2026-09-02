@@ -138,6 +138,9 @@ export class LoginCaptcha implements ControlValueAccessor, OnInit, OnDestroy {
   }
 
   private commitToken(token: string): void {
+    if (this.destroyed || this.disabled()) {
+      return;
+    }
     this.token.set(token);
     this.onChange(token);
     this.onTouched();

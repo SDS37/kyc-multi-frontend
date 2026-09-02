@@ -47,6 +47,10 @@
   overflow-x: auto;
 }
 
+.widgetDisabled {
+  pointer-events: none;
+}
+
 .error {
   margin: 0;
   color: var(--kyc-color-danger);

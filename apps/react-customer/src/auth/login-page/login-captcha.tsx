@@ -39,11 +39,21 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
     const widgetIdRef = useRef<string | null>(null);
     const onTokenChangeRef = useRef(onTokenChange);
     const onLoadFailedRef = useRef(onLoadFailed);
+    const disabledRef = useRef(disabled);
+    const unmountedRef = useRef(false);
 
     useEffect((): void => {
       onTokenChangeRef.current = onTokenChange;
       onLoadFailedRef.current = onLoadFailed;
+      disabledRef.current = disabled;
     });
+
+    useEffect((): (() => void) => {
+      unmountedRef.current = false;
+      return (): void => {
+        unmountedRef.current = true;
+      };
+    }, []);
 
     useImperativeHandle(ref, (): LoginCaptchaHandle => {
       return {
@@ -76,19 +86,28 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
           widgetIdRef.current = api.render(host, {
             sitekey: site,
             callback: (token: string): void => {
+              if (cancelled || unmountedRef.current || disabledRef.current) {
+                return;
+              }
               onTokenChangeRef.current(token);
             },
             'expired-callback': (): void => {
+              if (cancelled || unmountedRef.current || disabledRef.current) {
+                return;
+              }
               onTokenChangeRef.current('');
             },
             'error-callback': (): void => {
+              if (cancelled || unmountedRef.current || disabledRef.current) {
+                return;
+              }
               onTokenChangeRef.current('');
             },
             theme: 'auto',
           });
         })
         .catch((): void => {
-          if (!cancelled) {
+          if (!cancelled && !unmountedRef.current) {
             onLoadFailedRef.current();
           }
         });
@@ -104,6 +123,9 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
     }, [usesWidget, siteKey]);
 
     if (usesWidget) {
+      const widgetClass: string = disabled
+        ? `${styles['widget'] ?? ''} ${styles['widgetDisabled'] ?? ''}`.trim()
+        : (styles['widget'] ?? '');
       return (
         <div className={styles['captcha']}>
           <p className={styles['label']} id="login-captcha-label">
@@ -111,9 +133,10 @@ export const LoginCaptcha = forwardRef<LoginCaptchaHandle, LoginCaptchaProps>(
           </p>
           <div
             ref={hostRef}
-            className={styles['widget']}
+            className={widgetClass}
             role="group"
             aria-labelledby="login-captcha-label"
+            aria-disabled={disabled || undefined}
             aria-invalid={invalid || undefined}
             aria-describedby={invalid ? 'captcha-error' : undefined}
           />

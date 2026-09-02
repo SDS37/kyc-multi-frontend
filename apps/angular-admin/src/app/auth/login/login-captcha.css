@@ -18,6 +18,10 @@
   overflow-x: auto;
 }
 
+.captcha__widget--disabled {
+  pointer-events: none;
+}
+
 .captcha__error {
   margin: var(--kyc-space-1) 0 0;
   color: var(--kyc-color-danger);

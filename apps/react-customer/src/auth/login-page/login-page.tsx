@@ -72,6 +72,7 @@ export function LoginPage(): ReactElement {
     setSubmitting(true);
     try {
       await login(credentials);
+      submittingLock.current = false;
       setSubmitting(false);
       const returnUrl: string | null = searchParams.get('returnUrl');
       void navigate(resolvePostLoginUrl(returnUrl), { replace: true });

@@ -4,9 +4,10 @@
       <p :class="$style['label']" id="login-captcha-label">{{ copy.captchaLabel }}</p>
       <div
         ref="hostEl"
-        :class="$style['widget']"
+        :class="[$style['widget'], disabled ? $style['widgetDisabled'] : undefined]"
         role="group"
         aria-labelledby="login-captcha-label"
+        :aria-disabled="disabled || undefined"
         :aria-invalid="invalid || undefined"
         :aria-describedby="invalid ? 'captcha-error' : undefined"
       />
@@ -63,12 +64,19 @@ let widgetApi: TurnstileWidgetApi | null = null;
 let widgetId: string | null = null;
 let destroyed: boolean = false;
 
+function emitToken(token: string): void {
+  if (destroyed || props.disabled) {
+    return;
+  }
+  emit('update:modelValue', token);
+}
+
 function onInput(event: Event): void {
   const target: EventTarget | null = event.target;
   if (!(target instanceof HTMLInputElement)) {
     return;
   }
-  emit('update:modelValue', target.value);
+  emitToken(target.value);
 }
 
 function reset(): void {
@@ -99,13 +107,13 @@ onMounted((): void => {
       widgetId = api.render(host, {
         sitekey: site,
         callback: (token: string): void => {
-          emit('update:modelValue', token);
+          emitToken(token);
         },
         'expired-callback': (): void => {
-          emit('update:modelValue', '');
+          emitToken('');
         },
         'error-callback': (): void => {
-          emit('update:modelValue', '');
+          emitToken('');
         },
         theme: 'auto',
       });
@@ -175,6 +183,10 @@ onUnmounted((): void => {
 .widget {
   min-height: 65px;
   overflow-x: auto;
+}
+
+.widgetDisabled {
+  pointer-events: none;
 }
 
 .error {

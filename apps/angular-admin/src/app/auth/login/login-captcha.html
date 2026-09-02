@@ -6,6 +6,8 @@
       class="captcha__widget"
       role="group"
       aria-labelledby="login-captcha-label"
+      [class.captcha__widget--disabled]="disabled()"
+      [attr.aria-disabled]="disabled() ? true : null"
       [attr.aria-invalid]="showInvalid() ? true : null"
       [attr.aria-describedby]="showInvalid() ? 'captcha-error' : null"
     ></div>

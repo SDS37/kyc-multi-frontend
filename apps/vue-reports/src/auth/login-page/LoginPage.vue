@@ -188,6 +188,7 @@ async function onSubmit(): Promise<void> {
   submitting.value = true;
   try {
     await login(credentials);
+    submittingLock = false;
     submitting.value = false;
     const returnUrlRaw: unknown = route.query['returnUrl'];
     const returnUrl: string | null = typeof returnUrlRaw === 'string' ? returnUrlRaw : null;

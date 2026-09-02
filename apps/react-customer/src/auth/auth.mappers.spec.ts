@@ -11,7 +11,12 @@ import {
   validateLoginForm,
 } from './auth.mappers';
 import { LOGIN_MESSAGES } from './auth.messages';
-import { LoginFailedError, RATE_LIMITED_CODE } from './auth.models';
+import {
+  LoginFailedError,
+  RATE_LIMITED_CODE,
+  type LoginCredentials,
+  type LoginFieldErrors,
+} from './auth.models';
 
 function testJwt(claims: Record<string, unknown>): string {
   const payload: string = btoa(
@@ -42,7 +47,7 @@ describe('auth.mappers', () => {
   });
 
   it('validateLoginForm reports required fields', (): void => {
-    const errors = validateLoginForm({
+    const errors: LoginFieldErrors = validateLoginForm({
       tenantSlug: '',
       email: '',
       password: '',
@@ -50,6 +55,22 @@ describe('auth.mappers', () => {
     expect(errors.tenantSlug).toBeDefined();
     expect(errors.email).toBeDefined();
     expect(errors.password).toBeDefined();
+  });
+
+  it('validateLoginForm requires a trimmed captcha token when captcha is required', (): void => {
+    const filled: LoginCredentials = {
+      tenantSlug: 'acme',
+      email: 'a@b.c',
+      password: 'secret',
+      captchaToken: '   ',
+    };
+    const missing: LoginFieldErrors = validateLoginForm(filled, { captchaRequired: true });
+    expect(missing.captchaToken).toBe(LOGIN_MESSAGES.captchaRequired);
+    const present: LoginFieldErrors = validateLoginForm(
+      { ...filled, captchaToken: 'token-1' },
+      { captchaRequired: true },
+    );
+    expect(present.captchaToken).toBeUndefined();
   });
 
   it('parseLoginSuccess returns the login payload', (): void => {
