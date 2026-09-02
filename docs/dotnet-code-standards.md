@@ -27,6 +27,7 @@ ADR-003 is a **modular monolith inside one project**. Folders are the modules. D
 - UTC timestamps: `DateTimeOffset.UtcNow`
 - New ids: `Guid.NewGuid()` (never from the client for tenant or owner)
 - Collection expressions where they already appear (`["Title is required."]`)
+- Prefer a concrete `List<T>` return on helpers that always allocate a list (CA1859). Keep public service tuples as `IReadOnlyList<T>`.
 - XML `<summary>` on public GraphQL types and non-obvious domain invariants — not on every private helper
 
 ```csharp

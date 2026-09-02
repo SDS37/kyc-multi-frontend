@@ -13,20 +13,20 @@ public static class RequestValidation
     public const string PayloadSet = "Payload";
     public const string CommentSet = "Comment";
 
-    public static IReadOnlyList<string> Errors<T>(IValidator<T> validator, T instance)
+    public static List<string> Errors<T>(IValidator<T> validator, T instance)
     {
         ValidationResult result = validator.Validate(instance);
         return ToMessages(result);
     }
 
-    public static IReadOnlyList<string> Errors<T>(IValidator<T> validator, T instance, string ruleSet)
+    public static List<string> Errors<T>(IValidator<T> validator, T instance, string ruleSet)
     {
         ValidationResult result = validator.Validate(instance, options => options.IncludeRuleSets(ruleSet));
         return ToMessages(result);
     }
 
-    private static IReadOnlyList<string> ToMessages(ValidationResult result) =>
+    private static List<string> ToMessages(ValidationResult result) =>
         result.IsValid
             ? []
-            : result.Errors.Select(failure => failure.ErrorMessage).ToList();
+            : result.Errors.ConvertAll(failure => failure.ErrorMessage);
 }

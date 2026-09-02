@@ -63,7 +63,7 @@ public sealed class CompleteCaseReviewService(
         Guid caseId,
         CaseStatus targetStatus,
         string? comment,
-        Func<IReadOnlyList<string>> commentErrors,
+        Func<List<string>> commentErrors,
         CancellationToken cancellationToken)
     {
 
