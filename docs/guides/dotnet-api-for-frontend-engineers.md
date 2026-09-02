@@ -8,7 +8,7 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
-| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles); case/document/audit GraphQL + REST upload/download | Seed data (KYC-101); optional user-management APIs |
+| .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles); case/document/audit GraphQL + REST upload/download; Development demo seed (KYC-101) | Optional user-management APIs ([beyond-mvp.md](../beyond-mvp.md)) |
 | **Angular admin** (KYC-060–065): login, shell, case list, review | CSP / HTTPS redirect ([issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108), follow-up from KYC-091) |
 | **React customer** (KYC-070–074): login, shell, my cases, draft form, document upload | CSP / HTTPS redirect ([issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108), follow-up from KYC-091) |
 | **Vue reports** (KYC-080–081): login, shell, status counts, latest-10 table | GraphQL cost analyzer when list volume grows |

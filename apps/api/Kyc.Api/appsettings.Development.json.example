@@ -63,5 +63,8 @@
     "Provider": "none",
     "RequiredForRegister": false,
     "RequiredForLogin": false
+  },
+  "Seed": {
+    "Enabled": true
   }
 }

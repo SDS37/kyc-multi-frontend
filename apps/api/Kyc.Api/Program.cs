@@ -225,6 +225,7 @@ builder.Services.AddHttpClient<ICaptchaVerifier, CaptchaVerifier>()
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 builder.Services.AddScoped<RegisterTenantService>();
 builder.Services.AddScoped<LoginService>();
+builder.Services.AddScoped<DemoSeedService>();
 builder.Services.AddScoped<CreateDraftCaseService>();
 builder.Services.AddScoped<UpdateDraftCaseService>();
 builder.Services.AddScoped<SubmitCaseService>();
@@ -490,6 +491,7 @@ app.MapGet("/api/cases/{caseId:guid}/documents/{documentId:guid}", async (
     Roles = $"{AuthRoles.Customer},{AuthRoles.Reviewer},{AuthRoles.TenantAdmin}"
 });
 
+await SeedDemoDataIfEnabledAsync(app);
 app.Run();
 
 public partial class Program
@@ -501,4 +503,53 @@ public partial class Program
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "JWT authentication failed {FailureType}")]
     internal static partial void LogJwtAuthFailed(ILogger logger, string failureType);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Demo seed blob repair failed ({ExceptionType}).")]
+    private static partial void LogSeedBackgroundFailed(ILogger logger, string exceptionType);
+
+    private static async Task SeedDemoDataIfEnabledAsync(WebApplication app)
+    {
+        if (!app.Environment.IsDevelopment())
+        {
+            return;
+        }
+
+        var enabled = app.Configuration
+            .GetSection(SeedOptions.SectionName)
+            .Get<SeedOptions>()?.Enabled ?? true;
+        if (!enabled)
+        {
+            return;
+        }
+
+        bool prepared;
+        using (var scope = app.Services.CreateScope())
+        {
+            prepared = await scope.ServiceProvider
+                .GetRequiredService<DemoSeedService>()
+                .SeedRowsAsync(app.Lifetime.ApplicationStopping);
+        }
+
+        if (!prepared)
+        {
+            return;
+        }
+
+        app.Lifetime.ApplicationStarted.Register(() => _ = RepairSeedBlobsAfterStartAsync(app));
+    }
+
+    private static async Task RepairSeedBlobsAfterStartAsync(WebApplication app)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            await scope.ServiceProvider
+                .GetRequiredService<DemoSeedService>()
+                .RepairSeedBlobsAsync(app.Lifetime.ApplicationStopping);
+        }
+        catch (Exception ex)
+        {
+            LogSeedBackgroundFailed(app.Logger, ex.GetType().Name);
+        }
+    }
 }

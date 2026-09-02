@@ -52,6 +52,7 @@ Splitting Identity vs Tenancy matches the conversation “authn vs tenant contex
 | `JwtOptions` / `JwtTokenService` | Issues HMAC-SHA256 access tokens: `sub`, `tenant_id`, `role`, `email`, `jti`. |
 | `LoginService` | Lookup tenant by **slug**, user by email; **`IgnoreQueryFilters()`** because login is not yet in a tenant JWT context. Dummy password verify on miss (KYC-107) so timing is less of an oracle. Generic error always. In-memory lockout after consecutive failures (KYC-093). |
 | `RegisterTenantService` | Tenant + first TenantAdmin in **one transaction**, with EF execution strategy (retries). Password hashed via ASP.NET `PasswordHasher<User>`. Captcha + invite gates (KYC-093); slug collisions stay generic. |
+| `DemoSeedService` | Development-only KYC-101 seed: two tenants, all roles, one case per status, PNG on non-draft cases. Idempotent. Uses `IgnoreQueryFilters` (no JWT at startup). |
 | `PasswordPolicy` | Length bounds shared with login/register (min 12, max 128). |
 | `*RequestValidator` | FluentValidation on request DTOs (KYC-090). Services call `RequestValidation` — not GraphQL middleware. |
 | `*Models.cs` | Request/response records used by GraphQL **and** REST so both adapters stay identical. |

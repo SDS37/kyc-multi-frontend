@@ -68,6 +68,7 @@ flowchart LR
 | `HostResilienceTests` | Timeouts / ready vs health behavior. |
 | `ObservabilityTests` | JSON logs, request id, no secret leakage. |
 | `LoginTimingTests` | Dummy hash verify on miss paths (KYC-107). |
+| `DemoSeedTests` | KYC-101: two tenants, all roles, every case status, idempotent; fills missing Acme users without resetting an existing admin hash. |
 | `PostgresIntegrationTests` | jsonb + migrate on real Postgres. |
 | `CapturingLoggerProvider` | Test sink for log assertions. |
 

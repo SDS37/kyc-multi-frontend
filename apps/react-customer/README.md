@@ -22,15 +22,13 @@ App: `http://localhost:5173` → `/login` (guests) or `/cases` (signed in)
 
 ## Demo login
 
-`registerTenant` creates **TenantAdmin**. Sign in works for any role; **`createDraftCase` / draft edit / submit / document upload require Customer**.
+Development seed (KYC-101) creates a **Customer** for `acme` / `globex`. Sign in works for any role; **`createDraftCase` / draft edit / submit / document upload require Customer**.
 
-Colleague copy-paste (Docker, API, Customer SQL, all three UIs): [root README runbook](../../README.md#colleague-runbook).
+Colleague copy-paste (Docker, API, accounts, all three UIs): [root README runbook](../../README.md#colleague-runbook).
 
 ```json
-{ "tenantSlug": "acme", "adminEmail": "admin@acme.example", "adminPassword": "ChangeMe1234", "tenantName": "Acme" }
+{ "tenantSlug": "acme", "email": "customer@acme.example", "password": "ChangeMe1234" }
 ```
-
-Until [KYC-101](https://github.com/SDS37/kyc-multi-frontend/issues/42) seed, insert `customer@acme.example` with role `Customer` as in the root runbook (copies the admin password hash).
 
 ## Security notes
 
