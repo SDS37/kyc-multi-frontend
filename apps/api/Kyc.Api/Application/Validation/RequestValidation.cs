@@ -9,7 +9,6 @@ namespace Kyc.Api.Application.Validation;
 /// </summary>
 public static class RequestValidation
 {
-    public const string IdSet = "Id";
     public const string PayloadSet = "Payload";
     public const string CommentSet = "Comment";
 
@@ -21,9 +20,19 @@ public static class RequestValidation
 
     public static List<string> Errors<T>(IValidator<T> validator, T instance, string ruleSet)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(ruleSet);
         ValidationResult result = validator.Validate(instance, options => options.IncludeRuleSets(ruleSet));
+        if (!RuleSetRan(result, ruleSet))
+        {
+            throw new InvalidOperationException($"FluentValidation did not execute rule set '{ruleSet}'.");
+        }
+
         return ToMessages(result);
     }
+
+    private static bool RuleSetRan(ValidationResult result, string ruleSet) =>
+        result.RuleSetsExecuted is { Length: > 0 } executed
+        && executed.Contains(ruleSet, StringComparer.OrdinalIgnoreCase);
 
     private static List<string> ToMessages(ValidationResult result) =>
         result.IsValid

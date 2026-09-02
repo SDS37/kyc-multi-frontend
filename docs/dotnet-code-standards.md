@@ -95,7 +95,7 @@ Typical write-tuple (extend, do not invent a new shape):
 
 4. Set `TenantId` / `CustomerUserId` on **insert** from the JWT. Query filters do not protect writes.
 5. Trim user-facing strings. Empty FormData normalizes to `"{}"`.
-6. Request DTO rules live in `AbstractValidator<T>` next to the feature. Run them via `RequestValidation` at the start of the service (or after `DOMAIN` / `NOT_FOUND` when KYC-109 requires it). Keep shared JSON/file helpers `internal` (`CaseDraftValidation`, `DocumentUploadValidation`).
+6. Request DTO rules live in `AbstractValidator<T>` next to the feature. Run them via `RequestValidation` at the start of the service (or after `DOMAIN` / `NOT_FOUND` when KYC-109 requires it). Put always-on rules (case id) on the default set; delayed rules (FormData, review comment) in a named RuleSet. Keep shared JSON/file helpers `internal` (`CaseDraftValidation`, `DocumentUploadValidation`).
 
 ```csharp
 // Prefer — owner mismatch is indistinguishable from missing

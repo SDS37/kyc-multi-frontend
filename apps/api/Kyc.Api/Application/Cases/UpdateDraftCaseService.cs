@@ -24,7 +24,7 @@ public sealed class UpdateDraftCaseService(
         UpdateDraftCaseRequest request,
         CancellationToken cancellationToken = default)
     {
-        var idErrors = RequestValidation.Errors(validator, request, RequestValidation.IdSet);
+        var idErrors = RequestValidation.Errors(validator, request);
         if (idErrors.Count > 0)
         {
             return (null, idErrors, false, null, null);

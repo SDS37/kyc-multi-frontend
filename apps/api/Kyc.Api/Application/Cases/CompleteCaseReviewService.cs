@@ -27,7 +27,7 @@ public sealed class CompleteCaseReviewService(
         ApproveCaseRequest request,
         CancellationToken cancellationToken = default)
     {
-        var idErrors = RequestValidation.Errors(approveValidator, request, RequestValidation.IdSet);
+        var idErrors = RequestValidation.Errors(approveValidator, request);
         if (idErrors.Count > 0)
         {
             return (null, idErrors, false, null, null);
@@ -45,7 +45,7 @@ public sealed class CompleteCaseReviewService(
         RejectCaseRequest request,
         CancellationToken cancellationToken = default)
     {
-        var idErrors = RequestValidation.Errors(rejectValidator, request, RequestValidation.IdSet);
+        var idErrors = RequestValidation.Errors(rejectValidator, request);
         if (idErrors.Count > 0)
         {
             return (null, idErrors, false, null, null);
@@ -66,7 +66,6 @@ public sealed class CompleteCaseReviewService(
         Func<List<string>> commentErrors,
         CancellationToken cancellationToken)
     {
-
         var tenantId = currentTenant.TenantId;
         var reviewerUserId = currentUser.UserId;
         if (tenantId is null || reviewerUserId is null)

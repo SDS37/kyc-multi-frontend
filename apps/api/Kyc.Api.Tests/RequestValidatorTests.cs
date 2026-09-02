@@ -1,5 +1,5 @@
-using FluentValidation;
 using Kyc.Api.Application.Cases;
+using Kyc.Api.Application.Documents;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Validation;
 
@@ -42,16 +42,29 @@ public sealed class RequestValidatorTests
     }
 
     [Fact]
-    public void Update_payload_rules_do_not_run_with_id_set()
+    public void Update_default_rules_check_id_only()
     {
         var validator = new UpdateDraftCaseRequestValidator();
-        var request = new UpdateDraftCaseRequest(Guid.NewGuid(), "  ", null);
+        var request = new UpdateDraftCaseRequest(Guid.Empty, "  ", null);
 
-        var idErrors = RequestValidation.Errors(validator, request, RequestValidation.IdSet);
+        var defaultErrors = RequestValidation.Errors(validator, request);
         var payloadErrors = RequestValidation.Errors(validator, request, RequestValidation.PayloadSet);
 
-        Assert.Empty(idErrors);
+        Assert.Equal(["Case id is required."], defaultErrors);
         Assert.Contains("Title is required.", payloadErrors);
+        Assert.DoesNotContain("Case id is required.", payloadErrors);
+    }
+
+    [Fact]
+    public void Unknown_rule_set_throws()
+    {
+        var validator = new UpdateDraftCaseRequestValidator();
+        var request = new UpdateDraftCaseRequest(Guid.NewGuid(), "Title", null);
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            RequestValidation.Errors(validator, request, "NoSuchSet"));
+
+        Assert.Contains("NoSuchSet", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -61,5 +74,15 @@ public sealed class RequestValidatorTests
         var errors = RequestValidation.Errors(validator, new CaseIdInput(Guid.Empty));
 
         Assert.Equal(["Case id is required."], errors);
+    }
+
+    [Fact]
+    public void Download_ids_keep_existing_messages()
+    {
+        var validator = new DownloadDocumentIdsValidator();
+        var errors = RequestValidation.Errors(validator, new DownloadDocumentIds(Guid.Empty, Guid.Empty));
+
+        Assert.Contains("Case id is required.", errors);
+        Assert.Contains(DownloadDocumentIdsValidator.DocumentIdRequiredMessage, errors);
     }
 }

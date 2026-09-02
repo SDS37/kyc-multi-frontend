@@ -4,7 +4,9 @@ using System.Text;
 using System.Text.Json;
 using FluentValidation;
 using Kyc.Api.Application.Cases;
+using Kyc.Api.Application.Documents;
 using Kyc.Api.Application.Identity;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,7 +64,13 @@ public sealed class FluentValidationPipelineTests(ApiFactory factory) : IClassFi
         Assert.NotNull(services.GetService<IValidator<LoginRequest>>());
         Assert.NotNull(services.GetService<IValidator<CreateDraftCaseRequest>>());
         Assert.NotNull(services.GetService<IValidator<UpdateDraftCaseRequest>>());
+        Assert.NotNull(services.GetService<IValidator<SubmitCaseRequest>>());
+        Assert.NotNull(services.GetService<IValidator<StartCaseReviewRequest>>());
+        Assert.NotNull(services.GetService<IValidator<ApproveCaseRequest>>());
+        Assert.NotNull(services.GetService<IValidator<RejectCaseRequest>>());
         Assert.NotNull(services.GetService<IValidator<ListCasesRequest>>());
+        Assert.NotNull(services.GetService<IValidator<CaseIdInput>>());
+        Assert.NotNull(services.GetService<IValidator<DownloadDocumentIds>>());
     }
 
     [Fact]

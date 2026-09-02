@@ -1,6 +1,8 @@
+using FluentValidation;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +17,8 @@ public sealed partial class DownloadDocumentService(
     ICurrentTenant currentTenant,
     ICurrentUser currentUser,
     IObjectStorage objectStorage,
-    ILogger<DownloadDocumentService> logger)
+    ILogger<DownloadDocumentService> logger,
+    IValidator<DownloadDocumentIds> idsValidator)
 {
     public const string NotFoundMessage = "Document was not found.";
 
@@ -24,14 +27,10 @@ public sealed partial class DownloadDocumentService(
         Guid documentId,
         CancellationToken cancellationToken = default)
     {
-        if (caseId == Guid.Empty)
+        var idErrors = RequestValidation.Errors(idsValidator, new DownloadDocumentIds(caseId, documentId));
+        if (idErrors.Count > 0)
         {
-            return (null, ["Case id is required."], false, null, null);
-        }
-
-        if (documentId == Guid.Empty)
-        {
-            return (null, ["Document id is required."], false, null, null);
+            return (null, idErrors, false, null, null);
         }
 
         var (userId, role, unauthorized) = await CaseVisibility.ResolveCallerAsync(

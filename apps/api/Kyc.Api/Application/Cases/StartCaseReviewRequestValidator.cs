@@ -7,8 +7,6 @@ public sealed class StartCaseReviewRequestValidator : AbstractValidator<StartCas
 {
     public StartCaseReviewRequestValidator()
     {
-        RuleFor(request => request.Id)
-            .NotEqual(Guid.Empty)
-            .WithMessage(CaseIdRules.RequiredMessage);
+        RuleFor(request => request.Id).RequiredCaseId();
     }
 }

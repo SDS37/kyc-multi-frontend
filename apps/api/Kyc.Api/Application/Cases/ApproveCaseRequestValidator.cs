@@ -7,12 +7,7 @@ public sealed class ApproveCaseRequestValidator : AbstractValidator<ApproveCaseR
 {
     public ApproveCaseRequestValidator()
     {
-        RuleSet(RequestValidation.IdSet, () =>
-        {
-            RuleFor(request => request.Id)
-                .NotEqual(Guid.Empty)
-                .WithMessage(CaseIdRules.RequiredMessage);
-        });
+        RuleFor(request => request.Id).RequiredCaseId();
 
         RuleSet(RequestValidation.CommentSet, () =>
         {

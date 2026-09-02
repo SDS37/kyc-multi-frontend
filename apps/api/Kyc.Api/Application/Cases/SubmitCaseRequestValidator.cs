@@ -7,8 +7,6 @@ public sealed class SubmitCaseRequestValidator : AbstractValidator<SubmitCaseReq
 {
     public SubmitCaseRequestValidator()
     {
-        RuleFor(request => request.Id)
-            .NotEqual(Guid.Empty)
-            .WithMessage(CaseIdRules.RequiredMessage);
+        RuleFor(request => request.Id).RequiredCaseId();
     }
 }

@@ -7,12 +7,8 @@ public sealed class UpdateDraftCaseRequestValidator : AbstractValidator<UpdateDr
 {
     public UpdateDraftCaseRequestValidator()
     {
-        RuleSet(RequestValidation.IdSet, () =>
-        {
-            RuleFor(request => request.Id)
-                .NotEqual(Guid.Empty)
-                .WithMessage(CaseIdRules.RequiredMessage);
-        });
+        // Default ruleset: runs when Errors(validator, request) is called with no set.
+        RuleFor(request => request.Id).RequiredCaseId();
 
         RuleSet(RequestValidation.PayloadSet, () =>
         {
