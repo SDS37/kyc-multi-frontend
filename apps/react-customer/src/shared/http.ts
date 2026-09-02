@@ -1,5 +1,6 @@
 import { appConfig } from '../config/app-config';
 import type { GraphqlError, GraphqlResponse } from './graphql.models';
+import { GraphqlHttpError } from './graphql.models';
 import { notifySessionCleared } from '../auth/session-events';
 import { tokenStorage } from '../auth/token-storage';
 
@@ -39,7 +40,7 @@ export async function graphqlRequest<TData>(
   clearSessionOnUnauthorized(response);
 
   if (!response.ok) {
-    throw new Error(`GraphQL HTTP ${String(response.status)}`);
+    throw new GraphqlHttpError(response.status);
   }
 
   const raw: unknown = await response.json();

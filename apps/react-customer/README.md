@@ -37,6 +37,8 @@ Provision a Customer user in the DB for create-draft E2E (no public signup yet).
 - Own-cases filter is **API-side**; client never sends `customerUserId` / `tenantId`
 - Create input is **title only**; update sends `id` + `title` + `formData` (ADR-007)
 - Client blocks non-PDF/PNG/JPG and files over 10 MB before upload
+- HTTP 429 on login is a rate-limit message (KYC-094); it does not clear the session or look like `AUTH_FAILED`
+- Login captcha is off unless `VITE_CAPTCHA_REQUIRED_FOR_LOGIN=true` (pair with API `Captcha:RequiredForLogin`)
 
 ## Component tree (KYC-074)
 

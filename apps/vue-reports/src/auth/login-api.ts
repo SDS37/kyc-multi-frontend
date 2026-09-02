@@ -2,15 +2,16 @@ import type { GraphqlResponse } from '../shared/graphql.models';
 import * as http from '../shared/http';
 import { LOGIN_MESSAGES } from './auth.messages';
 import {
-  normalizeLoginCredentials,
   parseLoginSuccess,
   toLoginFailedError,
+  toLoginMutationInput,
   toShellSession,
 } from './auth.mappers';
 import {
   LoginFailedError,
   isReportsRole,
   type LoginCredentials,
+  type LoginMutationInput,
   type LoginSuccess,
   type ShellSession,
 } from './auth.models';
@@ -31,7 +32,7 @@ const LOGIN_MUTATION: string = `
  * Pure parse/normalize in auth.mappers; token write is the intentional side effect.
  */
 export async function login(credentials: LoginCredentials): Promise<LoginSuccess> {
-  const input: LoginCredentials = normalizeLoginCredentials(credentials);
+  const input: LoginMutationInput = toLoginMutationInput(credentials);
 
   try {
     const body: GraphqlResponse<{ login?: LoginSuccess | null }> = await http.graphqlRequest<

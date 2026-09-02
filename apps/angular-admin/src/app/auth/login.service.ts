@@ -3,9 +3,9 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { APP_CONFIG, AppConfig } from '../config/app-config';
 import {
-  normalizeLoginCredentials,
   parseLoginSuccess,
   toLoginFailedError,
+  toLoginMutationInput,
   toShellSession,
 } from './auth.mappers';
 import { LOGIN_MESSAGES } from './auth.messages';
@@ -13,6 +13,7 @@ import {
   GraphqlLoginBody,
   LoginCredentials,
   LoginFailedError,
+  LoginMutationInput,
   LoginSuccess,
   ShellSession,
   isAdminRole,
@@ -41,7 +42,7 @@ export class LoginService {
   private readonly tokens: TokenStorage = inject(TokenStorage);
 
   login(credentials: LoginCredentials): Observable<LoginSuccess> {
-    const input: LoginCredentials = normalizeLoginCredentials(credentials);
+    const input: LoginMutationInput = toLoginMutationInput(credentials);
 
     return this.http
       .post<GraphqlLoginBody>(

@@ -106,4 +106,14 @@ describe('authInterceptor', () => {
     });
     expect(tokens.getAccessToken()).toBe('test-jwt');
   });
+
+  it('keeps the session on HTTP 429', (): void => {
+    tokens.setAccessToken('test-jwt');
+    http.post(graphqlUrl, { query: '{ apiStatus }' }).subscribe({
+      error: (): void => undefined,
+    });
+    const req: TestRequest = httpTesting.expectOne(graphqlUrl);
+    req.flush({ error: 'Too many requests.' }, { status: 429, statusText: 'Too Many Requests' });
+    expect(tokens.getAccessToken()).toBe('test-jwt');
+  });
 });

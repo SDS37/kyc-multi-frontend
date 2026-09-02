@@ -79,6 +79,16 @@
         }
       </mat-form-field>
 
+      @if (captchaRequired) {
+        <app-login-captcha
+          [siteKey]="turnstileSiteKey"
+          [disabled]="submitting()"
+          [invalid]="captchaInvalid()"
+          (tokenChange)="onCaptchaToken($event)"
+          (loadFailed)="onCaptchaLoadFailed()"
+        />
+      }
+
       <button
         mat-flat-button
         color="primary"

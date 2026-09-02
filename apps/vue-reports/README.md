@@ -41,6 +41,8 @@ PRs that touch `apps/vue-reports` (or `.github/workflows/vue-ci.yml`) run GitHub
 - GraphQL `login` is anonymous (`skipAuth`). All other calls attach JWT `Authorization` — never send `tenantId` / role in bodies (ADR-007)
 - Session lives in `sessionStorage` (tab close clears it)
 - HTTP 401 and GraphQL `AUTH_NOT_AUTHENTICATED` clear the session
+- HTTP 429 on login is a rate-limit message (KYC-094); it does not clear the session or look like `AUTH_FAILED`
+- Login captcha is off unless `VITE_CAPTCHA_REQUIRED_FOR_LOGIN=true` (pair with API `Captcha:RequiredForLogin`)
 - `returnUrl` must be an in-app path (`/` but not `//`) — open redirects are blocked
 - Route guards are UX only; the API still enforces JWT
 - `/reports` is **read-only** (counts + table). No case mutations

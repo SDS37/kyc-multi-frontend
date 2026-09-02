@@ -1,0 +1,36 @@
+<div class="captcha">
+  @if (usesWidget()) {
+    <p class="captcha__label" id="login-captcha-label">{{ copy.captchaLabel }}</p>
+    <div
+      #widgetHost
+      class="captcha__widget"
+      role="group"
+      aria-labelledby="login-captcha-label"
+      [attr.aria-invalid]="invalid() ? true : null"
+      [attr.aria-describedby]="invalid() ? 'captcha-error' : null"
+    ></div>
+    @if (invalid()) {
+      <p id="captcha-error" class="captcha__error">{{ copy.captchaRequired }}</p>
+    }
+  } @else {
+    <mat-form-field appearance="outline" class="captcha__field">
+      <mat-label>{{ copy.captchaLabel }}</mat-label>
+      <input
+        matInput
+        type="text"
+        name="captchaToken"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength="2048"
+        [disabled]="disabled()"
+        [attr.aria-invalid]="invalid()"
+        [attr.aria-describedby]="invalid() ? 'captcha-error' : 'captcha-help'"
+        (input)="onTokenInput($event)"
+      />
+      <mat-hint id="captcha-help">{{ copy.captchaHelp }}</mat-hint>
+      @if (invalid()) {
+        <mat-error id="captcha-error">{{ copy.captchaRequired }}</mat-error>
+      }
+    </mat-form-field>
+  }
+</div>

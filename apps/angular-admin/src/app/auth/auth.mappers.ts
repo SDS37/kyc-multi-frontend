@@ -5,7 +5,10 @@ import {
   GraphqlLoginBody,
   LoginCredentials,
   LoginFailedError,
+  LoginMutationInput,
   LoginSuccess,
+  RATE_LIMITED_CODE,
+  RATE_LIMITED_HTTP_STATUS,
   ShellSession,
   isAppRole,
 } from './auth.models';
@@ -15,12 +18,32 @@ export { appRoleLabel } from './auth.messages';
 
 const DEFAULT_POST_LOGIN_URL: string = '/cases';
 
-/** Pure: trim slug/email; password unchanged. */
+/** Pure: trim slug/email; password unchanged; omit empty captcha. */
 export function normalizeLoginCredentials(credentials: LoginCredentials): LoginCredentials {
+  const captchaToken: string | undefined = credentials.captchaToken?.trim();
   return {
     tenantSlug: credentials.tenantSlug.trim(),
     email: credentials.email.trim(),
     password: credentials.password,
+    ...(captchaToken ? { captchaToken } : {}),
+  };
+}
+
+/** Pure: GraphQL login variables — captchaToken only when the user supplied one. */
+export function toLoginMutationInput(credentials: LoginCredentials): LoginMutationInput {
+  const normalized: LoginCredentials = normalizeLoginCredentials(credentials);
+  if (normalized.captchaToken) {
+    return {
+      tenantSlug: normalized.tenantSlug,
+      email: normalized.email,
+      password: normalized.password,
+      captchaToken: normalized.captchaToken,
+    };
+  }
+  return {
+    tenantSlug: normalized.tenantSlug,
+    email: normalized.email,
+    password: normalized.password,
   };
 }
 
@@ -56,6 +79,9 @@ export function toLoginFailedError(err: unknown): LoginFailedError {
     return err;
   }
   if (err instanceof HttpErrorResponse) {
+    if (err.status === RATE_LIMITED_HTTP_STATUS) {
+      return new LoginFailedError(LOGIN_MESSAGES.rateLimited, RATE_LIMITED_CODE);
+    }
     return new LoginFailedError(LOGIN_MESSAGES.networkFailed, 'NETWORK');
   }
   return new LoginFailedError(LOGIN_MESSAGES.signInFailed);

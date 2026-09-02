@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { MockInstance, vi } from 'vitest';
 import { APP_CONFIG } from '../../config/app-config';
+import { LOGIN_MESSAGES } from '../auth.messages';
 import { TokenStorage } from '../token-storage';
 import { Login } from './login';
 
@@ -145,6 +146,27 @@ describe('Login', () => {
     expect(alert).toBeInstanceOf(HTMLElement);
     expect(alert?.textContent).toContain('Invalid email, password, or tenant.');
     expect(tokens.getAccessToken()).toBeNull();
+  });
+
+  it('surfaces a dedicated rate-limit alert on HTTP 429 without clearing a session', (): void => {
+    tokens.setSession(testAccessToken(), 'acme');
+    setFormValues(fixture, {
+      tenantSlug: 'acme',
+      email: 'reviewer@acme.test',
+      password: 'Password1!',
+    });
+    submitForm(fixture);
+
+    httpTesting.expectOne(graphqlUrl).flush(
+      { error: 'Too many requests.' },
+      { status: 429, statusText: 'Too Many Requests' },
+    );
+    fixture.detectChanges();
+
+    const alert: Element | null = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain(LOGIN_MESSAGES.rateLimited);
+    expect(alert?.textContent).not.toContain('Invalid email, password, or tenant.');
+    expect(tokens.getAccessToken()).not.toBeNull();
   });
 });
 

@@ -86,6 +86,16 @@
           </p>
         </div>
 
+        <LoginCaptcha
+          v-if="captchaRequired"
+          ref="captchaRef"
+          v-model="captchaToken"
+          :site-key="turnstileSiteKey"
+          :disabled="submitting"
+          :invalid="touched && fieldErrors.captchaToken !== undefined"
+          @load-failed="onCaptchaLoadFailed"
+        />
+
         <button
           type="submit"
           :class="$style['submit']"
@@ -110,6 +120,7 @@
 <script setup lang="ts">
 import { computed, ref, type ComputedRef, type Ref } from 'vue';
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded, type Router } from 'vue-router';
+import { appConfig } from '../../config/app-config';
 import { UI_MESSAGES } from '../../shared/ui.messages';
 import {
   hasLoginFieldErrors,
@@ -120,6 +131,7 @@ import {
 import { LOGIN_MESSAGES, type LoginMessages } from '../auth.messages';
 import type { LoginCredentials, LoginFieldErrors } from '../auth.models';
 import { login } from '../login-api';
+import LoginCaptcha from './LoginCaptcha.vue';
 
 defineOptions({ name: 'LoginPage' });
 
@@ -135,9 +147,13 @@ const route: RouteLocationNormalizedLoaded = useRoute();
 const tenantSlug: Ref<string> = ref('');
 const email: Ref<string> = ref('');
 const password: Ref<string> = ref('');
+const captchaToken: Ref<string> = ref('');
 const touched: Ref<boolean> = ref(false);
 const submitting: Ref<boolean> = ref(false);
 const formError: Ref<string | null> = ref(null);
+const captchaRequired: boolean = appConfig.captchaRequiredForLogin;
+const turnstileSiteKey: string = appConfig.turnstileSiteKey;
+const captchaRef: Ref<{ reset: () => void } | null> = ref(null);
 let submittingLock: boolean = false;
 
 const fieldErrors: ComputedRef<LoginFieldErrors> = computed((): LoginFieldErrors => {
@@ -145,9 +161,14 @@ const fieldErrors: ComputedRef<LoginFieldErrors> = computed((): LoginFieldErrors
     tenantSlug: tenantSlug.value,
     email: email.value,
     password: password.value,
+    captchaToken: captchaToken.value,
   };
-  return validateLoginForm(credentials);
+  return validateLoginForm(credentials, { captchaRequired });
 });
+
+function onCaptchaLoadFailed(): void {
+  formError.value = copy.captchaUnavailable;
+}
 
 async function onSubmit(): Promise<void> {
   formError.value = null;
@@ -157,8 +178,9 @@ async function onSubmit(): Promise<void> {
     tenantSlug: tenantSlug.value,
     email: email.value,
     password: password.value,
+    captchaToken: captchaToken.value,
   };
-  if (hasLoginFieldErrors(validateLoginForm(credentials)) || submittingLock) {
+  if (hasLoginFieldErrors(validateLoginForm(credentials, { captchaRequired })) || submittingLock) {
     return;
   }
 
@@ -173,6 +195,7 @@ async function onSubmit(): Promise<void> {
   } catch (err: unknown) {
     submittingLock = false;
     submitting.value = false;
+    captchaRef.value?.reset();
     formError.value = toLoginFailedError(err).message;
   }
 }
