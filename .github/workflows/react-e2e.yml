@@ -1,4 +1,5 @@
 # Chromium smoke for React customer (KYC-110). Path-filtered so Angular/Vue PRs skip this job.
+# Do not mark this workflow as a required check: skipped path filters leave no status.
 name: react-e2e
 
 on:
@@ -28,6 +29,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   e2e:
@@ -36,3 +38,4 @@ jobs:
       app-directory: apps/react-customer
       node-version-file: apps/react-customer/.nvmrc
       cache-dependency-path: apps/react-customer/package-lock.json
+      artifact-name: react-customer

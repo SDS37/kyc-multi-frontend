@@ -28,6 +28,30 @@ public sealed class GraphQlOperationClassifierTests
     }
 
     [Fact]
+    public void Login_string_default_is_not_a_second_field()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "mutation Login($x: String = \"login(\") { login(input: $input) { accessToken } }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Login, classified.Kind);
+        Assert.Equal(1, classified.LoginFieldCount);
+        Assert.False(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
+    public void Frontend_multiline_login_is_one_login_field()
+    {
+        var classified = GraphQlOperationClassifier.ClassifyDocument("""
+            { "query": "\n  mutation Login($input: LoginRequestInput!) {\n    login(input: $input) {\n      accessToken\n    }\n  }\n" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Login, classified.Kind);
+        Assert.Equal(1, classified.LoginFieldCount);
+        Assert.False(classified.ExceedsSingleAuthOpLimit);
+    }
+
+    [Fact]
     public void Named_register_operation_is_one_register_field()
     {
         var classified = GraphQlOperationClassifier.ClassifyDocument("""

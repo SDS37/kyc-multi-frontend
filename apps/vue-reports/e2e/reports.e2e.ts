@@ -17,18 +17,28 @@ async function fillLogin(
   await page.getByRole('button', { name: 'Sign in' }).click();
 }
 
+async function expectSeededStatusCount(counts: Locator, label: string): Promise<void> {
+  const card: Locator = counts.getByRole('listitem').filter({
+    has: counts.getByText(label, { exact: true }),
+  });
+  await expect(card).toBeVisible();
+  const raw: string = (await card.locator('span').nth(1).innerText()).trim();
+  const count: number = Number.parseInt(raw, 10);
+  expect(Number.isInteger(count) && count > 0).toBe(true);
+}
+
 test('reviewer sees status counts and the latest-10 table', async ({
   page,
 }): Promise<void> => {
   await fillLogin(page, DEMO_REVIEWER_EMAIL);
   await expect(page.getByRole('heading', { name: 'Reports' })).toBeVisible();
-  const counts: Locator = page.getByLabel('Cases by status');
+  const counts: Locator = page.getByRole('region', { name: 'Cases by status' });
   await expect(counts).toBeVisible();
-  await expect(counts.getByText('Draft', { exact: true })).toBeVisible();
-  await expect(counts.getByText('Submitted', { exact: true })).toBeVisible();
-  await expect(counts.getByText('In review', { exact: true })).toBeVisible();
-  await expect(counts.getByText('Approved', { exact: true })).toBeVisible();
-  await expect(counts.getByText('Rejected', { exact: true })).toBeVisible();
+  await expectSeededStatusCount(counts, 'Draft');
+  await expectSeededStatusCount(counts, 'Submitted');
+  await expectSeededStatusCount(counts, 'In review');
+  await expectSeededStatusCount(counts, 'Approved');
+  await expectSeededStatusCount(counts, 'Rejected');
   await expect(page.getByRole('heading', { name: 'Latest cases' })).toBeVisible();
   const latest: Locator = page.getByRole('table');
   await expect(latest).toBeVisible();

@@ -14,9 +14,13 @@ on:
       cache-dependency-path:
         required: true
         type: string
+      artifact-name:
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   playwright:
@@ -106,3 +110,18 @@ jobs:
       - name: Playwright
         working-directory: ${{ inputs.app-directory }}
         run: npm run test:e2e
+
+      - name: Dump API log
+        if: failure()
+        run: tail -n 200 api-e2e.log || true
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-${{ inputs.artifact-name }}-${{ github.run_id }}
+          path: |
+            ${{ inputs.app-directory }}/test-results
+            ${{ inputs.app-directory }}/playwright-report
+            api-e2e.log
+          if-no-files-found: ignore

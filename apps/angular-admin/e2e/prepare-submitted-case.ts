@@ -52,7 +52,9 @@ async function graphqlData(
     body: JSON.stringify({ query, variables }),
   });
   if (!response.ok) {
-    throw new Error(`GraphQL HTTP ${String(response.status)}`);
+    const detail: string = await response.text();
+    const preview: string = detail.length > 300 ? `${detail.slice(0, 300)}…` : detail;
+    throw new Error(`GraphQL HTTP ${String(response.status)}: ${preview}`);
   }
 
   const body: unknown = await response.json();
@@ -142,7 +144,9 @@ export async function prepareSubmittedCase(): Promise<{
     },
   );
   if (!uploadResponse.ok) {
-    throw new Error(`Document upload HTTP ${String(uploadResponse.status)}`);
+    const detail: string = await uploadResponse.text();
+    const preview: string = detail.length > 300 ? `${detail.slice(0, 300)}…` : detail;
+    throw new Error(`Document upload HTTP ${String(uploadResponse.status)}: ${preview}`);
   }
 
   await graphqlData(

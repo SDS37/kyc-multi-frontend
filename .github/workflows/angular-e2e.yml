@@ -1,4 +1,5 @@
 # Chromium smoke for Angular admin (KYC-110). Path-filtered so React/Vue PRs skip this job.
+# Do not mark this workflow as a required check: skipped path filters leave no status.
 name: angular-e2e
 
 on:
@@ -28,6 +29,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   e2e:
@@ -36,3 +38,4 @@ jobs:
       app-directory: apps/angular-admin
       node-version-file: apps/angular-admin/.nvmrc
       cache-dependency-path: apps/angular-admin/package-lock.json
+      artifact-name: angular-admin

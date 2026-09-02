@@ -69,6 +69,8 @@ flowchart TB
 
 Concurrency: `cancel-in-progress: true` — a new push to the same PR cancels the old run.
 
+Failed `*-e2e` jobs dump `api-e2e.log` and upload Playwright `test-results` / `playwright-report`. **Do not** add `angular-e2e` / `react-e2e` / `vue-e2e` as required checks: GitHub path filters skip the workflow, so the check never reports and the PR cannot merge.
+
 ## What CI does *not* prove (so you do not over-claim)
 
 - Full UI matrix (Playwright is one happy path per app — [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98))
@@ -96,6 +98,7 @@ Playwright smokes landed with KYC-110. Keep API isolation tests in `api-ci` — 
 - [api-ci.yml](api-ci.yml)
 - [angular-ci.yml](angular-ci.yml)
 - [angular-e2e.yml](angular-e2e.yml)
+- [react-ci.yml](react-ci.yml)
 - [react-e2e.yml](react-e2e.yml)
 - [vue-ci.yml](vue-ci.yml)
 - [vue-e2e.yml](vue-e2e.yml)
