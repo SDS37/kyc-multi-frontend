@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Threading.RateLimiting;
+using FluentValidation;
 using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Documents;
@@ -200,6 +201,7 @@ if (registrationOptions.AllowPublicRegistration &&
         "Set Registration:AllowInProduction=true only as an explicit break-glass, or disable public registration.");
 }
 
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 builder.Services.AddScoped<RegisterTenantService>();
 builder.Services.AddScoped<LoginService>();
 builder.Services.AddScoped<CreateDraftCaseService>();

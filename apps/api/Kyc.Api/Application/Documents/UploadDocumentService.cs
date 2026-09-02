@@ -1,7 +1,9 @@
+using FluentValidation;
 using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
@@ -16,7 +18,8 @@ public sealed partial class UploadDocumentService(
     ICurrentTenant currentTenant,
     ICurrentUser currentUser,
     IObjectStorage objectStorage,
-    ILogger<UploadDocumentService> logger)
+    ILogger<UploadDocumentService> logger,
+    IValidator<CaseIdInput> caseIdValidator)
 {
     public const string NotFoundMessage = "Case was not found.";
     public const string NotUploadableMessage = "Documents can only be uploaded to draft or submitted cases.";
@@ -27,9 +30,10 @@ public sealed partial class UploadDocumentService(
         IFormFile? file,
         CancellationToken cancellationToken = default)
     {
-        if (caseId == Guid.Empty)
+        var idErrors = RequestValidation.Errors(caseIdValidator, new CaseIdInput(caseId));
+        if (idErrors.Count > 0)
         {
-            return (null, ["Case id is required."], false, false, null, null);
+            return (null, idErrors, false, false, null, null);
         }
 
         if (file is null || file.Length <= 0)

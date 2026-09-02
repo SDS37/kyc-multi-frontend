@@ -1,6 +1,8 @@
+using FluentValidation;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Identity;
@@ -15,7 +17,8 @@ namespace Kyc.Api.Application.Audit;
 public sealed class ListCaseAuditService(
     AppDbContext db,
     ICurrentTenant currentTenant,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IValidator<CaseIdInput> caseIdValidator)
 {
     public const string ForbiddenMessage = "Only reviewers and tenant admins can view case audit entries.";
     public const string NotFoundMessage = CaseVisibility.NotFoundMessage;
@@ -24,9 +27,10 @@ public sealed class ListCaseAuditService(
         Guid caseId,
         CancellationToken cancellationToken = default)
     {
-        if (caseId == Guid.Empty)
+        var idErrors = RequestValidation.Errors(caseIdValidator, new CaseIdInput(caseId));
+        if (idErrors.Count > 0)
         {
-            return (null, ["Case id is required."], false, false, null, null);
+            return (null, idErrors, false, false, null, null);
         }
 
         // Resolve caller (JWT + DB user) before role gate so deleted users get AUTH_FAILED, not Forbidden.

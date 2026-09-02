@@ -1,6 +1,8 @@
+using FluentValidation;
 using Kyc.Api.Application.Documents;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,15 +11,17 @@ namespace Kyc.Api.Application.Cases;
 public sealed class GetCaseDetailService(
     AppDbContext db,
     ICurrentTenant currentTenant,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IValidator<CaseIdInput> caseIdValidator)
 {
     public async Task<(CaseDetailResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> GetAsync(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        if (id == Guid.Empty)
+        var idErrors = RequestValidation.Errors(caseIdValidator, new CaseIdInput(id));
+        if (idErrors.Count > 0)
         {
-            return (null, ["Case id is required."], false, null, null);
+            return (null, idErrors, false, null, null);
         }
 
         var (userId, role, unauthorized) = await CaseVisibility.ResolveCallerAsync(

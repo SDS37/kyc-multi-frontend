@@ -1,6 +1,8 @@
+using FluentValidation;
 using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
@@ -12,7 +14,8 @@ namespace Kyc.Api.Application.Cases;
 public sealed class UpdateDraftCaseService(
     AppDbContext db,
     ICurrentTenant currentTenant,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IValidator<UpdateDraftCaseRequest> validator)
 {
     public const string NotFoundMessage = "Case was not found.";
     public const string NotDraftMessage = "Only draft cases can be updated.";
@@ -21,9 +24,10 @@ public sealed class UpdateDraftCaseService(
         UpdateDraftCaseRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Id == Guid.Empty)
+        var idErrors = RequestValidation.Errors(validator, request, RequestValidation.IdSet);
+        if (idErrors.Count > 0)
         {
-            return (null, ["Case id is required."], false, null, null);
+            return (null, idErrors, false, null, null);
         }
 
         var tenantId = currentTenant.TenantId;
@@ -59,7 +63,7 @@ public sealed class UpdateDraftCaseService(
             return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
         }
 
-        var validationErrors = CaseDraftValidation.ValidateTitleAndFormData(request.Title, request.FormData);
+        var validationErrors = RequestValidation.Errors(validator, request, RequestValidation.PayloadSet);
         if (validationErrors.Count > 0)
         {
             return (null, validationErrors, false, null, null);

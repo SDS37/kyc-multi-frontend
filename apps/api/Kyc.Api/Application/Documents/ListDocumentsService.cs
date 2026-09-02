@@ -1,6 +1,8 @@
+using FluentValidation;
 using Kyc.Api.Application.Cases;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,15 +14,17 @@ namespace Kyc.Api.Application.Documents;
 public sealed class ListDocumentsService(
     AppDbContext db,
     ICurrentTenant currentTenant,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IValidator<CaseIdInput> caseIdValidator)
 {
     public async Task<(IReadOnlyList<CaseDocumentMetadataResponse>? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> ListAsync(
         Guid caseId,
         CancellationToken cancellationToken = default)
     {
-        if (caseId == Guid.Empty)
+        var idErrors = RequestValidation.Errors(caseIdValidator, new CaseIdInput(caseId));
+        if (idErrors.Count > 0)
         {
-            return (null, ["Case id is required."], false, null, null);
+            return (null, idErrors, false, null, null);
         }
 
         var (userId, role, unauthorized) = await CaseVisibility.ResolveCallerAsync(

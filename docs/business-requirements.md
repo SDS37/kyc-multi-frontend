@@ -3,7 +3,7 @@
 **Product**: KYC Compliance Platform
 **Version**: MVP
 **Last updated**: 2026-09-01
-**Status**: Aligned with accepted ADRs; W1–W5 delivered on `main` (API + Angular admin + React customer). Vue reports overview (KYC-080–081) is on `main`. Remaining Week 6 is seed (KYC-101) and security hardening (KYC-090–093, KYC-100).
+**Status**: Aligned with accepted ADRs; W1–W5 delivered on `main` (API + Angular admin + React customer). Vue reports overview (KYC-080–081) is on `main`. Remaining Week 6 is seed (KYC-101), runbook (KYC-100), and security hardening (KYC-091 remainder, KYC-093).
 
 ## 1. Vision
 

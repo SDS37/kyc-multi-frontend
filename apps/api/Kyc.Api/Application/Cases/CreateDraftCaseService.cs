@@ -1,9 +1,11 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using FluentValidation;
 using Kyc.Api.Application.Audit;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Audit;
 using Kyc.Api.Domain.Cases;
@@ -15,7 +17,8 @@ namespace Kyc.Api.Application.Cases;
 public sealed class CreateDraftCaseService(
     AppDbContext db,
     ICurrentTenant currentTenant,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IValidator<CreateDraftCaseRequest> validator)
 {
     public const int MaxTitleLength = 200;
     public const int MaxFormDataUtf8Bytes = 64 * 1024;
@@ -29,7 +32,7 @@ public sealed class CreateDraftCaseService(
         CreateDraftCaseRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validationErrors = CaseDraftValidation.ValidateTitleAndFormData(request.Title, request.FormData);
+        var validationErrors = RequestValidation.Errors(validator, request);
         if (validationErrors.Count > 0)
         {
             return (null, validationErrors, false);

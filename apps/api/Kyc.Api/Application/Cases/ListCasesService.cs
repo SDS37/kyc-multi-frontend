@@ -1,5 +1,7 @@
+using FluentValidation;
 using Kyc.Api.Application.Identity;
 using Kyc.Api.Application.Tenancy;
+using Kyc.Api.Application.Validation;
 using Kyc.Api.Data;
 using Kyc.Api.Domain.Cases;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +11,8 @@ namespace Kyc.Api.Application.Cases;
 public sealed class ListCasesService(
     AppDbContext db,
     ICurrentTenant currentTenant,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IValidator<ListCasesRequest> validator)
 {
     public const int DefaultPageSize = 20;
     public const int MaxPageSize = 100;
@@ -18,24 +21,14 @@ public sealed class ListCasesService(
         ListCasesRequest request,
         CancellationToken cancellationToken = default)
     {
-        var skip = request.Skip ?? 0;
-        var take = request.Take ?? DefaultPageSize;
-
-        var errors = new List<string>();
-        if (skip < 0)
-        {
-            errors.Add("Skip must be zero or greater.");
-        }
-
-        if (take < 1 || take > MaxPageSize)
-        {
-            errors.Add($"Take must be between 1 and {MaxPageSize}.");
-        }
-
+        var errors = RequestValidation.Errors(validator, request);
         if (errors.Count > 0)
         {
             return (null, errors, false);
         }
+
+        var skip = request.Skip ?? 0;
+        var take = request.Take ?? DefaultPageSize;
 
         var (userId, role, unauthorized) = await CaseVisibility.ResolveCallerAsync(
             db,
