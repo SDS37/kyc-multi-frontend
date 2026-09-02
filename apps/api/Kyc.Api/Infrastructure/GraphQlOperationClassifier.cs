@@ -24,6 +24,7 @@ public sealed class GraphQlOperationFeature(GraphQlOperationKind kind) : IGraphQ
 /// <summary>
 /// Classifies a GraphQL POST so login/register can use the auth buckets instead of the general GraphQL limiter.
 /// Inspects <c>operationName</c> and the <c>query</c> document only — never variable values.
+/// The stricter of the two wins so a login <c>operationName</c> cannot hide <c>registerTenant</c>.
 /// </summary>
 public static partial class GraphQlOperationClassifier
 {
@@ -95,39 +96,39 @@ public static partial class GraphQlOperationClassifier
             return GraphQlOperationKind.Other;
         }
 
+        var kind = GraphQlOperationKind.Other;
         if (element.TryGetProperty("operationName", out var operationName) &&
             operationName.ValueKind == JsonValueKind.String)
         {
             var name = operationName.GetString();
             if (IsRegisterName(name))
             {
-                return GraphQlOperationKind.Register;
+                kind = GraphQlOperationKind.Register;
             }
-
-            if (IsLoginName(name))
+            else if (IsLoginName(name))
             {
-                return GraphQlOperationKind.Login;
+                kind = GraphQlOperationKind.Login;
             }
         }
 
         if (!element.TryGetProperty("query", out var queryElement) ||
             queryElement.ValueKind != JsonValueKind.String)
         {
-            return GraphQlOperationKind.Other;
+            return kind;
         }
 
         var query = queryElement.GetString() ?? string.Empty;
         if (RegisterField().IsMatch(query))
         {
-            return GraphQlOperationKind.Register;
+            return Max(kind, GraphQlOperationKind.Register);
         }
 
         if (LoginField().IsMatch(query))
         {
-            return GraphQlOperationKind.Login;
+            return Max(kind, GraphQlOperationKind.Login);
         }
 
-        return GraphQlOperationKind.Other;
+        return kind;
     }
 
     private static GraphQlOperationKind Max(GraphQlOperationKind left, GraphQlOperationKind right) =>

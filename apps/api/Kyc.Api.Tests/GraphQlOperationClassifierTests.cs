@@ -36,6 +36,16 @@ public sealed class GraphQlOperationClassifierTests
     }
 
     [Fact]
+    public void Mismatched_operationName_uses_stricter_query_kind()
+    {
+        var kind = GraphQlOperationClassifier.ClassifyJson("""
+            { "operationName": "login", "query": "mutation { registerTenant(input: {}) { tenantSlug } }" }
+            """);
+
+        Assert.Equal(GraphQlOperationKind.Register, kind);
+    }
+
+    [Fact]
     public void Cases_query_is_other()
     {
         var kind = GraphQlOperationClassifier.ClassifyJson("""

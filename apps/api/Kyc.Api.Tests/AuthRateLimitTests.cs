@@ -100,6 +100,25 @@ public sealed class AuthRateLimitTests
     }
 
     [Fact]
+    public async Task GraphQl_register_over_limit_returns_generic_429()
+    {
+        await using var factory = new TightRegisterLimitFactory();
+        await factory.InitializeAsync();
+        using var client = factory.CreateClient();
+
+        using var first = await PostGraphqlAsync(client, RegisterGraphqlBody("g1"));
+        using var second = await PostGraphqlAsync(client, RegisterGraphqlBody("g2"));
+        using var third = await PostGraphqlAsync(client, RegisterGraphqlBody("g3"));
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, third.StatusCode);
+        var thirdBody = await third.Content.ReadAsStringAsync();
+        Assert.Contains(AuthRateLimiting.TooManyRequestsMessage, thirdBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("registerTenant", thirdBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Graphql_other_operations_do_not_consume_login_bucket()
     {
         await using var factory = new TightGraphqlLimitFactory();
@@ -134,6 +153,24 @@ public sealed class AuthRateLimitTests
               "adminPassword": "ChangeMe1234"
             }
             """);
+    }
+
+    private static string RegisterGraphqlBody(string prefix)
+    {
+        var slug = $"{prefix}-{Guid.NewGuid():N}"[..16];
+        return $$"""
+            {
+              "query": "mutation($input: RegisterTenantRequestInput!) { registerTenant(input: $input) { tenantSlug } }",
+              "variables": {
+                "input": {
+                  "tenantName": "Rate Co",
+                  "tenantSlug": "{{slug}}",
+                  "adminEmail": "a@{{slug}}.example",
+                  "adminPassword": "ChangeMe1234"
+                }
+              }
+            }
+            """;
     }
 
     private static string LoginBody(string slug, string email) =>

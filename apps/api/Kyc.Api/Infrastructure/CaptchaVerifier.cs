@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kyc.Api.Application.Identity;
 using Microsoft.Extensions.Options;
@@ -80,7 +81,8 @@ public sealed partial class CaptchaVerifier(
             LogCaptchaRejected(logger, "provider");
             return new CaptchaVerification(false, FailedMessage);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        catch (Exception ex) when (
+            ex is HttpRequestException or TaskCanceledException or JsonException or NotSupportedException)
         {
             LogCaptchaRejected(logger, ex.GetType().Name);
             return new CaptchaVerification(false, FailedMessage);
