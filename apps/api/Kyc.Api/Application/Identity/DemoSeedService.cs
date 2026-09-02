@@ -292,7 +292,7 @@ public sealed partial class DemoSeedService(
         }
 
         var documentId = Guid.NewGuid();
-        var fileName = "seed-id.png";
+        const string fileName = "seed-id.png";
         var storageKey = DocumentUploadValidation.BuildStorageKey(
             caseEntity.TenantId,
             caseEntity.Id,
