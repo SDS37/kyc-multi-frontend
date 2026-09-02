@@ -12,7 +12,9 @@ public sealed partial class LoginService(
     IPasswordHasher<User> passwordHasher,
     JwtTokenService jwtTokenService,
     ILogger<LoginService> logger,
-    IValidator<LoginRequest> validator)
+    IValidator<LoginRequest> validator,
+    ICaptchaVerifier captchaVerifier,
+    ILoginLockoutStore lockoutStore)
 {
     public const string GenericAuthFailure = "Invalid email, password, or tenant.";
     public const string RejectedLog = "Login rejected";
@@ -33,8 +35,24 @@ public sealed partial class LoginService(
             return (null, validationErrors, false);
         }
 
+        var captcha = await captchaVerifier.VerifyAsync(
+            request.CaptchaToken,
+            CaptchaPurpose.Login,
+            cancellationToken);
+        if (!captcha.Passed)
+        {
+            return (null, [captcha.ErrorMessage ?? CaptchaMessages.Failed], false);
+        }
+
         var slug = request.TenantSlug.Trim().ToLowerInvariant();
         var email = request.Email.Trim().ToLowerInvariant();
+        var now = DateTimeOffset.UtcNow;
+
+        if (lockoutStore.IsLocked(slug, email, now))
+        {
+            RejectUnverified(request.Password);
+            return (null, Array.Empty<string>(), true);
+        }
 
         var tenant = await db.Tenants
             .AsNoTracking()
@@ -45,6 +63,7 @@ public sealed partial class LoginService(
         if (tenant?.IsActive is not true)
         {
             RejectUnverified(request.Password);
+            lockoutStore.RecordFailure(slug, email, now);
             return (null, Array.Empty<string>(), true);
         }
 
@@ -59,9 +78,11 @@ public sealed partial class LoginService(
         if (user is null || verify == PasswordVerificationResult.Failed)
         {
             LogRejected(logger);
+            lockoutStore.RecordFailure(slug, email, now);
             return (null, Array.Empty<string>(), true);
         }
 
+        lockoutStore.RecordSuccess(slug, email);
         var (token, expiresInSeconds) = jwtTokenService.CreateAccessToken(user);
         return (
             new LoginResponse(token, "Bearer", expiresInSeconds),

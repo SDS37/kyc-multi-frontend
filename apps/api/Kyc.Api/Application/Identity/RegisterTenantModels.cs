@@ -4,7 +4,9 @@ public sealed record RegisterTenantRequest(
     string TenantName,
     string TenantSlug,
     string AdminEmail,
-    string AdminPassword);
+    string AdminPassword,
+    string? InviteCode = null,
+    string? CaptchaToken = null);
 
 public sealed record RegisterTenantResponse(
     Guid TenantId,

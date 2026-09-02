@@ -24,6 +24,7 @@ public class AppDbContext(
     public DbSet<Case> Cases => Set<Case>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<RegistrationInvite> RegistrationInvites => Set<RegistrationInvite>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -54,5 +54,9 @@ public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncL
         builder.UseSetting("ObjectStorage:Provider", "InMemory");
         builder.UseSetting("ObjectStorage:BucketName", "kyc-documents");
         builder.UseSetting("Registration:AllowPublicRegistration", "true");
+        builder.UseSetting("Registration:RequireInviteCode", "false");
+        builder.UseSetting("Captcha:RequiredForRegister", "false");
+        builder.UseSetting("Captcha:RequiredForLogin", "false");
+        builder.UseSetting("Captcha:Provider", "none");
     }
 }

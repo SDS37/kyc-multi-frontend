@@ -19,6 +19,22 @@ public sealed class RequestValidatorTests
     }
 
     [Fact]
+    public void Register_short_invite_code_is_rejected()
+    {
+        var validator = new RegisterTenantRequestValidator();
+        var request = new RegisterTenantRequest(
+            "Acme",
+            "acme",
+            "admin@acme.example",
+            "ChangeMe1234",
+            InviteCode: "tooshort");
+
+        var errors = RequestValidation.Errors(validator, request);
+
+        Assert.Contains("Invite code must be between 16 and 64 characters.", errors);
+    }
+
+    [Fact]
     public void Login_oversized_password_keeps_existing_message()
     {
         var validator = new LoginRequestValidator();

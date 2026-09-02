@@ -47,6 +47,21 @@
     "ForcePathStyle": true
   },
   "Registration": {
-    "AllowPublicRegistration": true
+    "AllowPublicRegistration": true,
+    "RequireInviteCode": false
+  },
+  "AuthLimits": {
+    "LoginPermitPerMinute": 120,
+    "RegisterPermitPerMinute": 30,
+    "GraphqlPermitPerMinute": 120
+  },
+  "Lockout": {
+    "MaxFailedAttempts": 5,
+    "DurationMinutes": 15
+  },
+  "Captcha": {
+    "Provider": "none",
+    "RequiredForRegister": false,
+    "RequiredForLogin": false
   }
 }
