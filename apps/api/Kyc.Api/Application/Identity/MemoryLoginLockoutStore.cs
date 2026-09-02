@@ -5,7 +5,7 @@ namespace Kyc.Api.Application.Identity;
 
 public sealed class MemoryLoginLockoutStore(IMemoryCache cache, IOptions<LoginLockoutOptions> options) : ILoginLockoutStore
 {
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
 
     private sealed class Counter
     {
