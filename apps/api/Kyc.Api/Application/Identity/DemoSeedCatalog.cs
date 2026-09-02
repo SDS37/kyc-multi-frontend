@@ -4,6 +4,7 @@ namespace Kyc.Api.Application.Identity;
 public static class DemoSeedCatalog
 {
     public const string Password = "ChangeMe1234";
+    public const string DocumentFileName = "seed-id.png";
 
     public const string CompleteFormData =
         """{"fullName":"Ada Lovelace","dateOfBirth":"1815-12-10","nationality":"British","address":"12 Analytical Engine Rd"}""";

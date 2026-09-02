@@ -7,12 +7,15 @@ using Kyc.Api.Domain.Documents;
 using Kyc.Api.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Kyc.Api.Application.Identity;
 
 /// <summary>
 /// Idempotent Development seed (KYC-101): two tenants, every role, one case per status,
 /// plus a tiny PNG on non-draft cases. Uses <c>IgnoreQueryFilters</c> because startup has no JWT.
+/// Object-storage OpenRead happens after the DB transaction so a down MinIO cannot block
+/// tenant/user rows — and Program runs blob repair after the host is listening.
 /// </summary>
 public sealed partial class DemoSeedService(
     AppDbContext db,
@@ -24,12 +27,69 @@ public sealed partial class DemoSeedService(
     private static readonly byte[] DemoPng = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
 
+    private static readonly TimeSpan StorageBudget = TimeSpan.FromSeconds(3);
+
+    private bool _storageUnavailable;
+
     public async Task SeedAsync(CancellationToken cancellationToken = default)
+    {
+        if (!await TryPrepareAsync(cancellationToken))
+        {
+            return;
+        }
+
+        _storageUnavailable = false;
+        var progress = new SeedProgress();
+        await ExecuteSeedRowsAsync(progress, cancellationToken);
+        await RepairSeedBlobsCoreAsync(progress, cancellationToken);
+        LogSeedOutcome(progress);
+    }
+
+    /// <summary>
+    /// Inserts missing tenants, users, cases, and new <c>seed-id.png</c> rows. Puts blobs only for
+    /// newly created documents. Does not OpenRead existing objects (that is <see cref="RepairSeedBlobsAsync"/>).
+    /// </summary>
+    /// <returns><c>false</c> when the database is unreachable or the schema is missing.</returns>
+    public async Task<bool> SeedRowsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!await TryPrepareAsync(cancellationToken))
+        {
+            return false;
+        }
+
+        _storageUnavailable = false;
+        var progress = new SeedProgress();
+        await ExecuteSeedRowsAsync(progress, cancellationToken);
+        LogSeedOutcome(progress);
+        return true;
+    }
+
+    /// <summary>
+    /// Restores missing object bytes for existing <c>seed-id.png</c> rows only. Stops after the first
+    /// storage failure so a down MinIO cannot stall startup or /health.
+    /// </summary>
+    public async Task RepairSeedBlobsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!await TryPrepareAsync(cancellationToken))
+        {
+            return;
+        }
+
+        _storageUnavailable = false;
+        var progress = new SeedProgress();
+        await RepairSeedBlobsCoreAsync(progress, cancellationToken);
+        if (progress.Applied)
+        {
+            LogSeedCompleted(logger);
+        }
+    }
+
+    private async Task<bool> TryPrepareAsync(CancellationToken cancellationToken)
     {
         if (!await db.Database.CanConnectAsync(cancellationToken))
         {
             LogSeedSkippedUnreachable(logger);
-            return;
+            return false;
         }
 
         try
@@ -39,25 +99,66 @@ public sealed partial class DemoSeedService(
         catch (Exception ex)
         {
             LogSeedSkippedSchema(logger, ex.GetType().Name);
-            return;
+            return false;
         }
 
-        var progress = new SeedProgress();
-        var strategy = db.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
+        return true;
+    }
+
+    private async Task ExecuteSeedRowsAsync(SeedProgress progress, CancellationToken cancellationToken)
+    {
+        try
         {
-            db.ChangeTracker.Clear();
-            progress.Applied = false;
-            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-            foreach (var spec in DemoSeedCatalog.Tenants)
+            var strategy = db.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                await SeedTenantAsync(spec, progress, cancellationToken);
+                db.ChangeTracker.Clear();
+                progress.Applied = false;
+                await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+                foreach (var spec in DemoSeedCatalog.Tenants)
+                {
+                    await SeedTenantAsync(spec, progress, cancellationToken);
+                }
+
+                await db.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            });
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex) || ex is DbUpdateConcurrencyException)
+        {
+            LogSeedUniqueConflict(logger);
+            progress.Applied = false;
+        }
+    }
+
+    private async Task RepairSeedBlobsCoreAsync(SeedProgress progress, CancellationToken cancellationToken)
+    {
+        var seedDocuments = await db.Documents
+            .IgnoreQueryFilters()
+            .Where(d => d.FileName == DemoSeedCatalog.DocumentFileName)
+            .ToListAsync(cancellationToken);
+
+        foreach (var document in seedDocuments)
+        {
+            if (_storageUnavailable)
+            {
+                break;
             }
 
-            await db.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-        });
+            if (await ObjectExistsAsync(document.StorageKey, document.CaseId, cancellationToken))
+            {
+                continue;
+            }
 
+            if (await TryPutDemoPngAsync(document.StorageKey, document.ContentType, document.CaseId, cancellationToken))
+            {
+                progress.Applied = true;
+            }
+        }
+    }
+
+    private void LogSeedOutcome(SeedProgress progress)
+    {
         if (progress.Applied)
         {
             LogSeedCompleted(logger);
@@ -275,24 +376,21 @@ public sealed partial class DemoSeedService(
     {
         var existing = await db.Documents
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(d => d.CaseId == caseEntity.Id, cancellationToken);
+            .FirstOrDefaultAsync(
+                d => d.CaseId == caseEntity.Id && d.FileName == DemoSeedCatalog.DocumentFileName,
+                cancellationToken);
         if (existing is not null)
         {
-            if (await ObjectExistsAsync(existing.StorageKey, caseEntity.Id, cancellationToken))
-            {
-                return;
-            }
+            return;
+        }
 
-            if (await TryPutDemoPngAsync(existing.StorageKey, existing.ContentType, caseEntity.Id, cancellationToken))
-            {
-                progress.Applied = true;
-            }
-
+        if (_storageUnavailable)
+        {
             return;
         }
 
         var documentId = Guid.NewGuid();
-        const string fileName = "seed-id.png";
+        var fileName = DemoSeedCatalog.DocumentFileName;
         var storageKey = DocumentUploadValidation.BuildStorageKey(
             caseEntity.TenantId,
             caseEntity.Id,
@@ -330,9 +428,16 @@ public sealed partial class DemoSeedService(
 
     private async Task<bool> ObjectExistsAsync(string storageKey, Guid caseId, CancellationToken cancellationToken)
     {
+        if (_storageUnavailable)
+        {
+            return false;
+        }
+
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        linked.CancelAfter(StorageBudget);
         try
         {
-            var blob = await objectStorage.OpenReadAsync(storageKey, cancellationToken);
+            var blob = await objectStorage.OpenReadAsync(storageKey, linked.Token);
             if (blob is null)
             {
                 return false;
@@ -341,8 +446,19 @@ public sealed partial class DemoSeedService(
             await blob.DisposeAsync();
             return true;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            _storageUnavailable = true;
+            LogSeedDocumentStorageFailed(logger, "Timeout", caseId);
+            return false;
+        }
         catch (Exception ex)
         {
+            _storageUnavailable = true;
             LogSeedDocumentStorageFailed(logger, ex.GetType().Name, caseId);
             return false;
         }
@@ -354,7 +470,14 @@ public sealed partial class DemoSeedService(
         Guid caseId,
         CancellationToken cancellationToken)
     {
+        if (_storageUnavailable)
+        {
+            return false;
+        }
+
         await using var content = new MemoryStream(DemoPng, writable: false);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        linked.CancelAfter(StorageBudget);
         try
         {
             await objectStorage.PutAsync(
@@ -362,11 +485,22 @@ public sealed partial class DemoSeedService(
                 content,
                 contentType,
                 DemoPng.LongLength,
-                cancellationToken);
+                linked.Token);
             return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            _storageUnavailable = true;
+            LogSeedDocumentStorageFailed(logger, "Timeout", caseId);
+            return false;
         }
         catch (Exception ex)
         {
+            _storageUnavailable = true;
             LogSeedDocumentStorageFailed(logger, ex.GetType().Name, caseId);
             return false;
         }
@@ -432,6 +566,29 @@ public sealed partial class DemoSeedService(
         }
     }
 
+    private static bool IsUniqueConstraintViolation(DbUpdateException exception)
+    {
+        if (exception is DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+
+        for (var inner = exception.InnerException; inner is not null; inner = inner.InnerException)
+        {
+            if (inner is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                return true;
+            }
+
+            if (inner.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private sealed class SeedProgress
     {
         public bool Applied { get; set; }
@@ -450,6 +607,11 @@ public sealed partial class DemoSeedService(
         Level = LogLevel.Warning,
         Message = "Demo seed skipped: schema is missing ({ExceptionType}). Apply migrations first.")]
     private static partial void LogSeedSkippedSchema(ILogger logger, string exceptionType);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Demo seed skipped: unique constraint (concurrent start).")]
+    private static partial void LogSeedUniqueConflict(ILogger logger);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
