@@ -15,7 +15,7 @@ Committed markdown here is the **contract with yourself and reviewers**: what th
 | [architecture.md](architecture.md) | You need C4 / request / lifecycle diagrams, frontend composition (apps → shells → API), or **today vs unused Redis / W7 MF** | Exact `dotnet` commands; per-pane UI trees (those live in app READMEs); treating dotted Redis as a live dependency |
 | [architecture-decision-records.md](architecture-decision-records.md) | Someone asks “why GraphQL / why not microservices / why tenant in JWT” | Implementation details of a service |
 | [roadmap.md](roadmap.md) | Sequencing: W1 identity, W2 GraphQL+cases, W3 documents… | Claiming Redis is in use today (MinIO **is** used for uploads) |
-| [beyond-mvp.md](beyond-mvp.md) | After DoD: Redis, MF host, invites, TLS — **triggers**, not a second sprint plan | Treating the wishlist as in-flight W6/W7 work |
+| [beyond-mvp.md](beyond-mvp.md) | After DoD: Redis, MF host, user invite/list, TLS — **triggers**, not a second sprint plan | Treating the wishlist as in-flight W6/W7 work |
 | [business-requirements.md](business-requirements.md) | Product scope, roles, KYC meaning | Code structure |
 | [DoD.md](DoD.md) | MVP exit criteria (isolation tested, three UIs on one API) | Week-by-week tasks |
 | [commits.md](commits.md) | Commit message format | Design |

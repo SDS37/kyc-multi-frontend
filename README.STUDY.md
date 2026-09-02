@@ -92,7 +92,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 - Frontend-oriented .NET map: [docs/guides/dotnet-api-for-frontend-engineers.md](docs/guides/dotnet-api-for-frontend-engineers.md)
 - How to write C# here: [docs/dotnet-code-standards.md](docs/dotnet-code-standards.md)
 - [Roadmap](docs/roadmap.md) (W1–W5 done; W6 next)
-- [Beyond MVP](docs/beyond-mvp.md) (Redis, MF host, invites — triggers only)
+- [Beyond MVP](docs/beyond-mvp.md) (Redis, MF host, user invite/list — triggers only)
 - [ADR-001 monorepo](docs/architecture-decision-records.md)
 - [ADR-007 tenant from JWT](docs/architecture-decision-records.md)
 - [.NET SDK / global.json](https://learn.microsoft.com/dotnet/core/tools/global-json)
