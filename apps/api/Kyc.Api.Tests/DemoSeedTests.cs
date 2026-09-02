@@ -6,6 +6,7 @@ using Kyc.Api.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kyc.Api.Tests;
@@ -126,8 +127,53 @@ public sealed class DemoSeedTests : IAsyncLifetime
         Assert.True(await db.Tenants.AnyAsync(t => t.Slug == "globex"));
     }
 
-    private DemoSeedService CreateSeeder(AppDbContext db) =>
-        new(db, _hasher, _storage, NullLogger<DemoSeedService>.Instance);
+    [Fact]
+    public async Task Seed_second_run_does_not_log_information()
+    {
+        var logger = new ListLogger<DemoSeedService>();
+        await using (var first = CreateDb())
+        {
+            await CreateSeeder(first, logger).SeedAsync();
+        }
+
+        Assert.Contains(logger.Messages, m => m.Contains("Demo seed completed", StringComparison.Ordinal));
+        logger.Messages.Clear();
+        logger.Levels.Clear();
+
+        await using var db = CreateDb();
+        await CreateSeeder(db, logger).SeedAsync();
+
+        Assert.DoesNotContain(LogLevel.Information, logger.Levels);
+        Assert.Contains(logger.Messages, m => m.Contains("Demo seed unchanged", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Seed_repairs_missing_object_for_existing_document_row()
+    {
+        await using (var first = CreateDb())
+        {
+            await CreateSeeder(first).SeedAsync();
+        }
+
+        await using var db = CreateDb();
+        var keys = await db.Documents.IgnoreQueryFilters().AsNoTracking()
+            .Select(d => d.StorageKey)
+            .ToListAsync();
+        Assert.NotEmpty(keys);
+        foreach (var key in keys)
+        {
+            await _storage.DeleteAsync(key);
+            Assert.False(_storage.Contains(key));
+        }
+
+        await CreateSeeder(db).SeedAsync();
+
+        Assert.Equal(8, await db.Documents.IgnoreQueryFilters().CountAsync());
+        Assert.All(keys, key => Assert.True(_storage.Contains(key)));
+    }
+
+    private DemoSeedService CreateSeeder(AppDbContext db, ILogger<DemoSeedService>? logger = null) =>
+        new(db, _hasher, _storage, logger ?? NullLogger<DemoSeedService>.Instance);
 
     private AppDbContext CreateDb()
     {
@@ -135,5 +181,36 @@ public sealed class DemoSeedTests : IAsyncLifetime
             .UseSqlite(_connection)
             .Options;
         return new AppDbContext(options, _currentTenant);
+    }
+
+    private sealed class ListLogger<T> : ILogger<T>
+    {
+        public List<LogLevel> Levels { get; } = [];
+        public List<string> Messages { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Levels.Add(logLevel);
+            Messages.Add(formatter(state, exception));
+        }
+
+        private sealed class NullScope : IDisposable
+        {
+            public static readonly NullScope Instance = new();
+
+            public void Dispose()
+            {
+            }
+        }
     }
 }

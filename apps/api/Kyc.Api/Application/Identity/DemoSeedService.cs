@@ -42,24 +42,36 @@ public sealed partial class DemoSeedService(
             return;
         }
 
+        var progress = new SeedProgress();
         var strategy = db.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             db.ChangeTracker.Clear();
+            progress.Applied = false;
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
             foreach (var spec in DemoSeedCatalog.Tenants)
             {
-                await SeedTenantAsync(spec, cancellationToken);
+                await SeedTenantAsync(spec, progress, cancellationToken);
             }
 
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         });
 
-        LogSeedCompleted(logger);
+        if (progress.Applied)
+        {
+            LogSeedCompleted(logger);
+        }
+        else
+        {
+            LogSeedUnchanged(logger);
+        }
     }
 
-    private async Task SeedTenantAsync(DemoTenantSpec spec, CancellationToken cancellationToken)
+    private async Task SeedTenantAsync(
+        DemoTenantSpec spec,
+        SeedProgress progress,
+        CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var tenant = await db.Tenants.FirstOrDefaultAsync(t => t.Slug == spec.Slug, cancellationToken);
@@ -74,11 +86,24 @@ public sealed partial class DemoSeedService(
                 CreatedAt = now
             };
             db.Tenants.Add(tenant);
+            progress.Applied = true;
         }
 
-        await EnsureUserAsync(tenant.Id, spec.AdminEmail, UserRole.TenantAdmin, now, cancellationToken);
-        var reviewer = await EnsureUserAsync(tenant.Id, spec.ReviewerEmail, UserRole.Reviewer, now, cancellationToken);
-        var customer = await EnsureUserAsync(tenant.Id, spec.CustomerEmail, UserRole.Customer, now, cancellationToken);
+        await EnsureUserAsync(tenant.Id, spec.AdminEmail, UserRole.TenantAdmin, now, progress, cancellationToken);
+        var reviewer = await EnsureUserAsync(
+            tenant.Id,
+            spec.ReviewerEmail,
+            UserRole.Reviewer,
+            now,
+            progress,
+            cancellationToken);
+        var customer = await EnsureUserAsync(
+            tenant.Id,
+            spec.CustomerEmail,
+            UserRole.Customer,
+            now,
+            progress,
+            cancellationToken);
 
         var draft = await EnsureCaseAsync(
             tenant.Id,
@@ -91,6 +116,7 @@ public sealed partial class DemoSeedService(
             reviewedAt: null,
             reviewedBy: null,
             reviewComment: null,
+            progress,
             cancellationToken);
         var submitted = await EnsureCaseAsync(
             tenant.Id,
@@ -103,6 +129,7 @@ public sealed partial class DemoSeedService(
             reviewedAt: null,
             reviewedBy: null,
             reviewComment: null,
+            progress,
             cancellationToken);
         var inReview = await EnsureCaseAsync(
             tenant.Id,
@@ -115,6 +142,7 @@ public sealed partial class DemoSeedService(
             reviewedAt: null,
             reviewedBy: reviewer.Id,
             reviewComment: null,
+            progress,
             cancellationToken);
         var approved = await EnsureCaseAsync(
             tenant.Id,
@@ -127,6 +155,7 @@ public sealed partial class DemoSeedService(
             reviewedAt: now.AddMinutes(-10),
             reviewedBy: reviewer.Id,
             reviewComment: DemoSeedCatalog.ApproveComment,
+            progress,
             cancellationToken);
         var rejected = await EnsureCaseAsync(
             tenant.Id,
@@ -139,6 +168,7 @@ public sealed partial class DemoSeedService(
             reviewedAt: now.AddMinutes(-5),
             reviewedBy: reviewer.Id,
             reviewComment: DemoSeedCatalog.RejectComment,
+            progress,
             cancellationToken);
 
         AppendNewCaseAudit(draft, customer.Id, reviewer.Id, includeSubmit: false, includeReview: false, finishAction: null);
@@ -159,10 +189,10 @@ public sealed partial class DemoSeedService(
             includeReview: true,
             finishAction: AuditActions.CaseRejected);
 
-        await EnsureDocumentAsync(submitted, customer.Id, cancellationToken);
-        await EnsureDocumentAsync(inReview, customer.Id, cancellationToken);
-        await EnsureDocumentAsync(approved, customer.Id, cancellationToken);
-        await EnsureDocumentAsync(rejected, customer.Id, cancellationToken);
+        await EnsureDocumentAsync(submitted, customer.Id, progress, cancellationToken);
+        await EnsureDocumentAsync(inReview, customer.Id, progress, cancellationToken);
+        await EnsureDocumentAsync(approved, customer.Id, progress, cancellationToken);
+        await EnsureDocumentAsync(rejected, customer.Id, progress, cancellationToken);
     }
 
     private async Task<User> EnsureUserAsync(
@@ -170,6 +200,7 @@ public sealed partial class DemoSeedService(
         string email,
         UserRole role,
         DateTimeOffset createdAt,
+        SeedProgress progress,
         CancellationToken cancellationToken)
     {
         var existing = await db.Users
@@ -190,6 +221,7 @@ public sealed partial class DemoSeedService(
         };
         user.PasswordHash = passwordHasher.HashPassword(user, DemoSeedCatalog.Password);
         db.Users.Add(user);
+        progress.Applied = true;
         return user;
     }
 
@@ -204,6 +236,7 @@ public sealed partial class DemoSeedService(
         DateTimeOffset? reviewedAt,
         Guid? reviewedBy,
         string? reviewComment,
+        SeedProgress progress,
         CancellationToken cancellationToken)
     {
         var existing = await db.Cases
@@ -230,16 +263,31 @@ public sealed partial class DemoSeedService(
             ReviewComment = reviewComment
         };
         db.Cases.Add(entity);
+        progress.Applied = true;
         return entity;
     }
 
-    private async Task EnsureDocumentAsync(Case caseEntity, Guid uploadedByUserId, CancellationToken cancellationToken)
+    private async Task EnsureDocumentAsync(
+        Case caseEntity,
+        Guid uploadedByUserId,
+        SeedProgress progress,
+        CancellationToken cancellationToken)
     {
-        var hasDocument = await db.Documents
+        var existing = await db.Documents
             .IgnoreQueryFilters()
-            .AnyAsync(d => d.CaseId == caseEntity.Id, cancellationToken);
-        if (hasDocument)
+            .FirstOrDefaultAsync(d => d.CaseId == caseEntity.Id, cancellationToken);
+        if (existing is not null)
         {
+            if (await ObjectExistsAsync(existing.StorageKey, caseEntity.Id, cancellationToken))
+            {
+                return;
+            }
+
+            if (await TryPutDemoPngAsync(existing.StorageKey, existing.ContentType, caseEntity.Id, cancellationToken))
+            {
+                progress.Applied = true;
+            }
+
             return;
         }
 
@@ -250,19 +298,8 @@ public sealed partial class DemoSeedService(
             caseEntity.Id,
             documentId,
             fileName);
-        await using var content = new MemoryStream(DemoPng, writable: false);
-        try
+        if (!await TryPutDemoPngAsync(storageKey, "image/png", caseEntity.Id, cancellationToken))
         {
-            await objectStorage.PutAsync(
-                storageKey,
-                content,
-                "image/png",
-                DemoPng.LongLength,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            LogSeedDocumentStorageFailed(logger, ex.GetType().Name, caseEntity.Id);
             return;
         }
 
@@ -279,6 +316,7 @@ public sealed partial class DemoSeedService(
             UploadedByUserId = uploadedByUserId,
             UploadedAt = uploadedAt
         });
+        progress.Applied = true;
         AuditRecorder.Append(
             db,
             caseEntity.TenantId,
@@ -288,6 +326,50 @@ public sealed partial class DemoSeedService(
             AuditActions.DocumentUploaded,
             uploadedAt,
             payload: """{"fileName":"seed-id.png","contentType":"image/png"}""");
+    }
+
+    private async Task<bool> ObjectExistsAsync(string storageKey, Guid caseId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var blob = await objectStorage.OpenReadAsync(storageKey, cancellationToken);
+            if (blob is null)
+            {
+                return false;
+            }
+
+            await blob.DisposeAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogSeedDocumentStorageFailed(logger, ex.GetType().Name, caseId);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryPutDemoPngAsync(
+        string storageKey,
+        string contentType,
+        Guid caseId,
+        CancellationToken cancellationToken)
+    {
+        await using var content = new MemoryStream(DemoPng, writable: false);
+        try
+        {
+            await objectStorage.PutAsync(
+                storageKey,
+                content,
+                contentType,
+                DemoPng.LongLength,
+                cancellationToken);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogSeedDocumentStorageFailed(logger, ex.GetType().Name, caseId);
+            return false;
+        }
     }
 
     private void AppendNewCaseAudit(
@@ -350,8 +432,16 @@ public sealed partial class DemoSeedService(
         }
     }
 
+    private sealed class SeedProgress
+    {
+        public bool Applied { get; set; }
+    }
+
     [LoggerMessage(Level = LogLevel.Information, Message = "Demo seed completed (KYC-101).")]
     private static partial void LogSeedCompleted(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Demo seed unchanged (KYC-101).")]
+    private static partial void LogSeedUnchanged(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Demo seed skipped: database is unreachable.")]
     private static partial void LogSeedSkippedUnreachable(ILogger logger);
