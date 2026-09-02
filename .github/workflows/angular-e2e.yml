@@ -1,0 +1,38 @@
+# Chromium smoke for Angular admin (KYC-110). Path-filtered so React/Vue PRs skip this job.
+name: angular-e2e
+
+on:
+  pull_request:
+    paths:
+      - "apps/angular-admin/**"
+      - "apps/api/**"
+      - "packages/design-tokens/**"
+      - "global.json"
+      - ".config/dotnet-tools.json"
+      - ".github/workflows/angular-e2e.yml"
+      - ".github/workflows/e2e-app.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/angular-admin/**"
+      - "apps/api/**"
+      - "packages/design-tokens/**"
+      - "global.json"
+      - ".config/dotnet-tools.json"
+      - ".github/workflows/angular-e2e.yml"
+      - ".github/workflows/e2e-app.yml"
+
+concurrency:
+  group: angular-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    uses: ./.github/workflows/e2e-app.yml
+    with:
+      app-directory: apps/angular-admin
+      node-version-file: apps/angular-admin/.nvmrc
+      cache-dependency-path: apps/angular-admin/package-lock.json

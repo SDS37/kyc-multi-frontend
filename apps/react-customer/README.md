@@ -30,6 +30,22 @@ Colleague copy-paste (Docker, API, accounts, all three UIs): [root README runboo
 { "tenantSlug": "acme", "email": "customer@acme.example", "password": "ChangeMe1234" }
 ```
 
+```bash
+npm test
+npm run test:ci
+npm run test:e2e   # Playwright Chromium smoke (API must already be running)
+npm run build
+```
+
+Playwright is **not** part of `test:ci`. With the API up on `http://localhost:5295` (Development seed from KYC-101):
+
+```bash
+npx playwright install chromium   # once per machine
+npm run test:e2e
+```
+
+The smoke logs in as Customer, creates a draft, fills required FormData, uploads a PNG, and submits. PRs that touch `apps/react-customer` (or `.github/workflows/react-ci.yml`) run `react-ci`. The same paths, plus `apps/api/**`, also run `react-e2e`.
+
 ## Security notes
 
 - List/create/detail/update/submit use JWT `Authorization` — never `skipAuth`

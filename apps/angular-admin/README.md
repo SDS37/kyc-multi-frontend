@@ -34,12 +34,22 @@ Colleague copy-paste (Docker, API, accounts, all three UIs): [root README runboo
 ```bash
 npm test       # unit tests (Vitest via Angular CLI)
 npm run test:ci
+npm run test:e2e   # Playwright Chromium smoke (API must already be running)
 npm run build
 ```
 
+Playwright is **not** part of `test:ci`. With the API up on `http://localhost:5295` (Development seed from KYC-101):
+
+```bash
+npx playwright install chromium   # once per machine
+npm run test:e2e
+```
+
+`ng serve` (dev file replacement) is required — a production `ng build` preview has empty API URLs. The smoke logs in as Reviewer, opens a freshly submitted case, starts review, expects empty-reject validation, downloads the document (authenticated GET), then approves. It does not fold tenant isolation into the browser (that stays in `api-ci`).
+
 Production `ng build` uses `src/environments/environment.ts`, which has **empty** `apiBaseUrl` / `graphqlUrl`. Bootstrap throws if those stay empty or point at `localhost`. Set explicit HTTPS origins in that file (or a deploy-time replacement) before shipping. `ng serve` keeps `environment.development.ts` (`http://localhost:5295`).
 
-PRs that touch `apps/angular-admin` (or `.github/workflows/angular-ci.yml`) run GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`).
+PRs that touch `apps/angular-admin` (or `.github/workflows/angular-ci.yml`) run GitHub Actions `angular-ci` (`npm ci`, build, `test:ci`). The same paths, plus `apps/api/**`, also run `angular-e2e` (Postgres → API + seed → `ng serve` → Playwright).
 
 ## What KYC-065 delivers
 

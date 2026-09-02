@@ -16,7 +16,7 @@ Still on the **MVP roadmap** (finish these first; they are not “beyond”):
 |---|---|
 | Colleague runbook polish | [KYC-100](https://github.com/SDS37/kyc-multi-frontend/issues/41) (done) |
 | Post-094 review punch-list (atomic draft/upload, GraphQL auth ops, FE hygiene) | [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114) (done) |
-| Angular Playwright smoke | [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98) |
+| Playwright smokes (Angular / React / Vue) | [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98) (done) |
 | Module Federation **spike** (keep 3 apps if it fails) | W7 / [ADR-005](architecture-decision-records.md) |
 
 Localhost hardening that already landed (rate limits, headers, captcha, `registerTenant` invite codes) stays as-is until you leave a single-process API. Those codes gate **new tenants** (KYC-093). They are not TenantAdmin user invite/list (Customer/Reviewer) — that is §1 below.
@@ -87,12 +87,11 @@ These keep the portfolio honest. They do not make KYC “more production.”
 
 ## Suggested order (if you ever execute this)
 
-1. Finish W6 Playwright so a colleague can click through all three roles with files.
-2. `updateDraftCase` CAS + honest upload error mapping (small API; protects React).
-3. User invite/list API if humans must join without SQL.
-4. TLS on a real deploy; `/ready` not public.
-5. Redis **only** with a second API instance or token revoke.
-6. W7 MF spike; keep three apps if it is not boringly stable.
-7. Refresh tokens, audit UI, extra Vue pages, i18n — when a demo or operator actually misses them.
+1. `updateDraftCase` CAS + honest upload error mapping (small API; protects React).
+2. User invite/list API if humans must join without SQL.
+3. TLS on a real deploy; `/ready` not public.
+4. Redis **only** with a second API instance or token revoke.
+5. W7 MF spike; keep three apps if it is not boringly stable.
+6. Refresh tokens, audit UI, extra Vue pages, i18n — when a demo or operator actually misses them.
 
 That sequence is the difference between a **wishlist** and a second fake MVP.

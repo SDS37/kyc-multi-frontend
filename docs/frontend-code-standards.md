@@ -40,7 +40,7 @@ Rules in this section apply to **Angular, React, and Vue**. Framework sections o
 | Secrets | No real passwords or JWT secrets in source; local demo credentials stay in README / `.env.example` only |
 | **CSP (UIs)** | API CSP does not constrain the SPA document. When a host adds CSP, allow `connect-src` to the API origin and Turnstile — [Content Security Policy](#content-security-policy-all-frontends) |
 | Commits | [Conventional Commits](commits.md) with scopes like `angular`, `react`, `vue`, `docs` |
-| CI | Path-filtered GitHub Actions per app (`angular-ci`, `react-ci`, `vue-ci`): `npm ci`, build, `test:ci` |
+| CI | Path-filtered GitHub Actions per app (`angular-ci`, `react-ci`, `vue-ci`): `npm ci`, build, `test:ci`. Playwright smokes (`angular-e2e`, `react-e2e`, `vue-e2e`) are separate — `npm run test:e2e`, not folded into `test:ci` |
 
 Do not invent Tenant user-management UIs in W4–W6 — that API does not exist yet.
 
@@ -466,6 +466,7 @@ Prefer **immutable** props/state so React’s bail-out and future Compiler wins 
 
 - Unit tests with Vitest + Testing Library (align with Angular’s Vitest choice where practical)
 - `react-ci`: `npm ci`, `npm run build`, `npm run test:ci` on `apps/react-customer/**`
+- `react-e2e`: Playwright Chromium smoke (`npm run test:e2e`) when that app, the API, or design-tokens change
 
 ### What React must not do in MVP
 
@@ -550,6 +551,7 @@ Prefer **immutable** data so Vue’s reactivity stays predictable. Derived displ
 
 - Unit tests with Vitest + Vue Test Utils (mappers/HTTP stay plain TS like React)
 - `vue-ci`: `npm ci`, `npm run lint`, `npm run build` (`vue-tsc` + Vite), `npm run test:ci` on `apps/vue-reports/**`
+- `vue-e2e`: Playwright Chromium smoke (`npm run test:e2e`) when that app, the API, or design-tokens change
 
 ### What Vue must not do in MVP
 

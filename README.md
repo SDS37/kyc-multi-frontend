@@ -47,8 +47,9 @@ This monorepo is a portfolio project. **Today:** three independent frontends on 
 | Vue Reports | Ready (KYC-080–081: login, shell, status counts, latest-10 table) |
 | Vue CI (`npm` build / test) | Ready (`vue-ci`; Node from `.nvmrc`; SHA-pinned actions) |
 | Demo seed (KYC-101) | Ready — Development `dotnet run` inserts Acme + Globex (all roles, cases in every status) |
+| Playwright smokes (KYC-110) | Ready — `test:e2e` per app; CI `angular-e2e` / `react-e2e` / `vue-e2e` |
 
-**Weeks 1–5 are done** on `main` (API + Angular admin + React customer happy path). **KYC-080–081** (Vue login/shell + read-only reports overview) are also on `main`. Remaining Week 6: Playwright ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)). See the [roadmap](docs/roadmap.md).
+**Weeks 1–6 are done** on `main` (API + three UIs + Playwright Chromium smokes). See the [roadmap](docs/roadmap.md).
 
 ## Tech stack (today)
 
@@ -184,9 +185,9 @@ cd apps/vue-reports && npm install && npm start
 
 | App | URL | CI workflow |
 |---|---|---|
-| Angular admin | http://localhost:4200 | `angular-ci` |
-| React customer | http://localhost:5173 | `react-ci` |
-| Vue reports | http://localhost:5174 | `vue-ci` |
+| Angular admin | http://localhost:4200 | `angular-ci` + `angular-e2e` |
+| React customer | http://localhost:5173 | `react-ci` + `react-e2e` |
+| Vue reports | http://localhost:5174 | `vue-ci` + `vue-e2e` |
 
 CORS already allows those origins. Guests land on `/login`.
 

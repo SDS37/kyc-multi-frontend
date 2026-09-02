@@ -1,0 +1,38 @@
+# Chromium smoke for Vue reports (KYC-110). Path-filtered so Angular/React PRs skip this job.
+name: vue-e2e
+
+on:
+  pull_request:
+    paths:
+      - "apps/vue-reports/**"
+      - "apps/api/**"
+      - "packages/design-tokens/**"
+      - "global.json"
+      - ".config/dotnet-tools.json"
+      - ".github/workflows/vue-e2e.yml"
+      - ".github/workflows/e2e-app.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/vue-reports/**"
+      - "apps/api/**"
+      - "packages/design-tokens/**"
+      - "global.json"
+      - ".config/dotnet-tools.json"
+      - ".github/workflows/vue-e2e.yml"
+      - ".github/workflows/e2e-app.yml"
+
+concurrency:
+  group: vue-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    uses: ./.github/workflows/e2e-app.yml
+    with:
+      app-directory: apps/vue-reports
+      node-version-file: apps/vue-reports/.nvmrc
+      cache-dependency-path: apps/vue-reports/package-lock.json

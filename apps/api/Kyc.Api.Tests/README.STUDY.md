@@ -82,7 +82,7 @@ You send `POST /graphql` with a query string and optional `Authorization` header
 
 ## Today vs target
 
-No Playwright against Angular yet (no UI). When UIs exist, keep **these** tests as the isolation backbone; UI tests should not be the only tenant proof.
+Playwright smokes live in each UI app (`npm run test:e2e`, KYC-110). Keep **these** tests as the isolation backbone; UI tests should not be the only tenant proof.
 
 ## What to skip
 

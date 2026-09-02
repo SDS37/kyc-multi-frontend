@@ -23,10 +23,18 @@ App: `http://localhost:5174` → `/login` (guests) or `/reports` (Reviewer / Ten
 ```bash
 npm test
 npm run test:ci
+npm run test:e2e   # Playwright Chromium smoke (API must already be running)
 npm run build
 ```
 
-PRs that touch `apps/vue-reports` (or `.github/workflows/vue-ci.yml`) run GitHub Actions `vue-ci` (`npm ci`, lint, `vue-tsc` + Vite build, `test:ci`).
+Playwright is **not** part of `test:ci`. With the API up on `http://localhost:5295` (Development seed from KYC-101):
+
+```bash
+npx playwright install chromium   # once per machine
+npm run test:e2e
+```
+
+The smoke logs in as Reviewer and checks status counts plus the latest-10 table. A second case logs in as Customer and expects the reports app to refuse that role. PRs that touch `apps/vue-reports` (or `.github/workflows/vue-ci.yml`) run GitHub Actions `vue-ci` (`npm ci`, lint, `vue-tsc` + Vite build, `test:ci`). The same paths, plus `apps/api/**`, also run `vue-e2e`.
 
 ## Demo login
 

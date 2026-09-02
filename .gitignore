@@ -204,6 +204,9 @@ lcov.info
 *.lcov
 junit.xml
 test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # -----------------------------------------------------------------------------
 # Misc

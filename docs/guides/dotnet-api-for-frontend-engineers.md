@@ -9,13 +9,14 @@ Conceptual map of the KYC .NET API for people who are strong on Angular/React/Vu
 | Already on `main` | Still ahead (roadmap) |
 |---|---|
 | .NET host + EF Core + Postgres; `Tenant`/`User` (+ roles); case/document/audit GraphQL + REST upload/download; Development demo seed (KYC-101) | Optional user-management APIs ([beyond-mvp.md](../beyond-mvp.md)) |
-| **Angular admin** (KYC-060–065): login, shell, case list, review | Playwright smoke ([KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98)) |
+| **Angular admin** (KYC-060–065): login, shell, case list, review | |
 | **React customer** (KYC-070–074): login, shell, my cases, draft form, document upload | |
 | **Vue reports** (KYC-080–081): login, shell, status counts, latest-10 table | GraphQL cost analyzer when list volume grows |
+| Playwright Chromium smokes per app (KYC-110) | |
 | Temporary register/login (JWT) + fail-closed tenant filters | |
 | CORS allow-list + security headers for local UIs (`localhost:4200`, `:5173`, `:5174`, Vite preview `:4173`/`:4174`); CSP; HTTPS redirect outside Development — KYC-091 + [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) | |
 | Hot Chocolate `/graphql` + `/health` + `/ready`; JSON logs; deny-by-default JWT; introspection/SDL Development-only | |
-| `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` / `angular-ci` / `react-ci` / `vue-ci`; SDK in `global.json` | |
+| `Kyc.Api.sln` + `Kyc.Api.Tests`; GitHub Actions `api-ci` / `angular-ci` / `react-ci` / `vue-ci` / `*-e2e`; SDK in `global.json` | |
 
 The **shape today** is one GraphQL API, a modular monolith of application services, JWT tenant context, and three frontends — [architecture](../architecture.md) and [ADRs](../architecture-decision-records.md). After DoD: [beyond-mvp.md](../beyond-mvp.md).
 
