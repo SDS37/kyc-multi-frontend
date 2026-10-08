@@ -251,7 +251,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-031 | Customer `createDraftCase`; status `Draft`; title required; empty `FormData` → `{}`; `TenantId`/`CustomerUserId` from JWT only |
 | KYC-032 | Customer `updateDraftCase`; missing/not owner → `NOT_FOUND`; Draft-only; title/FormData; owner other statuses → `DOMAIN` |
 | KYC-033 | Customer `submitCase`; missing/not owner → `NOT_FOUND`; Draft→Submitted; FormData requires fullName/dateOfBirth/nationality/address; `SubmittedAt` set |
-| KYC-111 | `submitCase` persist filters `Status == Draft` and the validated FormData snapshot; `SubmitCaseRaceTests` — invalid concurrent FormData stays Draft + `VALIDATION`; valid concurrent FormData stays Draft + `DOMAIN`; status leaving Draft stays `DOMAIN` |
+| KYC-111 | `submitCase` persist filters `Status == Draft` and the validated FormData snapshot; `SubmitCaseRaceTests` — invalid concurrent FormData stays Draft + `VALIDATION`; valid concurrent FormData stays Draft + `DOMAIN`; status leaving Draft stays `DOMAIN`; removed row → `NOT_FOUND` |
 | KYC-034 | Reviewer/TenantAdmin `startCaseReview`; Submitted→InReview; same tenant; sets `ReviewedBy` |
 | KYC-035 | Reviewer/TenantAdmin `approveCase` / `rejectCase`; InReview only; reject requires comment; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 | KYC-036 | Authenticated `cases` query; Customer own-only; Reviewer/TenantAdmin tenant-wide; status filter; skip/take pagination; `customerEmail` on list items |

@@ -2,7 +2,7 @@
 
 **Product**: KYC Compliance Platform
 **Version**: MVP
-**Last updated**: 2026-09-02
+**Last updated**: 2026-10-08
 **Status**: Aligned with accepted ADRs; W1–W6 delivered on `main` (API + Angular admin + React customer + Vue reports + Playwright smokes). KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), KYC-094 (frontend 429 + optional login captcha), KYC-095 (post-094 review punch-list), KYC-100 (runbook), KYC-101 (demo seed), KYC-110 (Playwright smokes), KYC-111 (`submitCase` FormData compare-and-swap), and [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) are done. W7 polish still open: KYC-112–115. The Module Federation spike is KYC-120, not a DoD gate.
 
 ## 1. Vision

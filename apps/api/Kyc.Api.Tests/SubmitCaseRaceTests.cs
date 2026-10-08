@@ -24,7 +24,8 @@ public enum SubmitPersistRace
 {
     InvalidFormData,
     ValidFormData,
-    LeaveDraft
+    LeaveDraft,
+    DeleteRow
 }
 
 public sealed class SubmitCaseRaceState
@@ -117,6 +118,13 @@ public sealed class SubmitPersistRaceInterceptor(SubmitCaseRaceState state) : Db
                 WHERE "Id" = @id AND "Status" = 'Draft'
                 """;
         }
+        else if (state.Flip == SubmitPersistRace.DeleteRow)
+        {
+            flip.CommandText = """
+                DELETE FROM "cases"
+                WHERE "Id" = @id AND "Status" = 'Draft'
+                """;
+        }
         else
         {
             var form = flip.CreateParameter();
@@ -130,7 +138,12 @@ public sealed class SubmitPersistRaceInterceptor(SubmitCaseRaceState state) : Db
                 """;
         }
 
-        flip.ExecuteNonQuery();
+        var flipped = flip.ExecuteNonQuery();
+        if (flipped != 1)
+        {
+            throw new InvalidOperationException(
+                $"Submit race hook changed {flipped} rows for {state.Flip}. SQL: {flip.CommandText}");
+        }
     }
 }
 
@@ -291,6 +304,29 @@ public sealed class SubmitCaseRaceTests(SubmitCaseRaceFactory factory)
         Assert.Equal(0, await SubmittedAuditCountAsync());
     }
 
+    [Fact]
+    public async Task Row_removed_after_read_returns_NOT_FOUND()
+    {
+        await ResetDraftAsync(CompleteFormData);
+        var state = factory.Services.GetRequiredService<SubmitCaseRaceState>();
+        state.Flip = SubmitPersistRace.DeleteRow;
+        state.Armed = true;
+
+        using var document = await SubmitAsync();
+        var errors = document.RootElement.GetProperty("errors").ToString();
+        Assert.Contains("NOT_FOUND", errors, StringComparison.Ordinal);
+        Assert.Contains(SubmitCaseService.NotFoundMessage, errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("DOMAIN", errors, StringComparison.Ordinal);
+        Assert.DoesNotContain("VALIDATION", errors, StringComparison.Ordinal);
+
+        using var scope = factory.Services.CreateScope();
+        var stored = await scope.ServiceProvider.GetRequiredService<AppDbContext>()
+            .Cases.IgnoreQueryFilters()
+            .SingleOrDefaultAsync(c => c.Id == _draftCaseId);
+        Assert.Null(stored);
+        Assert.Equal(0, await SubmittedAuditCountAsync());
+    }
+
     private void Arm(SubmitPersistRace flip, string newerFormData)
     {
         var state = factory.Services.GetRequiredService<SubmitCaseRaceState>();
@@ -306,7 +342,7 @@ public sealed class SubmitCaseRaceTests(SubmitCaseRaceFactory factory)
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Cases
+        var updated = await db.Cases
             .IgnoreQueryFilters()
             .Where(c => c.Id == _draftCaseId)
             .ExecuteUpdateAsync(setters => setters
@@ -314,6 +350,23 @@ public sealed class SubmitCaseRaceTests(SubmitCaseRaceFactory factory)
                 .SetProperty(c => c.FormData, formData)
                 .SetProperty(c => c.SubmittedAt, (DateTimeOffset?)null)
                 .SetProperty(c => c.UpdatedAt, DateTimeOffset.UtcNow));
+        if (updated == 0)
+        {
+            var now = DateTimeOffset.UtcNow;
+            db.Cases.Add(new Case
+            {
+                Id = _draftCaseId,
+                TenantId = _tenantId,
+                CustomerUserId = _customerId,
+                Title = "Submit race draft",
+                Status = CaseStatus.Draft,
+                FormData = formData,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
         await db.AuditEntries
             .IgnoreQueryFilters()
             .Where(a => a.EntityId == _draftCaseId && a.Action == AuditActions.CaseSubmitted)
@@ -348,8 +401,9 @@ public sealed class SubmitCaseRaceTests(SubmitCaseRaceFactory factory)
                 Encoding.UTF8,
                 "application/json"));
 
-        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
-        return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.IsSuccessStatusCode, body);
+        return JsonDocument.Parse(body);
     }
 
     private async Task<Case> LoadCaseAsync()

@@ -57,6 +57,29 @@ public sealed class PostgresIntegrationTests(PostgresApiFactory factory) : IClas
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Submit's FormData compare-and-swap must use the jsonb mapping. A text parameter against jsonb
+    /// fails at execution (<c>operator does not exist: jsonb = text</c>) and SQLite tests cannot see that.
+    /// </summary>
+    [Fact]
+    public void Submit_formData_equality_uses_jsonb_mapping()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var property = db.Model.FindEntityType(typeof(Case))!.FindProperty(nameof(Case.FormData))!;
+        var mapping = property.GetRelationalTypeMapping();
+        Assert.Equal("jsonb", mapping.StoreType);
+        Assert.Contains("Json", mapping.GetType().Name, StringComparison.OrdinalIgnoreCase);
+
+        var sql = db.Cases
+            .Where(c =>
+                c.Id == Guid.Empty &&
+                c.Status == CaseStatus.Draft &&
+                c.FormData == """{"fullName":"Ada"}""")
+            .ToQueryString();
+        Assert.Contains("FormData", sql, StringComparison.Ordinal);
+    }
+
     [PostgresFact]
     public async Task Ready_is_healthy_against_live_postgres()
     {
