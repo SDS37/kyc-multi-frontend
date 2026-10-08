@@ -216,7 +216,7 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 | `login` | Anonymous | Issue JWT (`sub`, `tenant_id`, `role`, `email`). Optional `captchaToken`. Failed attempts lock the slug+email (generic `AUTH_FAILED`) |
 | `createDraftCase` | Customer | Create draft case; `TenantId` / `CustomerUserId` from JWT only; title required; empty `formData` → `"{}"`; `formData` max 64 KiB / depth 8; status `DRAFT` |
 | `updateDraftCase` | Customer | Update own draft (`title` required; `formData` optional, max 64 KiB / depth 8); missing / not owner → `NOT_FOUND`; owner non-draft → `DOMAIN` |
-| `submitCase` | Customer | Submit own draft by `id`; missing / not owner → `NOT_FOUND`; FormData max 64 KiB / depth 8 with `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`; owner non-draft → `DOMAIN`; sets `SUBMITTED` + `submittedAt` |
+| `submitCase` | Customer | Submit own draft by `id`; missing / not owner → `NOT_FOUND`; FormData max 64 KiB / depth 8 with `fullName`, `dateOfBirth` (YYYY-MM-DD), `nationality`, `address`; owner non-draft → `DOMAIN`; persist compare-and-swaps `Draft` **and** the validated FormData snapshot (KYC-111) — a concurrent edit cannot leave `SUBMITTED` with different FormData; still-draft invalid FormData → `VALIDATION`; still-draft valid FormData → `DOMAIN` (submit again); sets `SUBMITTED` + `submittedAt` |
 | `startCaseReview` | Reviewer or TenantAdmin | Move submitted case to `IN_REVIEW`; sets `ReviewedBy` from JWT; same-tenant only |
 | `approveCase` | Reviewer or TenantAdmin | `IN_REVIEW` → `APPROVED`; optional `comment`; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 | `rejectCase` | Reviewer or TenantAdmin | `IN_REVIEW` → `REJECTED`; required `comment`; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
@@ -251,6 +251,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-031 | Customer `createDraftCase`; status `Draft`; title required; empty `FormData` → `{}`; `TenantId`/`CustomerUserId` from JWT only |
 | KYC-032 | Customer `updateDraftCase`; missing/not owner → `NOT_FOUND`; Draft-only; title/FormData; owner other statuses → `DOMAIN` |
 | KYC-033 | Customer `submitCase`; missing/not owner → `NOT_FOUND`; Draft→Submitted; FormData requires fullName/dateOfBirth/nationality/address; `SubmittedAt` set |
+| KYC-111 | `submitCase` persist filters `Status == Draft` and the validated FormData snapshot; `SubmitCaseRaceTests` — invalid concurrent FormData stays Draft + `VALIDATION`; valid concurrent FormData stays Draft + `DOMAIN`; status leaving Draft stays `DOMAIN` |
 | KYC-034 | Reviewer/TenantAdmin `startCaseReview`; Submitted→InReview; same tenant; sets `ReviewedBy` |
 | KYC-035 | Reviewer/TenantAdmin `approveCase` / `rejectCase`; InReview only; reject requires comment; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 | KYC-036 | Authenticated `cases` query; Customer own-only; Reviewer/TenantAdmin tenant-wide; status filter; skip/take pagination; `customerEmail` on list items |

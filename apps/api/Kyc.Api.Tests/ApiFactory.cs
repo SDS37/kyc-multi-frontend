@@ -56,8 +56,21 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.RemoveAll<DbContextOptions<AppDbContext>>();
             services.RemoveAll<AppDbContext>();
 
-            services.AddDbContext<AppDbContext>(options => options.UseSqlite(_connection));
+            services.AddDbContext<AppDbContext>((sp, options) =>
+            {
+                options.UseSqlite(_connection);
+                ConfigureSqlite(sp, options);
+            });
         });
+    }
+
+    /// <summary>
+    /// Extra SQLite options for a derived factory (race interceptors). The default host adds none.
+    /// </summary>
+    protected virtual void ConfigureSqlite(IServiceProvider serviceProvider, DbContextOptionsBuilder options)
+    {
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentNullException.ThrowIfNull(options);
     }
 
     public override async ValueTask DisposeAsync()

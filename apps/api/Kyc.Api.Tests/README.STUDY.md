@@ -55,6 +55,7 @@ flowchart LR
 | `GraphQlAuthTests` | Deny-by-default; anonymous login/register; invalid token rejected. |
 | `RoleAuthorizationTests` | Customer cannot call reviewer mutations (and vice versa) → `AUTH_NOT_AUTHORIZED`. |
 | `CreateDraftCaseTests` / `UpdateDraftCaseTests` / `SubmitCaseTests` | JWT-owned drafts; NOT_FOUND vs DOMAIN; FormData rules. |
+| `SubmitCaseRaceTests` | KYC-111: FormData or status changed after the submit read cannot produce Submitted + a different payload. Invalid FormData stays Draft + `VALIDATION`; still-valid FormData stays Draft + `DOMAIN`; leaving Draft stays `DOMAIN`. |
 | `StartCaseReviewTests` / `CompleteCaseReviewTests` | Lifecycle + reject comment. |
 | `ListCasesTests` / `GetCaseDetailTests` | Shared visibility; list has no FormData; detail can include documents. |
 | `ListDocumentsTests` | KYC-041 `documents(caseId)`; owner / peer NOT_FOUND / reviewer+admin; metadata only (no storage key); newest first. |

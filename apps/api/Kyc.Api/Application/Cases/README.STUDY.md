@@ -16,7 +16,7 @@ One class per action keeps PRs and tests aligned with stories (KYC-031, 032, …
 |---|---|---|---|
 | `CreateDraftCaseService` + `CreateDraftCaseModels` | KYC-031 | Customer | New row, status `Draft`. `TenantId` / `CustomerUserId` from JWT. Empty FormData → `"{}"`. |
 | `UpdateDraftCaseService` | KYC-032 / 106 / 109 / 095 | Customer | Own draft only. **DOMAIN (not draft) before FormData validation**. **Atomic** `ExecuteUpdate` where `Status = Draft`. Title-only updates omit `FormData` from the SET so a concurrent FormData save is not overwritten. |
-| `SubmitCaseService` | KYC-033 / 106 | Customer | Draft → Submitted. Required FormData fields. **Atomic** `ExecuteUpdate` so two tabs cannot double-submit. |
+| `SubmitCaseService` | KYC-033 / 106 / 111 | Customer | Draft → Submitted. Required FormData fields. **Atomic** `ExecuteUpdate` on `Status = Draft` **and** the validated FormData snapshot, so a concurrent edit cannot submit different FormData. |
 | `StartCaseReviewService` | KYC-034 | Reviewer / TenantAdmin | Submitted → InReview. Sets `ReviewedBy`. |
 | `CompleteCaseReviewService` | KYC-035 | Reviewer / TenantAdmin | Approve (comment optional) or reject (comment required). InReview only. |
 | `ListCasesService` | KYC-036 | Any authenticated role | Paginated list **without** FormData. |
@@ -69,13 +69,13 @@ Detail returns document **metadata** from `documents` (KYC-040/041). Dedicated G
 
 ## Atomic status updates
 
-`SubmitCaseService`, `UpdateDraftCaseService` (KYC-095), and start-review use `ExecuteUpdate` with a `WHERE` that includes **current status**. If `rows == 0`, another request won the race → treat as DOMAIN/NOT_FOUND rather than assuming in-memory `entity.Status` is still true. Document upload re-checks Draft/Submitted at persist time in the same way.
+`SubmitCaseService`, `UpdateDraftCaseService` (KYC-095), and start-review use `ExecuteUpdate` with a `WHERE` that includes **current status**. Submit also requires `FormData` to equal the snapshot that passed validation (KYC-111). If `rows == 0`, another request won the race: missing owner → `NOT_FOUND`; status left Draft → `DOMAIN`. If the row is still Draft, submit re-validates the current FormData (`VALIDATION` when it is now invalid, `DOMAIN` “submit again” when it is still valid). Do not assume in-memory `entity.Status` or `entity.FormData` is still true. Document upload re-checks Draft/Submitted at persist time in the same way.
 
 ## How to read this folder (90 minutes)
 
 1. `CreateDraftCaseService` — JWT assignment, validation.
 2. `UpdateDraftCaseService` — NOT_FOUND vs DOMAIN order.
-3. `SubmitCaseService` — FormData required fields + ExecuteUpdate.
+3. `SubmitCaseService` — FormData required fields + ExecuteUpdate on status and the validated FormData snapshot (KYC-111).
 4. `CompleteCaseReviewService` — reject comment required.
 5. `CaseVisibility` + `ListCasesService` + `GetCaseDetailService` — same filter, list omits FormData.
 

@@ -174,7 +174,8 @@ public class Mutation
     }
 
     /// <summary>
-    /// Customer submits their own draft (KYC-033). Required FormData fields must already be persisted.
+    /// Customer submits their own draft (KYC-033 / KYC-111). Required FormData is compare-and-swapped
+    /// with Draft → Submitted, so a concurrent edit cannot submit a different payload.
     /// </summary>
     [Authorize(Roles = new[] { AuthRoles.Customer })]
     public async Task<CaseResponse> SubmitCase(
