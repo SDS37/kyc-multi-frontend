@@ -48,7 +48,7 @@ KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an
 ## What the API project is
 
 - **`Program.cs`** — composition root. Registers EF Core (retries + command timeout), JWT auth, `ICurrentTenant`, Hot Chocolate, `/health` + `/ready`, request timeouts, JSON request logs, OpenAPI (Development), register + login REST.
-- **`AppDbContext`** — EF session with `Tenants` and `Users`; global query filters on `ITenantScoped` from JWT `tenant_id` (fail closed when unauthenticated).
+- **`AppDbContext`** — EF session with `Tenants`, `Users`, `Cases`, `Documents`, `AuditEntries`, and `RegistrationInvites`; global query filters on `ITenantScoped` from JWT `tenant_id` (fail closed when unauthenticated).
 - **`/graphql`** — Hot Chocolate endpoint; IDE enabled in Development only.
 - **`/health`** — liveness; process check only (does not open Postgres).
 - **`/ready`** — readiness; **503** when Postgres is unreachable (KYC-103).
@@ -56,7 +56,7 @@ KYC-004 was the empty-host step (`ng new` / `npm create vite` **plus** wiring an
 - **`UseNpgsql`** — Postgres provider (the `pg` driver equivalent), with `EnableRetryOnFailure` and a 30s command timeout.
 - **Local HTTP** — Development uses `http://localhost:5295`. Fine for local Compose credentials; do not treat that as a production pattern for passwords.
 - **JWT** — short-lived access token from login (`sub`, `tenant_id`, `role`, `email`). Signing key lives in Development config / user-secrets (not committed).
-- **Tenant isolation** — never trust client-supplied tenant IDs (ADR-007). Login bypasses filters with `IgnoreQueryFilters()`. Case (KYC-030) must implement `ITenantScoped` to inherit the filter.
+- **Tenant isolation** — never trust client-supplied tenant IDs (ADR-007). Login bypasses filters with `IgnoreQueryFilters()`. Case implements `ITenantScoped` and inherits the filter.
 - **Tests / CI** — `apps/api/Kyc.Api.Tests` (tenant isolation); PRs run `api-ci`.
 
 ## Secrets
@@ -77,7 +77,7 @@ Do not put passwords in `launchSettings.json`; that file is committed.
 
 EF migrations are versioned schema, like Prisma’s `migrations/` folder.
 
-History includes `InitialCreate` (empty pipeline proof), then `AddTenant` and `AddUser`. KYC-014 added query filters only (no new migration). Apply with `dotnet ef database update` after Compose Postgres is healthy.
+History on `main`: `InitialCreate` (empty pipeline proof) → `AddTenant` → `AddUser` → `AddCase` → `AddCaseReviewComment` → `AddDocument` → `AddAuditEntry` → `AddRegistrationInvites`. KYC-014 added query filters only (no new migration). Apply with `dotnet ef database update` after Compose Postgres is healthy.
 
 `dotnet-ef` is a **local tool** in `.config/dotnet-tools.json` (`dotnet tool restore` from the repo root).
 

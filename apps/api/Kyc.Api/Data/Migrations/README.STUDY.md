@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Parent: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `main` after `AddDocument` (KYC-040).
+**Aligned with:** `main` after `AddRegistrationInvites` (KYC-093).
 
 ## Purpose
 
@@ -30,6 +30,8 @@ History on `main` (order matters):
 | `AddCase` | `cases` + FormData |
 | `AddCaseReviewComment` | `ReviewComment` on cases (KYC-035) |
 | `AddDocument` | `documents` table + unique `StorageKey` (KYC-040) |
+| `AddAuditEntry` | `audit_entries` (KYC-050) |
+| `AddRegistrationInvites` | `registration_invites` unique `CodeHash` (KYC-093) |
 
 **KYC-014 (tenant filters) added no migration.** Filters are C# in `AppDbContext`, not columns. If someone says “isolation is a migration,” correct them.
 

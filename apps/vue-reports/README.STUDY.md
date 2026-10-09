@@ -1,6 +1,6 @@
 # Study: `apps/vue-reports`
 
-**Aligned with:** `main` / KYC-081 (counts + latest 10 on the KYC-080 shell).
+**Aligned with:** `main` after KYC-081 (counts + latest 10 on the KYC-080 shell).
 
 ## Purpose
 

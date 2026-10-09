@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** `main` after W6 (login, cases, document metadata, audit).
 
 ## Purpose
 

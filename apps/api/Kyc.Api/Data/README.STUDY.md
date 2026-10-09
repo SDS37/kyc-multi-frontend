@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** `main` after `AddRegistrationInvites` (cases, documents, audit, invite codes).
 
 ## Purpose
 
@@ -57,6 +57,8 @@ flowchart TB
 | `UserConfiguration` | Unique `(TenantId, Email)`. Role stored as **string**. FK Restrict (do not cascade-delete users if a tenant row were deleted). |
 | `CaseConfiguration` | Indexes `(TenantId, CustomerUserId)` and `(TenantId, Status)` — list/filter shaped. `ReviewComment` max 2000. FKs Restrict. Status as string. |
 | `DocumentConfiguration` | Table `documents`. Unique `StorageKey`. Index `(TenantId, CaseId)`. FKs to case/tenant/uploader Restrict. |
+| `AuditEntryConfiguration` | Table `audit_entries`. Indexes `(TenantId, OccurredAt)` and `(TenantId, EntityType, EntityId)`. FKs to tenant and actor Restrict. |
+| `RegistrationInviteConfiguration` | Table `registration_invites`. Unique `CodeHash`. `RedeemedAt` is a concurrency token. FK to redeemed tenant Restrict. |
 
 `ApplyConfigurationsFromAssembly` loads all `IEntityTypeConfiguration<>` in this project automatically — like Angular `import.meta.glob`, but compile-time.
 
@@ -66,7 +68,7 @@ Every authenticated GraphQL field that loads cases goes: service → `db.Cases` 
 
 ## Today vs target
 
-One `AppDbContext` for all modules (including `Documents`). Redis will not appear here. MinIO is **not** EF — only `StorageKey` strings live in Postgres.
+One `AppDbContext` for all modules (cases, documents, audit, registration invites). Redis will not appear here. MinIO is **not** EF — only `StorageKey` strings live in Postgres.
 
 ## What to skip
 
