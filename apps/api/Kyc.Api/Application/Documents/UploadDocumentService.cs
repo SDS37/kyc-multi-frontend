@@ -24,6 +24,7 @@ public sealed partial class UploadDocumentService(
     public const string NotFoundMessage = "Case was not found.";
     public const string NotUploadableMessage = "Documents can only be uploaded to draft or submitted cases.";
     public const string ForbiddenMessage = "Only customers can upload documents.";
+    public const string StorageFailureMessage = "Could not store the document. Please try again.";
 
     public async Task<(CaseDocumentMetadataResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, bool Forbidden, string? ErrorCode, string? ErrorMessage)> UploadAsync(
         Guid caseId,
@@ -168,7 +169,7 @@ public sealed partial class UploadDocumentService(
                 false,
                 false,
                 "STORAGE",
-                "Could not store the document. Please try again.");
+                StorageFailureMessage);
         }
 
         var document = new Document
@@ -184,25 +185,33 @@ public sealed partial class UploadDocumentService(
             UploadedAt = uploadedAt
         };
 
+        bool persisted;
         try
         {
-            var persisted = await TryPersistMetadataAsync(
+            persisted = await TryPersistMetadataAsync(
                 document,
                 tenantId,
                 userId,
                 uploadedAt,
                 cancellationToken);
-            if (!persisted)
-            {
-                await CompensateObjectAsync(storageKey, documentId, caseId, cancellationToken);
-                return await UploadRejectedAfterRaceAsync(caseId, userId, cancellationToken);
-            }
         }
         catch (Exception ex)
         {
             LogDocumentMetadataSaveFailed(logger, ex, documentId);
             await CompensateObjectAsync(storageKey, documentId, caseId, cancellationToken);
-            return (null, ["Could not save document metadata. Please try again."], false, false, null, null);
+            return (
+                null,
+                Array.Empty<string>(),
+                false,
+                false,
+                "STORAGE",
+                StorageFailureMessage);
+        }
+
+        if (!persisted)
+        {
+            await CompensateObjectAsync(storageKey, documentId, caseId, cancellationToken);
+            return await UploadRejectedAfterRaceAsync(caseId, userId, cancellationToken);
         }
 
         LogDocumentUploaded(logger, documentId, caseId, sizeBytes, contentType);
@@ -312,7 +321,7 @@ public sealed partial class UploadDocumentService(
     private static partial void LogDocumentMetadataSaveFailed(ILogger logger, Exception ex, Guid documentId);
 
     [LoggerMessage(
-        Level = LogLevel.Warning,
+        Level = LogLevel.Error,
         Message = "Compensating object-storage delete failed for document {DocumentId} case {CaseId}; object may be orphaned")]
     private static partial void LogDocumentOrphanCleanupFailed(
         ILogger logger,

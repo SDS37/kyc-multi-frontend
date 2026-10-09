@@ -142,7 +142,7 @@ GraphQL returns HTTP 200 with `errors[].extensions.code`. Use these codes only:
 | `NOT_FOUND` | Missing **or not visible** |
 | `DOMAIN` | Legal input, illegal state (submit a non-draft) |
 
-REST document **upload and download** use `STORAGE` (HTTP 502) for MinIO/object-store failures — never map those to `VALIDATION`.
+REST document **upload and download** use `STORAGE` (HTTP 502) for MinIO/object-store failures and for a metadata save that fails after a successful put — never map those to `VALIDATION`. A failed compensating delete is logged at Error with document and case ids, not the storage key.
 
 Local browser UIs are allowed via `Cors:AllowedOrigins` (`http://localhost:4200`, `http://localhost:5173`, `http://localhost:5174`, Vite preview `4173` / `4174`). Do not add `*` or reflect the request Origin. Basic headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`), `Content-Security-Policy` (`default-src 'none'`), and non-Dev HSTS + HTTPS redirect ship together (KYC-091 + [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108)). Development keeps local HTTP `http://localhost:5295`.
 

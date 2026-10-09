@@ -205,7 +205,7 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 |---|---|---|
 | `POST /api/register-tenant` | Anonymous | Same as GraphQL `registerTenant` |
 | `POST /api/login` | Anonymous | Same as GraphQL `login` |
-| `POST /api/cases/{caseId}/documents` | Customer | Multipart upload (`file`); Draft/Submitted + owner only; PDF/PNG/JPG; max 10 MB; stores in MinIO; returns metadata; object-store failure → `STORAGE` 502 |
+| `POST /api/cases/{caseId}/documents` | Customer | Multipart upload (`file`); Draft/Submitted + owner only; PDF/PNG/JPG; max 10 MB; stores in MinIO; returns metadata; object-store failure or metadata save after put → `STORAGE` 502 |
 | `GET /api/cases/{caseId}/documents/{documentId}` | Customer, Reviewer, or TenantAdmin | Stream file bytes; same visibility as `documents`; missing blob → `NOT_FOUND`; object-store failure → `STORAGE` 502 |
 
 ### Mutations
@@ -221,7 +221,7 @@ Endpoint: `POST /graphql` (IDE, introspection, and SDL `?sdl` in Development —
 | `approveCase` | Reviewer or TenantAdmin | `IN_REVIEW` → `APPROVED`; optional `comment`; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 | `rejectCase` | Reviewer or TenantAdmin | `IN_REVIEW` → `REJECTED`; required `comment`; sets `ReviewedAt` / `ReviewedBy` / `ReviewComment` |
 
-Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED`, `NOT_FOUND`, `DOMAIN`. Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations. Document upload/download use dedicated REST (see table above); object-store failures use `STORAGE` (HTTP 502), never `VALIDATION`.
+Common GraphQL error codes: `AUTH_NOT_AUTHENTICATED`, `AUTH_NOT_AUTHORIZED`, `VALIDATION`, `AUTH_FAILED`, `NOT_FOUND`, `DOMAIN`. Temporary REST `POST /api/register-tenant` and `POST /api/login` mirror the anonymous mutations. Document upload/download use dedicated REST (see table above); object-store failures and a metadata save that fails after a successful put use `STORAGE` (HTTP 502), never `VALIDATION`.
 
 ## 5. Build and test
 
@@ -257,6 +257,7 @@ PRs that touch `apps/api` (or `global.json` / the workflow file) run the same bu
 | KYC-036 | Authenticated `cases` query; Customer own-only; Reviewer/TenantAdmin tenant-wide; status filter; skip/take pagination; `customerEmail` on list items |
 | KYC-037 | Authenticated `case(id)` detail; same visibility as list; FormData + comments; `customerEmail`; document metadata (no bytes) |
 | KYC-040 | Customer `POST /api/cases/{id}/documents`; Draft/Submitted; PDF/PNG/JPG ≤10 MB; MinIO + metadata; owner only; MinIO put failure → `STORAGE` 502 |
+| KYC-113 | Metadata save after a successful put → `STORAGE` 502 (not `VALIDATION`); compensating delete still runs; failed delete logged at Error with document and case ids, not the storage key |
 | KYC-041 | Authenticated `documents(caseId)`; same visibility as `case`; metadata only (no bytes / storage keys) |
 | KYC-042 | Authenticated `GET /api/cases/{id}/documents/{documentId}` stream; same visibility as list; private bucket |
 | KYC-050 | Append-only `audit_entries` for CaseCreated/Updated/Submitted, ReviewStarted, CaseApproved/Rejected, DocumentUploaded; no update/delete API |

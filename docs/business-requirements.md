@@ -3,7 +3,7 @@
 **Product**: KYC Compliance Platform
 **Version**: MVP
 **Last updated**: 2026-10-09
-**Status**: Aligned with accepted ADRs; W1–W6 delivered on `main` (API + Angular admin + React customer + Vue reports + Playwright smokes). KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), KYC-094 (frontend 429 + optional login captcha), KYC-095 (post-094 review punch-list), KYC-100 (runbook), KYC-101 (demo seed), KYC-110 (Playwright smokes), KYC-111 (`submitCase` FormData compare-and-swap), KYC-112 (React/Vue production API URL guard), and [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) are done. W7 polish still open: KYC-113–115. The Module Federation spike is KYC-120, not a DoD gate.
+**Status**: Aligned with accepted ADRs; W1–W6 delivered on `main` (API + Angular admin + React customer + Vue reports + Playwright smokes). KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), KYC-094 (frontend 429 + optional login captcha), KYC-095 (post-094 review punch-list), KYC-100 (runbook), KYC-101 (demo seed), KYC-110 (Playwright smokes), KYC-111 (`submitCase` FormData compare-and-swap), KYC-112 (React/Vue production API URL guard), KYC-113 (upload post-put `STORAGE` 502), and [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) are done. W7 polish still open: KYC-114–115. The Module Federation spike is KYC-120, not a DoD gate.
 
 ## 1. Vision
 

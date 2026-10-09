@@ -115,6 +115,10 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
         return buffer;
     }
 
+    /// <summary>
+    /// Throws after an Error log so upload compensation can record document and case ids (KYC-113).
+    /// The storage log field is a key hash, not the key (KYC-095).
+    /// </summary>
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         try
@@ -124,6 +128,7 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
         catch (Exception ex)
         {
             LogDeleteFailed(_logger, ex, StorageKeyLog.Hash(key));
+            throw;
         }
     }
 
@@ -163,6 +168,6 @@ public sealed partial class MinioObjectStorage : IObjectStorage, IAsyncDisposabl
         return ValueTask.CompletedTask;
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to delete object {StorageKeyHash}")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to delete object {StorageKeyHash}")]
     private static partial void LogDeleteFailed(ILogger logger, Exception ex, string storageKeyHash);
 }
