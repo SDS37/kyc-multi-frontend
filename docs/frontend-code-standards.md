@@ -447,6 +447,7 @@ Prefer **immutable** props/state so React’s bail-out and future Compiler wins 
 - Attach `Authorization: Bearer <token>` in one place (fetch wrapper / interceptor helper); skip auth for `login` / `registerTenant`
 - Token storage: dedicated module (`token-storage.ts`); MVP may use `sessionStorage`; do not scatter `sessionStorage.getItem` across features
 - REST document upload/download uses the same JWT and `apiBaseUrl`
+- Production bootstrap (`import.meta.env.PROD`) throws if `VITE_API_BASE_URL` or `VITE_GRAPHQL_URL` is empty or localhost / `127.0.0.1` / `::1` (KYC-112). `npm run build` still succeeds without those variables. Development keeps `http://localhost:5295`.
 
 ### Hooks and effects ([react.dev](https://react.dev/reference/react))
 
@@ -532,6 +533,7 @@ Prefer **immutable** data so Vue’s reactivity stays predictable. Derived displ
 - Token storage: dedicated module (`token-storage.ts`); MVP uses `sessionStorage`; do not scatter `sessionStorage.getItem` across features
 - Navigation guards **return a location or `false`** — do not use the deprecated `next()` callback ([Vue Router](https://router.vuejs.org/guide/advanced/navigation-guards.html))
 - Reports roles are **Reviewer / TenantAdmin**. Customer sessions must not enter this app (UX guard + login mapper). API still enforces JWT (ADR-007)
+- Production bootstrap (`import.meta.env.PROD`) throws if `VITE_API_BASE_URL` or `VITE_GRAPHQL_URL` is empty or localhost / `127.0.0.1` / `::1` (KYC-112). `npm run build` still succeeds without those variables. Development keeps `http://localhost:5295`.
 
 ### Composition API ([vuejs.org](https://vuejs.org/guide/extras/composition-api-faq.html))
 

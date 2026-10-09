@@ -10,11 +10,10 @@ How this demo starts to look like a **whole, functional production product** —
 
 [DoD.md](DoD.md) is already true for the product slice: Customer (React), Reviewer (Angular), reports overview (Vue), isolation tests, local README.
 
-W6 leftover that was still listed here (KYC-100, KYC-095, KYC-110) is **done**. [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120) (submit FormData at persist) is **done**. Still on the **MVP roadmap** (W7 — not “beyond”):
+W6 leftover that was still listed here (KYC-100, KYC-095, KYC-110) is **done**. [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120) (submit FormData at persist) and [KYC-112](https://github.com/SDS37/kyc-multi-frontend/issues/121) (React/Vue production API URL guard) are **done**. Still on the **MVP roadmap** (W7 — not “beyond”):
 
 | Item | Where |
 |---|---|
-| React/Vue production localhost API guard | [KYC-112](https://github.com/SDS37/kyc-multi-frontend/issues/121) |
 | Upload post-put → `STORAGE` 502; compensate at Error | [KYC-113](https://github.com/SDS37/kyc-multi-frontend/issues/122) |
 | STUDY / README / beyond-mvp / ADR-002 leftovers | [KYC-114](https://github.com/SDS37/kyc-multi-frontend/issues/123) |
 | Angular login/cases transport errors vs React/Vue | [KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124) |
@@ -87,7 +86,7 @@ These keep the portfolio honest. They do not make KYC “more production.”
 
 ## Suggested order (if you ever execute this)
 
-1. Finish remaining **W7 polish** (KYC-112–115; KYC-111 submit FormData CAS is done) — not Redis, not an MF host.
+1. Finish remaining **W7 polish** (KYC-113–115; KYC-111 submit FormData CAS and KYC-112 React/Vue production API URLs are done) — not Redis, not an MF host.
 2. User invite/list API if humans must join without SQL.
 3. TLS on a real deploy; `/ready` not public.
 4. Redis **only** with a second API instance or token revoke.
