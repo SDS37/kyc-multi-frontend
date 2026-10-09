@@ -61,6 +61,8 @@ flowchart LR
 | `ListDocumentsTests` | KYC-041 `documents(caseId)`; owner / peer NOT_FOUND / reviewer+admin; metadata only (no storage key); newest first. |
 | `UploadDocumentTests` | Customer multipart upload; Draft/Submitted; peer `NOT_FOUND`; reviewer 403; magic/size `VALIDATION`; InMemory object store via `ObjectStorage:Provider=InMemory` on factories. |
 | `FailingStorageUploadTests` | MinIO/put failure → `STORAGE` 502, not `VALIDATION`. |
+| `UploadDocumentMetadataFailureTests` | KYC-113: metadata save after put → `STORAGE` 502 and the object is deleted. A failing compensate stays `STORAGE` and is logged at Error without the storage key. |
+| `UploadDocumentRaceTests` | Status leaving Submitted during put → `DOMAIN` and the compensating delete removes the object. |
 | `CorsTests` | Local + Vite preview origins preflight GraphQL + document GET; denied origin has no ACAO. |
 | `SecurityHeadersTests` | CSP on `/health`; Production HTTP GraphQL → HTTPS 307; probes and `X-Forwarded-Proto: https` do not redirect. |
 | `HttpsRedirectTests` | Probe paths and forwarded TLS skip HTTPS redirect. |

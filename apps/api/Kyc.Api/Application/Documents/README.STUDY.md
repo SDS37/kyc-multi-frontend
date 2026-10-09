@@ -71,6 +71,7 @@ sequenceDiagram
 | Not owner / missing case | 404 | `NOT_FOUND` |
 | Wrong status (e.g. Approved) | 422 | `DOMAIN` |
 | Object storage put failure | 502 | `STORAGE` |
+| Metadata save fails after a successful put (compensating delete still runs; a failed delete is logged at Error with document and case ids, not the storage key — KYC-113) | 502 | `STORAGE` |
 
 ### Download
 

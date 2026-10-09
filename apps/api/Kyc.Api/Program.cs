@@ -442,7 +442,7 @@ app.MapPost("/api/cases/{caseId:guid}/documents", async (
     if (errorCode == "STORAGE")
     {
         return Results.Json(
-            new { error = errorMessage ?? "Could not store the document. Please try again.", code = "STORAGE" },
+            new { error = errorMessage ?? UploadDocumentService.StorageFailureMessage, code = "STORAGE" },
             statusCode: StatusCodes.Status502BadGateway);
     }
 
