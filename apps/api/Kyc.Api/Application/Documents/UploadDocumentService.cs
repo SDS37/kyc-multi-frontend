@@ -185,19 +185,15 @@ public sealed partial class UploadDocumentService(
             UploadedAt = uploadedAt
         };
 
+        bool persisted;
         try
         {
-            var persisted = await TryPersistMetadataAsync(
+            persisted = await TryPersistMetadataAsync(
                 document,
                 tenantId,
                 userId,
                 uploadedAt,
                 cancellationToken);
-            if (!persisted)
-            {
-                await CompensateObjectAsync(storageKey, documentId, caseId, cancellationToken);
-                return await UploadRejectedAfterRaceAsync(caseId, userId, cancellationToken);
-            }
         }
         catch (Exception ex)
         {
@@ -210,6 +206,12 @@ public sealed partial class UploadDocumentService(
                 false,
                 "STORAGE",
                 StorageFailureMessage);
+        }
+
+        if (!persisted)
+        {
+            await CompensateObjectAsync(storageKey, documentId, caseId, cancellationToken);
+            return await UploadRejectedAfterRaceAsync(caseId, userId, cancellationToken);
         }
 
         LogDocumentUploaded(logger, documentId, caseId, sizeBytes, contentType);

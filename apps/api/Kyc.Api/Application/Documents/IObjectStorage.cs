@@ -16,5 +16,8 @@ public interface IObjectStorage
     /// </summary>
     Task<Stream?> OpenReadAsync(string key, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Removes the object. A missing key is success. A store failure throws so the caller can log it (KYC-113).
+    /// </summary>
     Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 }

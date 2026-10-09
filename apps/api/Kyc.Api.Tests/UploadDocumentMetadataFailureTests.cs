@@ -201,20 +201,31 @@ public sealed class UploadDocumentMetadataFailureTests(MetadataSaveFailFactory f
         var deletesBefore = storage.DeleteCount;
         var objectsBefore = storage.ObjectCount;
 
-        using var response = await PostPdfAsync();
-        var body = await response.Content.ReadAsStringAsync();
-        state.FailDocumentSave = false;
+        HttpResponseMessage response;
+        try
+        {
+            response = await PostPdfAsync();
+        }
+        finally
+        {
+            state.FailDocumentSave = false;
+        }
 
-        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
-        Assert.Contains("STORAGE", body, StringComparison.Ordinal);
-        Assert.Contains(UploadDocumentService.StorageFailureMessage, body, StringComparison.Ordinal);
-        Assert.DoesNotContain("VALIDATION", body, StringComparison.Ordinal);
-        Assert.Equal(deletesBefore + 1, storage.DeleteCount);
-        Assert.Equal(objectsBefore, storage.ObjectCount);
+        using (response)
+        {
+            var body = await response.Content.ReadAsStringAsync();
 
-        using var verify = factory.Services.CreateScope();
-        var db = verify.ServiceProvider.GetRequiredService<AppDbContext>();
-        Assert.Equal(0, await db.Documents.IgnoreQueryFilters().CountAsync(d => d.CaseId == _draftCaseId));
+            Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+            Assert.Contains("STORAGE", body, StringComparison.Ordinal);
+            Assert.Contains(UploadDocumentService.StorageFailureMessage, body, StringComparison.Ordinal);
+            Assert.DoesNotContain("VALIDATION", body, StringComparison.Ordinal);
+            Assert.Equal(deletesBefore + 1, storage.DeleteCount);
+            Assert.Equal(objectsBefore, storage.ObjectCount);
+
+            using var verify = factory.Services.CreateScope();
+            var db = verify.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Equal(0, await db.Documents.IgnoreQueryFilters().CountAsync(d => d.CaseId == _draftCaseId));
+        }
     }
 
     [Fact]
@@ -226,22 +237,41 @@ public sealed class UploadDocumentMetadataFailureTests(MetadataSaveFailFactory f
         storage.ThrowOnDelete = true;
         var objectsBefore = storage.ObjectCount;
 
-        using var response = await PostPdfAsync();
-        var body = await response.Content.ReadAsStringAsync();
-        state.FailDocumentSave = false;
-        storage.ThrowOnDelete = false;
+        HttpResponseMessage response;
+        try
+        {
+            response = await PostPdfAsync();
+        }
+        finally
+        {
+            state.FailDocumentSave = false;
+            storage.ThrowOnDelete = false;
+        }
 
-        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
-        Assert.Contains("STORAGE", body, StringComparison.Ordinal);
-        Assert.DoesNotContain("VALIDATION", body, StringComparison.Ordinal);
-        Assert.Equal(objectsBefore + 1, storage.ObjectCount);
+        using (response)
+        {
+            var body = await response.Content.ReadAsStringAsync();
 
-        var orphanLog = Assert.Single(
-            factory.Logs.Entries,
-            entry => entry.Message.Contains("Compensating object-storage delete failed", StringComparison.Ordinal));
-        Assert.Equal(LogLevel.Error, orphanLog.Level);
-        Assert.Contains(_draftCaseId.ToString(), orphanLog.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("tenants/", orphanLog.Message, StringComparison.Ordinal);
+            Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+            Assert.Contains("STORAGE", body, StringComparison.Ordinal);
+            Assert.DoesNotContain("VALIDATION", body, StringComparison.Ordinal);
+            Assert.Equal(objectsBefore + 1, storage.ObjectCount);
+
+            var orphanLog = Assert.Single(
+                factory.Logs.Entries,
+                entry => entry.Message.Contains("Compensating object-storage delete failed", StringComparison.Ordinal));
+            Assert.Equal(LogLevel.Error, orphanLog.Level);
+            Assert.Contains(_draftCaseId.ToString(), orphanLog.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("tenants/", orphanLog.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain("meta.pdf", orphanLog.Message, StringComparison.Ordinal);
+            Assert.Matches(
+                "document [0-9a-fA-F-]{36} case [0-9a-fA-F-]{36}",
+                orphanLog.Message);
+
+            using var verify = factory.Services.CreateScope();
+            var db = verify.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Equal(0, await db.Documents.IgnoreQueryFilters().CountAsync(d => d.CaseId == _draftCaseId));
+        }
     }
 
     private async Task<HttpResponseMessage> PostPdfAsync()
