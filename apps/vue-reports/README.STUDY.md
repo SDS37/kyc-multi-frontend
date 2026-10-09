@@ -1,10 +1,10 @@
 # Study: `apps/vue-reports`
 
-**Aligned with:** `main` after KYC-081 (counts + latest 10 on the KYC-080 shell).
+**Aligned with:** `main` after KYC-081 (counts + latest 10) and KYC-112 (production bootstrap refuses an empty or localhost API URL).
 
 ## Purpose
 
-Read-only reports portal for **Reviewer / TenantAdmin** (ADR-004). Status counts and the latest ten cases reuse GraphQL `cases` (KYC-036) with aliases — no new backend field.
+Read-only reports portal for **Reviewer / TenantAdmin** (ADR-004). Status counts and the latest ten cases reuse GraphQL `cases` (KYC-036) with aliases — no new backend field. Production bootstrap throws if the API URL is empty or localhost (KYC-112).
 
 ## Map
 

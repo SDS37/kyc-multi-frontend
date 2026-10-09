@@ -1,10 +1,10 @@
 # Study: `apps/react-customer`
 
-**Aligned with:** `main` after KYC-070–074 (W5 complete).
+**Aligned with:** `main` after KYC-070–074 and KYC-112 (production bootstrap refuses an empty or localhost API URL).
 
 ## Purpose
 
-Customer portal: sign in, list own cases, create/edit drafts, submit, upload documents (PDF/PNG/JPG ≤10 MB).
+Customer portal: sign in, list own cases, create/edit drafts, submit, upload documents (PDF/PNG/JPG ≤10 MB). Production bootstrap throws if the API URL is empty or localhost (KYC-112).
 
 ## Map
 

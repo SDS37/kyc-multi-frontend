@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README. Official runbook: [README.md](README.md).
 
-**Aligned with:** `main` after KYC-060–065 (W4 Angular admin complete).
+**Aligned with:** `main` after KYC-065, KYC-094 (login 429), and KYC-115 (unreachable API uses the network catalog).
 
 ## Purpose
 
-Tenant Admin / Reviewer product (ADR-004). KYC-060–065: login, shell, case list, and **case review** (form data, documents + download, start / approve / reject).
+Tenant Admin / Reviewer product (ADR-004). KYC-060–065: login, shell, case list, and **case review** (form data, documents + download, start / approve / reject). HTTP 429 keeps the session (KYC-094). An unreachable API uses the network catalog (KYC-115). Production bootstrap refuses an empty or localhost API origin (KYC-095).
 
 ## Why these folders exist
 

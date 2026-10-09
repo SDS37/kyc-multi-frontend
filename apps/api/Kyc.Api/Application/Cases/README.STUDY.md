@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Parent layer: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `main` after KYC-041. Cases are Week 2; document **metadata** list/detail is Week 3.
+**Aligned with:** `main` after KYC-111 (`submitCase` FormData compare-and-swap; document metadata is KYC-041).
 
 ## Purpose
 

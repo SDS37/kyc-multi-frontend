@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Parent layer: [../README.STUDY.md](../README.STUDY.md).
 
-**Aligned with:** `main` after KYC-042 (document download).
+**Aligned with:** `main` after KYC-113 (download is KYC-042; a metadata save after put is `STORAGE` 502).
 
 ## Purpose
 
