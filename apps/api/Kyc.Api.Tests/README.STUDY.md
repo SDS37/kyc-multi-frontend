@@ -55,6 +55,7 @@ flowchart LR
 | `GraphQlAuthTests` | Deny-by-default; anonymous login/register; invalid token rejected. |
 | `RoleAuthorizationTests` | Customer cannot call reviewer mutations (and vice versa) → `AUTH_NOT_AUTHORIZED`. |
 | `CreateDraftCaseTests` / `UpdateDraftCaseTests` / `SubmitCaseTests` | JWT-owned drafts; NOT_FOUND vs DOMAIN; FormData rules. |
+| `SubmitCaseRaceTests` | KYC-111: FormData, status, or the row changed after the submit read cannot produce Submitted + a different payload. Invalid FormData stays Draft + `VALIDATION`; still-valid FormData stays Draft + `DOMAIN`; leaving Draft stays `DOMAIN`; a removed row is `NOT_FOUND`. |
 | `StartCaseReviewTests` / `CompleteCaseReviewTests` | Lifecycle + reject comment. |
 | `ListCasesTests` / `GetCaseDetailTests` | Shared visibility; list has no FormData; detail can include documents. |
 | `ListDocumentsTests` | KYC-041 `documents(caseId)`; owner / peer NOT_FOUND / reviewer+admin; metadata only (no storage key); newest first. |
@@ -71,7 +72,7 @@ flowchart LR
 | `ObservabilityTests` | JSON logs, request id, no secret leakage. |
 | `LoginTimingTests` | Dummy hash verify on miss paths (KYC-107). |
 | `DemoSeedTests` | KYC-101: two tenants, all roles, every case status, idempotent; fills missing Acme users without resetting an existing admin hash. |
-| `PostgresIntegrationTests` | jsonb + migrate on real Postgres. |
+| `PostgresIntegrationTests` | jsonb + migrate on real Postgres. `Submit_formData_equality_uses_jsonb_mapping` always runs (no live database): the submit FormData compare-and-swap uses a jsonb mapping, not text. |
 | `CapturingLoggerProvider` | Test sink for log assertions. |
 
 xUnit `[Fact]` is one test method. `[PostgresFact]` is a custom Fact that **skips** when the env var is absent so `dotnet test` on a laptop without Compose still goes green.

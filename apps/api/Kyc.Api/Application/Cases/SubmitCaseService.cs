@@ -19,6 +19,7 @@ public sealed class SubmitCaseService(
 {
     public const string NotFoundMessage = "Case was not found.";
     public const string NotDraftMessage = "Only draft cases can be submitted.";
+    public const string DraftChangedMessage = "The draft changed while submitting. Submit again.";
 
     public async Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> SubmitAsync(
         SubmitCaseRequest request,
@@ -62,48 +63,26 @@ public sealed class SubmitCaseService(
             return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
         }
 
-        var formErrors = CaseDraftValidation.ValidateSubmitFormData(entity.FormData);
+        // Snapshot is part of the CAS. A concurrent updateDraftCase must not leave Submitted + different FormData.
+        var acceptedFormData = entity.FormData;
+        var formErrors = CaseDraftValidation.ValidateSubmitFormData(acceptedFormData);
         if (formErrors.Count > 0)
         {
             return (null, formErrors, false, null, null);
         }
 
         var now = DateTimeOffset.UtcNow;
-        var rows = await AuditRecorder.ExecuteUpdateWithAuditAsync(
-            db,
-            ct => db.Cases
-                .Where(c =>
-                    c.Id == entity.Id &&
-                    c.CustomerUserId == customerUserId.Value &&
-                    c.Status == CaseStatus.Draft)
-                .ExecuteUpdateAsync(
-                    setters => setters
-                        .SetProperty(c => c.Status, CaseStatus.Submitted)
-                        .SetProperty(c => c.SubmittedAt, now)
-                        .SetProperty(c => c.UpdatedAt, now),
-                    ct),
-            () => AuditRecorder.Append(
-                db,
-                tenantId.Value,
-                customerUserId.Value,
-                AuditEntityTypes.Case,
-                entity.Id,
-                AuditActions.CaseSubmitted,
-                now),
+        var rows = await PersistSubmittedAsync(
+            tenantId.Value,
+            customerUserId.Value,
+            entity.Id,
+            acceptedFormData,
+            now,
             cancellationToken);
 
         if (rows == 0)
         {
-            db.Entry(entity).State = EntityState.Detached;
-            var current = await db.Cases
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == entity.Id, cancellationToken);
-            if (current is null || current.CustomerUserId != customerUserId.Value)
-            {
-                return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
-            }
-
-            return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
+            return await LostSubmitRaceAsync(entity, customerUserId.Value, cancellationToken);
         }
 
         db.Entry(entity).State = EntityState.Detached;
@@ -115,5 +94,71 @@ public sealed class SubmitCaseService(
             customerUserId.Value,
             cancellationToken);
         return (CreateDraftCaseService.ToResponse(entity, customerEmail), Array.Empty<string>(), false, null, null);
+    }
+
+    /// <summary>
+    /// Draft → Submitted only when the row is still the validated FormData snapshot (KYC-111).
+    /// </summary>
+    private Task<int> PersistSubmittedAsync(
+        Guid tenantId,
+        Guid customerUserId,
+        Guid caseId,
+        string acceptedFormData,
+        DateTimeOffset now,
+        CancellationToken cancellationToken) =>
+        AuditRecorder.ExecuteUpdateWithAuditAsync(
+            db,
+            ct => db.Cases
+                .Where(c =>
+                    c.Id == caseId &&
+                    c.CustomerUserId == customerUserId &&
+                    c.Status == CaseStatus.Draft &&
+                    c.FormData == acceptedFormData)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(c => c.Status, CaseStatus.Submitted)
+                        .SetProperty(c => c.SubmittedAt, now)
+                        .SetProperty(c => c.UpdatedAt, now),
+                    ct),
+            () => AuditRecorder.Append(
+                db,
+                tenantId,
+                customerUserId,
+                AuditEntityTypes.Case,
+                caseId,
+                AuditActions.CaseSubmitted,
+                now),
+            cancellationToken);
+
+    /// <summary>
+    /// 0-row CAS: missing owner stays <c>NOT_FOUND</c>; leaving Draft stays <c>DOMAIN</c>.
+    /// A still-draft row lost on FormData is re-validated (invalid → <c>VALIDATION</c>, still valid → <c>DOMAIN</c>).
+    /// </summary>
+    private async Task<(CaseResponse? Result, IReadOnlyList<string> ValidationErrors, bool Unauthorized, string? ErrorCode, string? ErrorMessage)> LostSubmitRaceAsync(
+        Case entity,
+        Guid customerUserId,
+        CancellationToken cancellationToken)
+    {
+        db.Entry(entity).State = EntityState.Detached;
+        var current = await db.Cases
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == entity.Id, cancellationToken);
+        if (current is null || current.CustomerUserId != customerUserId)
+        {
+            return (null, Array.Empty<string>(), false, "NOT_FOUND", NotFoundMessage);
+        }
+
+        if (current.Status != CaseStatus.Draft)
+        {
+            return (null, Array.Empty<string>(), false, "DOMAIN", NotDraftMessage);
+        }
+
+        var formErrors = CaseDraftValidation.ValidateSubmitFormData(current.FormData);
+        if (formErrors.Count > 0)
+        {
+            return (null, formErrors, false, null, null);
+        }
+
+        return (null, Array.Empty<string>(), false, "DOMAIN", DraftChangedMessage);
     }
 }

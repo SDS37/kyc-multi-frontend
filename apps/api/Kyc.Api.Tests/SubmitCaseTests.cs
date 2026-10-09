@@ -181,11 +181,19 @@ public sealed class SubmitCaseTests(ApiFactory factory) : IClassFixture<ApiFacto
                 Encoding.UTF8,
                 "application/json"));
 
-        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.IsSuccessStatusCode, body);
+        using var document = JsonDocument.Parse(body);
         var errors = document.RootElement.GetProperty("errors").ToString();
         Assert.Contains("VALIDATION", errors, StringComparison.Ordinal);
         Assert.Contains("dateOfBirth", errors, StringComparison.Ordinal);
+
+        using var scope = factory.Services.CreateScope();
+        var row = await scope.ServiceProvider.GetRequiredService<AppDbContext>()
+            .Cases.IgnoreQueryFilters()
+            .SingleAsync(c => c.Id == _incompleteDraftId);
+        Assert.Equal(CaseStatus.Draft, row.Status);
+        Assert.Null(row.SubmittedAt);
     }
 
     [Fact]
