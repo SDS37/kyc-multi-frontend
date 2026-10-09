@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** `main` after KYC-113 (isolation, seed, submit FormData, upload `STORAGE`).
 
 ## Purpose
 

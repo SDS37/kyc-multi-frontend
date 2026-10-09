@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-042 (document upload/list/download).
+**Aligned with:** `main` after KYC-113 (cases, documents, audit).
 
 ## Purpose
 
-Application is the **use-case layer**: one class (or small cluster) per action the product allows. GraphQL and temporary REST are delivery adapters that call these services. Services talk to `AppDbContext` directly — there is no `ICaseRepository` yet.
+Application is the **use-case layer**: one class (or small cluster) per action the product allows. GraphQL and temporary REST are delivery adapters that call these services. Services talk to `AppDbContext` directly. There is no `ICaseRepository`.
 
 This is the folder to study if you want to argue behavior: validation, status transitions, tenant/user from JWT, error codes.
 

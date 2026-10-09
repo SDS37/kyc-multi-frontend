@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** KYC-060 (`angular-ci`) + KYC-070 (`react-ci`) + KYC-080 (`vue-ci`) + KYC-110 (`angular-e2e` / `react-e2e` / `vue-e2e`).
+**Aligned with:** `api-ci` + KYC-060 (`angular-ci`) + KYC-070 (`react-ci`) + KYC-080 (`vue-ci`) + KYC-110 (`angular-e2e` / `react-e2e` / `vue-e2e`).
 
 ## Purpose
 

@@ -2,11 +2,11 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** `main` after KYC-040.
+**Aligned with:** `main` after KYC-050 (audit) and KYC-093 (registration invites).
 
 ## Purpose
 
-Domain is the **language of the product**: Tenant, User, Case, Document, statuses, roles. It does not know GraphQL, JWT, or HTTP. It barely knows persistence (`ITenantScoped` exists so EF can filter — a pragmatic leak, not a pure DDD fortress).
+Domain is the **language of the product**: Tenant, User, Case, Document, AuditEntry, RegistrationInvite, statuses, roles. It does not know GraphQL, JWT, or HTTP. It barely knows persistence (`ITenantScoped` exists so EF can filter — a pragmatic leak, not a pure DDD fortress).
 
 If Application is “what the system *does*,” Domain is “what the system *is*.”
 
@@ -18,8 +18,10 @@ If Application is “what the system *does*,” Domain is “what the system *is
 | `Identity/` | `Tenant`, `User`, `UserRole`. Identity bounded context (still a folder, not a project). |
 | `Cases/` | `Case`, `CaseStatus`. Case bounded context. |
 | `Documents/` | `Document` — metadata only; bytes live in object storage (KYC-040). |
+| `Audit/` | `AuditEntry`, `AuditActions`. Append-only history (KYC-050). Implements `ITenantScoped`. |
+| `Identity/RegistrationInvite` | Single-use `registerTenant` code (KYC-093). **Not** `ITenantScoped`: the tenant does not exist until redeem. |
 
-**Tenant is not `ITenantScoped`.** A tenant *is* the isolation boundary; it does not have a `TenantId` pointing at itself. Users, cases, and documents do.
+**Tenant is not `ITenantScoped`.** A tenant *is* the isolation boundary; it does not have a `TenantId` pointing at itself. Users, cases, documents, and audit entries do. Registration invites do not.
 
 ## Angular / Java analog
 
