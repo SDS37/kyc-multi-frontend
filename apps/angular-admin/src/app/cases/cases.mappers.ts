@@ -105,15 +105,15 @@ export function parseStatusFilterValue(value: unknown): CaseStatus | null | unde
   return undefined;
 }
 
-/**
- * Fetch-level failures that are not an HttpErrorResponse.
- * Same shape as React/Vue (KYC-115). Copied here; no shared package.
- */
-function isUnreachableApiError(err: unknown): boolean {
-  return (
-    err instanceof TypeError ||
-    (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message))
-  );
+const GRAPHQL_TRANSPORT_FAILURE: RegExp = /GraphQL HTTP|Failed to fetch|NetworkError/i;
+const REST_TRANSPORT_FAILURE: RegExp = /Failed to fetch|NetworkError/i;
+
+/** Fetch aborted or the host was unreachable. REST download omits the GraphQL clause. */
+function isUnreachableApiError(
+  err: unknown,
+  pattern: RegExp = GRAPHQL_TRANSPORT_FAILURE,
+): boolean {
+  return err instanceof TypeError || (err instanceof Error && pattern.test(err.message));
 }
 
 /** Pure: map transport / unknown errors to CasesLoadError. */
@@ -392,7 +392,7 @@ export function toCaseDownloadError(err: unknown): CaseDownloadError {
     }
     return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadFailed, 'NETWORK');
   }
-  if (isUnreachableApiError(err)) {
+  if (isUnreachableApiError(err, REST_TRANSPORT_FAILURE)) {
     return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadNetworkFailed, 'NETWORK');
   }
   return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadFailed);

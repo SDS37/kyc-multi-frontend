@@ -73,10 +73,7 @@ export function resolvePostLoginUrl(returnUrl: string | null): string {
   return DEFAULT_POST_LOGIN_URL;
 }
 
-/**
- * Fetch-level failures that are not an HttpErrorResponse.
- * Same shape as React/Vue (KYC-115). Copied here; no shared package.
- */
+/** Fetch aborted or the host was unreachable (same check as React/Vue login). */
 function isUnreachableApiError(err: unknown): boolean {
   return (
     err instanceof TypeError ||

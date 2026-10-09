@@ -135,6 +135,10 @@ describe('auth.mappers', () => {
     );
     expect(networkError.code).toBe('NETWORK');
     expect(networkError.message).toBe(LOGIN_MESSAGES.networkFailed);
+
+    const graphqlHttp: LoginFailedError = toLoginFailedError(new Error('GraphQL HTTP 502'));
+    expect(graphqlHttp.code).toBe('NETWORK');
+    expect(graphqlHttp.message).toBe(LOGIN_MESSAGES.networkFailed);
   });
 
   it('toLoginFailedError keeps an unknown error on the sign-in message', (): void => {
