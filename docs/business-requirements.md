@@ -3,7 +3,7 @@
 **Product**: KYC Compliance Platform
 **Version**: MVP
 **Last updated**: 2026-10-09
-**Status**: Aligned with accepted ADRs; W1–W6 delivered on `main` (API + Angular admin + React customer + Vue reports + Playwright smokes). KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), KYC-094 (frontend 429 + optional login captcha), KYC-095 (post-094 review punch-list), KYC-100 (runbook), KYC-101 (demo seed), KYC-110 (Playwright smokes), KYC-111 (`submitCase` FormData compare-and-swap), KYC-112 (React/Vue production API URL guard), KYC-113 (upload post-put `STORAGE` 502), KYC-114 (docs consistency), KYC-115 (Angular transport errors), and [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) are done. W7 polish is done. The Module Federation spike is KYC-120, not a DoD gate.
+**Status**: Aligned with accepted ADRs; W1–W6 delivered on `main` (API + Angular admin + React customer + Vue reports + Playwright smokes). KYC-091 (local CORS + basic headers), KYC-093 (auth abuse controls), KYC-094 (frontend 429 + optional login captcha), KYC-095 (post-094 review punch-list), KYC-100 (runbook), KYC-101 (demo seed), KYC-110 (Playwright smokes), KYC-111 (`submitCase` FormData compare-and-swap), KYC-112 (React/Vue production API URL guard), KYC-113 (upload post-put `STORAGE` 502), KYC-114 (docs consistency), KYC-115 (Angular transport errors), KYC-120 (Module Federation spike — keep three apps), and [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect) are done. W7 polish is done. KYC-120 did not add a host and is not a DoD gate.
 
 ## 1. Vision
 
@@ -69,7 +69,7 @@ A multi-tenant platform that allows companies to manage KYC (Know Your Customer)
 - Automated document verification / OCR / liveness
 - MFA
 - Multi-language runtime (English `*.messages.ts` catalogs only; second locale is [beyond-mvp.md](beyond-mvp.md))
-- Module Federation as a product host (W7 **spike** [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) only; keep three apps if it fails; not W7 polish)
+- Module Federation as a product host ([KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) closed as keep three apps; a host is [beyond-mvp.md](beyond-mvp.md) §2)
 - User management UI / invite API beyond seed ([KYC-101](https://github.com/SDS37/kyc-multi-frontend/issues/42) / [beyond-mvp.md](beyond-mvp.md))
 - Redis-backed cache, rate limits, or JWT denylist (Compose Redis is unused)
 - JWT refresh / server-side logout
