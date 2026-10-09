@@ -164,7 +164,7 @@ Templates (Angular), JSX (React), and Vue templates re-evaluate when their owner
 2. **Not now — full i18n runtime** — do not add `$localize` / `react-i18next` / `vue-i18n` until a second locale is a product requirement  
 3. **Later — swap catalogs** behind stable keys without rewriting screens  
 
-**Rule:** no new user-facing English in views or as ad-hoc component string fields. Put it in `*.messages.ts`. Map API/GraphQL error codes → catalog text at the edge.
+**Rule:** no new user-facing English in views or as ad-hoc component string fields. Put it in `*.messages.ts`. Map API/GraphQL error codes → catalog text at the edge. HTTP 429 maps to the rate-limit catalog and does not clear the session (KYC-094). An unreachable API — `HttpErrorResponse` status 0, `TypeError`, or an `Error` whose message is `GraphQL HTTP` / `Failed to fetch` / `NetworkError` — maps to the network catalog (KYC-115). Copy that classification in each app’s `*.mappers.ts`. Do not add a shared package.
 
 ### Design practices (all frontends)
 

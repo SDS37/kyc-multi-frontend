@@ -6,12 +6,14 @@ import {
   parseCasesPage,
   parseStatusFilterValue,
   resolveReviewActions,
+  toCaseActionError,
+  toCaseDownloadError,
   toCasesLoadError,
   toDocumentDownloadUrl,
   toListCasesVariables,
 } from './cases.mappers';
-import { CasesLoadError } from './cases.models';
-import { CASES_LIST_MESSAGES } from './cases.messages';
+import { CaseActionError, CaseDownloadError, CasesLoadError } from './cases.models';
+import { CASES_LIST_MESSAGES, CASES_REVIEW_MESSAGES } from './cases.messages';
 
 describe('cases.mappers', () => {
   it('toListCasesVariables applies defaults', (): void => {
@@ -91,6 +93,46 @@ describe('cases.mappers', () => {
     );
     expect(mapped.code).toBe('RATE_LIMITED');
     expect(mapped.message).toBe(CASES_LIST_MESSAGES.listRateLimited);
+  });
+
+  it('toCasesLoadError maps an unreachable API to the network message', (): void => {
+    const fetchFailure: CasesLoadError = toCasesLoadError(new TypeError('Failed to fetch'));
+    expect(fetchFailure.code).toBe('NETWORK');
+    expect(fetchFailure.message).toBe(CASES_LIST_MESSAGES.listNetworkFailed);
+
+    const networkError: CasesLoadError = toCasesLoadError(
+      new Error('NetworkError when attempting to fetch resource'),
+    );
+    expect(networkError.code).toBe('NETWORK');
+    expect(networkError.message).toBe(CASES_LIST_MESSAGES.listNetworkFailed);
+  });
+
+  it('toCasesLoadError keeps an unknown error on the list-failed message', (): void => {
+    const mapped: CasesLoadError = toCasesLoadError(new Error('boom'));
+    expect(mapped.message).toBe(CASES_LIST_MESSAGES.listLoadFailed);
+    expect(mapped.code).toBeUndefined();
+  });
+
+  it('toCaseDownloadError maps an unreachable API to the network message', (): void => {
+    const mapped: CaseDownloadError = toCaseDownloadError(new TypeError('Failed to fetch'));
+    expect(mapped.code).toBe('NETWORK');
+    expect(mapped.message).toBe(CASES_REVIEW_MESSAGES.downloadNetworkFailed);
+  });
+
+  it('toCaseDownloadError maps HTTP 429 to a rate-limit message', (): void => {
+    const mapped: CaseDownloadError = toCaseDownloadError(
+      new HttpErrorResponse({ status: 429, statusText: 'Too Many Requests' }),
+    );
+    expect(mapped.code).toBe('RATE_LIMITED');
+    expect(mapped.message).toBe(CASES_REVIEW_MESSAGES.downloadRateLimited);
+  });
+
+  it('toCaseActionError maps an unreachable API to the network message', (): void => {
+    const mapped: CaseActionError = toCaseActionError(
+      new Error('GraphQL HTTP 502'),
+    );
+    expect(mapped.code).toBe('NETWORK');
+    expect(mapped.message).toBe(CASES_REVIEW_MESSAGES.actionNetworkFailed);
   });
 
   it('resolveReviewActions follows status rules for reviewers', (): void => {

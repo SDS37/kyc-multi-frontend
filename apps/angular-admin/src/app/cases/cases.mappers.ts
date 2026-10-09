@@ -105,6 +105,17 @@ export function parseStatusFilterValue(value: unknown): CaseStatus | null | unde
   return undefined;
 }
 
+/**
+ * Fetch-level failures that are not an HttpErrorResponse.
+ * Same shape as React/Vue (KYC-115). Copied here; no shared package.
+ */
+function isUnreachableApiError(err: unknown): boolean {
+  return (
+    err instanceof TypeError ||
+    (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message))
+  );
+}
+
 /** Pure: map transport / unknown errors to CasesLoadError. */
 export function toCasesLoadError(err: unknown): CasesLoadError {
   if (err instanceof CasesLoadError) {
@@ -114,6 +125,9 @@ export function toCasesLoadError(err: unknown): CasesLoadError {
     if (err.status === RATE_LIMITED_HTTP_STATUS) {
       return new CasesLoadError(CASES_LIST_MESSAGES.listRateLimited, RATE_LIMITED_CODE);
     }
+    return new CasesLoadError(CASES_LIST_MESSAGES.listNetworkFailed, 'NETWORK');
+  }
+  if (isUnreachableApiError(err)) {
     return new CasesLoadError(CASES_LIST_MESSAGES.listNetworkFailed, 'NETWORK');
   }
   return new CasesLoadError(CASES_LIST_MESSAGES.listLoadFailed);
@@ -355,6 +369,9 @@ export function toCaseActionError(err: unknown): CaseActionError {
     }
     return new CaseActionError(CASES_REVIEW_MESSAGES.actionNetworkFailed, 'NETWORK');
   }
+  if (isUnreachableApiError(err)) {
+    return new CaseActionError(CASES_REVIEW_MESSAGES.actionNetworkFailed, 'NETWORK');
+  }
   return new CaseActionError(CASES_REVIEW_MESSAGES.actionFailed);
 }
 
@@ -374,6 +391,9 @@ export function toCaseDownloadError(err: unknown): CaseDownloadError {
       return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadNetworkFailed, 'NETWORK');
     }
     return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadFailed, 'NETWORK');
+  }
+  if (isUnreachableApiError(err)) {
+    return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadNetworkFailed, 'NETWORK');
   }
   return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadFailed);
 }
