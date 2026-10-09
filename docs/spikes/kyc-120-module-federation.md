@@ -10,15 +10,15 @@ The roadmap time-control rule closes this spike at the **end of W7**, the same w
 
 ## What was tried
 
-No host or remote was added to the apps. The check was whether a host could be wired onto the builders already on `main` without swapping them.
+No host and no remotes were added. This is the written fail: keep three apps. The check was whether a host could be wired onto the builders already locked on `main` without moving those locks.
 
 | App | Builder today | Federation package checked | Fit |
 |---|---|---|---|
-| Angular admin | `@angular/build` application builder `^22.1.6` (not webpack) | `@angular-architects/native-federation@22.2.2` | Peer is `@angular/build` `~22.2.0`. This repo is 22.1. Installing it means bumping the Angular build during the spike. |
-| Angular admin | same | `@angular-architects/module-federation@22.0.0` | Webpack-era helper. This app is not a webpack build. |
+| Angular admin | `@angular/build` application builder, lockfile `22.1.6` (`package.json` says `^22.1.6`). `@angular/core` lock is `22.1.4`. Not webpack. | `@angular-architects/native-federation@22.2.2` | Peer is `@angular/build` `~22.2.0`, and the package depends on `@angular-devkit/*` `~22.2.0`. The declared `^22.1.6` range allows 22.2. The lock does not have it. Matching the peer means moving the locked Angular 22.1 set to 22.2 inside a closed spike window. |
+| Angular admin | same | `@angular-architects/module-federation@22.0.0` | npm description: Webpack Module Federation with the Angular CLI. This app uses the application builder, not webpack. |
 | React customer, Vue reports | Vite `^8.2.2` | `@module-federation/vite@1.23.4` | Peer accepts Vite 5–8, so the two Vite apps could be remotes. |
 
-A host still has to load the other two runtimes. The architecture sketch is an Angular shell. That shell is the package whose peer does not match this repo, and it would own one URL for three routers (`@angular/router`, `react-router`, `vue-router`). That is the unstable case ADR-005 told us to drop.
+A host still has to load the other two runtimes. The architecture sketch is an Angular shell. That shell is the one whose lock does not match the native-federation peer, and it would own one URL for three routers (`@angular/router`, `react-router`, `vue-router`). That is the unstable case ADR-005 told us to drop.
 
 ## What would have been shared
 

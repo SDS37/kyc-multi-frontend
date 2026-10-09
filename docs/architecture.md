@@ -10,7 +10,7 @@ This document describes **what runs today** and labels anything that is not wire
 
 **Observability (KYC-104):** JSON stdout logs include a `RequestId` (`X-Request-Id`). Auth and readiness failures are logged without secrets. MVP signals are those logs plus `/ready`; no APM vendor.
 
-**MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Share `@kyc/design-tokens` + auth/GraphQL contract + a11y rules — not cross-framework UI components (see §3). Section 3’s host/remotes diagram is the composition KYC-120 did not build, not DoD. Redis on the context diagram is **dotted / unused**. When to wire Redis, a real MF host, user invite/list, or TLS: [beyond-mvp.md](beyond-mvp.md).
+**MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Share `@kyc/design-tokens` + auth/GraphQL contract + a11y rules — not cross-framework UI components (see §3). Section 3’s host/remotes diagram is the composition KYC-120 did not build. It is not DoD. Redis on the context diagram is **dotted / unused**. When to wire Redis, a real MF host, user invite/list, or TLS: [beyond-mvp.md](beyond-mvp.md).
 
 ## 1. System Context
 

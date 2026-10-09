@@ -29,7 +29,7 @@ Each row is “the product would feel complete if…” plus **when** to actuall
 
 | Gap today | Production-shaped | Trigger |
 |---|---|---|
-| Three apps, three origins (`:4200`, `:5173`, `:5174`). [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) closed as keep three apps | A shell that loads remotes (Module Federation) **or** a reverse-proxied same-site deploy | A **new** story after this wishlist, and a reviewer should not juggle three tabs. KYC-120 is not that story (ADR-005). |
+| Three apps, three origins (`:4200`, `:5173`, `:5174`). [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) closed as keep three apps | A shell that loads remotes (Module Federation) **or** a reverse-proxied same-site deploy | A **new** story, and a reviewer should not juggle three tabs. KYC-120 is not that story (ADR-005). |
 | JWT 60 minutes, no refresh, no logout kill | Refresh tokens; optional revoke list | Sessions are too short, or “Sign out” must invalidate the token on the server |
 
 Redis belongs here only for **shared revoke / rate-limit state** across API instances — see §4.
@@ -70,7 +70,7 @@ Do not cache KYC documents or case rows “in Redis.” Bytes stay MinIO; source
 These keep the portfolio honest. They do not make KYC “more production.”
 
 - MediatR / domain-events rewrite to match old diagrams
-- Module Federation from week 1, or a host after KYC-120 (that spike kept three apps)
+- Module Federation from week 1, or a host now that KYC-120 kept three apps
 - Shared React/Angular/Vue widget library (tokens + GraphQL stay the share boundary)
 - Notifications, billing, OCR, custom workflows ([roadmap](roadmap.md) time-control)
 - Sheriff / Nx / tsarch for a three-feature admin
