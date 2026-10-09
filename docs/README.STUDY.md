@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. These files **are** the project documentation. This note only tells you **how to read them** as a frontend architect.
 
-**Aligned with:** KYC-081 Vue reports overview (counts + latest 10).
+**Aligned with:** `main` after W6 (weeks 1–6 delivered; W7 polish left is KYC-115).
 
 ## Purpose
 

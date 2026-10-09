@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. The official runbook is [README.md](README.md).
 
-**Aligned with:** `main` after W5 (API unchanged as UI consumers; Angular + React use this host).
+**Aligned with:** `main` after W6 (Angular, React, and Vue use this host; KYC-101 seed; KYC-110 Playwright).
 
 ## Purpose
 

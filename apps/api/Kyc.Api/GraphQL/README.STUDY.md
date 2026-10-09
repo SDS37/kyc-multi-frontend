@@ -67,7 +67,7 @@ Error mapping is repetitive on purpose (copy-paste of VALIDATION / AUTH_FAILED /
 
 ## Today vs target
 
-REST login/register still mapped in `Program.cs`, not in this folder. DoD: UIs should consume GraphQL identity; REST is allow-listed until then.
+REST login/register still mapped in `Program.cs`, not in this folder. The UIs already sign in with GraphQL. Those endpoints stay on the anonymous allow-list until an explicit retire story past DoD.
 
 DataLoaders (N+1) are called out in ADR-002 as a future need. List/detail today are simple queries; do not over-claim batching.
 

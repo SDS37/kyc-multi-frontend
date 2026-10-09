@@ -83,4 +83,4 @@ History includes `InitialCreate` (empty pipeline proof), then `AddTenant` and `A
 
 ## Next steps
 
-Register/login are GraphQL mutations (`registerTenant`, `login`) with deny-by-default JWT on all other fields (KYC-021). Temporary REST endpoints remain on the same anonymous allow-list. Domain fields (cases, etc.) come with later stories. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).
+Register/login are GraphQL mutations (`registerTenant`, `login`) with deny-by-default JWT on all other fields (KYC-021). Cases, documents, and audit are on the same schema. The three UIs already sign in with GraphQL. Temporary REST `POST /api/register-tenant` and `POST /api/login` stay on the anonymous allow-list until an explicit retire story past DoD — DoD does not remove them. Document upload and download stay REST. For exact commands, use [`apps/api/README.md`](../../apps/api/README.md).

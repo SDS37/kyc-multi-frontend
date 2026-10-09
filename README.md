@@ -1,11 +1,11 @@
 # KYC Multi-Frontend Platform
 
 > Production-oriented multi-tenant KYC & Compliance platform.
-> Target: Angular admin shell, React customer portal, Vue reports, and a .NET GraphQL API.
+> Target: three independent apps — Angular admin, React customer, Vue reports — and a .NET GraphQL API ([ADR-005](docs/architecture-decision-records.md)).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This monorepo is a portfolio project. **Today:** three independent frontends on one GraphQL API (ADR-002). Module Federation is a **W7 spike** (ADR-005), not a requirement. Redis runs in Compose and is **unused** by the API. After DoD, see [beyond-mvp.md](docs/beyond-mvp.md).
+This monorepo is a portfolio project. **Today:** three independent frontends (ADR-005) on one GraphQL API (ADR-002). **W7 polish** is [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120)–[KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124): submit FormData, production API URLs, upload `STORAGE`, these docs, and Angular transport errors (111–114 done; 115 open). Module Federation is a **separate** W7 spike ([KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125)), not a polish item and not a requirement. Redis runs in Compose and is **unused** by the API. After DoD, see [beyond-mvp.md](docs/beyond-mvp.md).
 
 ## Current status (what works today)
 
@@ -223,7 +223,7 @@ flowchart TB
 - **Multi-tenancy:** tenant and role come from the JWT, never from client-supplied IDs (ADR-007).
 - **Application layer:** command-like and query-like **services** (no MediatR). CQRS vocabulary only.
 - **GraphQL:** one schema for all three clients (ADR-002; KYC-020). Document bytes are REST.
-- **Frontends:** independent apps for MVP; Module Federation is a W7 spike (ADR-005).
+- **Frontends:** three independent apps (ADR-005). W7 polish is KYC-111–115. Module Federation is a separate W7 spike (KYC-120), not a polish gate.
 - **Files:** KYC documents go to MinIO (ADR-006). Redis is not on the request path.
 
 ## Documentation
