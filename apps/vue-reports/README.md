@@ -27,6 +27,8 @@ npm run test:e2e   # Playwright Chromium smoke (API must already be running)
 npm run build
 ```
 
+Production `npm run build` does **not** fall back to `http://localhost:5295`. The build still succeeds without those variables. The bundle throws before the first screen if `VITE_API_BASE_URL` or `VITE_GRAPHQL_URL` is empty or points at `localhost`, `127.0.0.1`, or `::1`. Set both to an explicit API origin before shipping. `npm start` keeps the local default.
+
 Playwright is **not** part of `test:ci`. With the API up on `http://localhost:5295` (Development seed from KYC-101):
 
 ```bash
