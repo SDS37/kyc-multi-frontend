@@ -73,6 +73,14 @@ export function resolvePostLoginUrl(returnUrl: string | null): string {
   return DEFAULT_POST_LOGIN_URL;
 }
 
+/** Fetch aborted or the host was unreachable (same check as React/Vue login). */
+function isUnreachableApiError(err: unknown): boolean {
+  return (
+    err instanceof TypeError ||
+    (err instanceof Error && /GraphQL HTTP|Failed to fetch|NetworkError/i.test(err.message))
+  );
+}
+
 /** Pure: map transport / unknown errors to LoginFailedError. */
 export function toLoginFailedError(err: unknown): LoginFailedError {
   if (err instanceof LoginFailedError) {
@@ -82,6 +90,9 @@ export function toLoginFailedError(err: unknown): LoginFailedError {
     if (err.status === RATE_LIMITED_HTTP_STATUS) {
       return new LoginFailedError(LOGIN_MESSAGES.rateLimited, RATE_LIMITED_CODE);
     }
+    return new LoginFailedError(LOGIN_MESSAGES.networkFailed, 'NETWORK');
+  }
+  if (isUnreachableApiError(err)) {
     return new LoginFailedError(LOGIN_MESSAGES.networkFailed, 'NETWORK');
   }
   return new LoginFailedError(LOGIN_MESSAGES.signInFailed);

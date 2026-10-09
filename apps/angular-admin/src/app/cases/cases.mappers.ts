@@ -105,6 +105,17 @@ export function parseStatusFilterValue(value: unknown): CaseStatus | null | unde
   return undefined;
 }
 
+const GRAPHQL_TRANSPORT_FAILURE: RegExp = /GraphQL HTTP|Failed to fetch|NetworkError/i;
+const REST_TRANSPORT_FAILURE: RegExp = /Failed to fetch|NetworkError/i;
+
+/** Fetch aborted or the host was unreachable. REST download omits the GraphQL clause. */
+function isUnreachableApiError(
+  err: unknown,
+  pattern: RegExp = GRAPHQL_TRANSPORT_FAILURE,
+): boolean {
+  return err instanceof TypeError || (err instanceof Error && pattern.test(err.message));
+}
+
 /** Pure: map transport / unknown errors to CasesLoadError. */
 export function toCasesLoadError(err: unknown): CasesLoadError {
   if (err instanceof CasesLoadError) {
@@ -114,6 +125,9 @@ export function toCasesLoadError(err: unknown): CasesLoadError {
     if (err.status === RATE_LIMITED_HTTP_STATUS) {
       return new CasesLoadError(CASES_LIST_MESSAGES.listRateLimited, RATE_LIMITED_CODE);
     }
+    return new CasesLoadError(CASES_LIST_MESSAGES.listNetworkFailed, 'NETWORK');
+  }
+  if (isUnreachableApiError(err)) {
     return new CasesLoadError(CASES_LIST_MESSAGES.listNetworkFailed, 'NETWORK');
   }
   return new CasesLoadError(CASES_LIST_MESSAGES.listLoadFailed);
@@ -355,6 +369,9 @@ export function toCaseActionError(err: unknown): CaseActionError {
     }
     return new CaseActionError(CASES_REVIEW_MESSAGES.actionNetworkFailed, 'NETWORK');
   }
+  if (isUnreachableApiError(err)) {
+    return new CaseActionError(CASES_REVIEW_MESSAGES.actionNetworkFailed, 'NETWORK');
+  }
   return new CaseActionError(CASES_REVIEW_MESSAGES.actionFailed);
 }
 
@@ -374,6 +391,9 @@ export function toCaseDownloadError(err: unknown): CaseDownloadError {
       return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadNetworkFailed, 'NETWORK');
     }
     return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadFailed, 'NETWORK');
+  }
+  if (isUnreachableApiError(err, REST_TRANSPORT_FAILURE)) {
+    return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadNetworkFailed, 'NETWORK');
   }
   return new CaseDownloadError(CASES_REVIEW_MESSAGES.downloadFailed);
 }

@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This monorepo is a portfolio project. **Today:** three independent frontends (ADR-005) on one GraphQL API (ADR-002). **W7 polish** is [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120)–[KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124): submit FormData, production API URLs, upload `STORAGE`, these docs, and Angular transport errors (111–114 done; 115 open). Module Federation is a **separate** W7 spike ([KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125)), not a polish item and not a requirement. Redis runs in Compose and is **unused** by the API. After DoD, see [beyond-mvp.md](docs/beyond-mvp.md).
+This monorepo is a portfolio project. **Today:** three independent frontends (ADR-005) on one GraphQL API (ADR-002). **W7 polish** is [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120)–[KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124): submit FormData, production API URLs, upload `STORAGE`, these docs, and Angular transport errors (111–115 done). Module Federation is a **separate** W7 spike ([KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125)), not a polish item and not a requirement. Redis runs in Compose and is **unused** by the API. After DoD, see [beyond-mvp.md](docs/beyond-mvp.md).
 
 ## Current status (what works today)
 

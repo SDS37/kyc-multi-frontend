@@ -10,11 +10,10 @@ How this demo starts to look like a **whole, functional production product** —
 
 [DoD.md](DoD.md) is already true for the product slice: Customer (React), Reviewer (Angular), reports overview (Vue), isolation tests, local README.
 
-W6 leftover that was still listed here (KYC-100, KYC-095, KYC-110) is **done**. [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120) (submit FormData at persist), [KYC-112](https://github.com/SDS37/kyc-multi-frontend/issues/121) (React/Vue production API URL guard), [KYC-113](https://github.com/SDS37/kyc-multi-frontend/issues/122) (upload post-put `STORAGE` 502), and [KYC-114](https://github.com/SDS37/kyc-multi-frontend/issues/123) (docs consistency) are **done**. `updateDraftCase` already compare-and-swaps `Status == Draft` (KYC-095); that is not an open gap. Still on the **MVP roadmap** (W7 — not “beyond”):
+W6 leftover that was still listed here (KYC-100, KYC-095, KYC-110) is **done**. [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120) (submit FormData at persist), [KYC-112](https://github.com/SDS37/kyc-multi-frontend/issues/121) (React/Vue production API URL guard), [KYC-113](https://github.com/SDS37/kyc-multi-frontend/issues/122) (upload post-put `STORAGE` 502), [KYC-114](https://github.com/SDS37/kyc-multi-frontend/issues/123) (docs consistency), and [KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124) (Angular transport errors) are **done**. `updateDraftCase` already compare-and-swaps `Status == Draft` (KYC-095); that is not an open gap. Still on the **MVP roadmap** (W7 — not “beyond”):
 
 | Item | Where |
 |---|---|
-| Angular login/cases transport errors vs React/Vue | [KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124) |
 | Module Federation **spike** (keep 3 apps if it fails; **not** a polish gate) | [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) / [ADR-005](architecture-decision-records.md) |
 
 Localhost hardening that already landed (rate limits, headers, captcha, `registerTenant` invite codes) stays as-is until you leave a single-process API. Those codes gate **new tenants** (KYC-093). They are not TenantAdmin user invite/list (Customer/Reviewer) — that is §1 below.
@@ -83,7 +82,7 @@ These keep the portfolio honest. They do not make KYC “more production.”
 
 ## Suggested order (if you ever execute this)
 
-1. Finish remaining **W7 polish** (KYC-115; KYC-111 submit FormData CAS, KYC-112 React/Vue production API URLs, KYC-113 upload post-put `STORAGE`, and KYC-114 docs consistency are done) — not Redis, not an MF host.
+1. **W7 polish** is done (KYC-111–115) — not Redis, not an MF host.
 2. User invite/list API if humans must join without SQL.
 3. TLS on a real deploy; `/ready` not public.
 4. Redis **only** with a second API instance or token revoke.

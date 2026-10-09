@@ -119,7 +119,7 @@ Still from KYC-061 / 060: login, guards, Material + tokens theme, `TokenStorage`
 ## Intended responsibilities (W4)
 
 - Shell chrome for the reviewer / Tenant Admin experience (**KYC-064** — done)
-- Login (tenant slug + email + password) against GraphQL `login` (**KYC-061** — done). HTTP 429 and optional login captcha (**KYC-094**).
+- Login (tenant slug + email + password) against GraphQL `login` (**KYC-061** — done). HTTP 429 and optional login captcha (**KYC-094**). An unreachable API (`TypeError`, `Failed to fetch`, `NetworkError`) uses the network catalog, same as React/Vue; a 429 does not clear the session (**KYC-115**).
 - Case list: title, **customer email**, status, updated date, status filter (**KYC-062** — done)
 - Case review: form data, documents **with download**, start / approve / reject (**KYC-063** — done)
 - Review page structure: `rxResource` + Signal Form reject + presentational panes (**KYC-065** — done)
