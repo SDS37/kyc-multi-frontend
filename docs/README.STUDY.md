@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. These files **are** the project documentation. This note only tells you **how to read them** as a frontend architect.
 
-**Aligned with:** `main` after W6 (weeks 1–6 delivered; W7 polish done). The Module Federation spike (KYC-120) is separate.
+**Aligned with:** `main` after W6 (weeks 1–6 delivered; W7 polish done). The Module Federation spike (KYC-120) closed as keep three apps.
 
 ## Purpose
 

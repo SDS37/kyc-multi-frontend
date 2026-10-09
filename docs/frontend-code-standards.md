@@ -21,7 +21,7 @@ Rules in this section apply to **Angular, React, and Vue**. Framework sections o
 
 | Topic | Rule |
 |---|---|
-| Apps | Three independent apps (ADR-005): `apps/angular-admin`, `apps/react-customer`, `apps/vue-reports` — no Module Federation for MVP |
+| Apps | Three independent apps (ADR-005): `apps/angular-admin`, `apps/react-customer`, `apps/vue-reports`. KYC-120 kept it that way — no Module Federation host |
 | Versions | Each app tracks the **latest stable** major of its framework (Angular 22+, React 19+, Vue 3+) — do not pin an outdated major “because an old issue said X” |
 | API contract | GraphQL for domain reads/writes; document **download** / **upload** are REST with the same JWT; do not invent extra BFF routes |
 | Auth | Store the access token after login; send `Authorization: Bearer <token>` on authenticated API calls; never put `tenant_id` / role in client-supplied request bodies for authorized ops (ADR-007) |
@@ -284,7 +284,7 @@ smart route / feature service
 
 #### What we never take from that site for MVP
 
-- Module Federation / micro-frontend host (ADR-005 — W7 **spike** only; a real host is [beyond-mvp.md](beyond-mvp.md) §2)
+- Module Federation / micro-frontend host (ADR-005 — KYC-120 kept three apps; a real host is [beyond-mvp.md](beyond-mvp.md) §2)
 - Agentic UI, A2UI, AG-UI, CopilotKit, MCP Apps, “AI coding agent” stop-hooks
 - Formal `AGENTS.md` architecture packs as a second source of truth (ADR-008). **This file** stays the contract.
 - Classic global NgRx Store “because enterprise”

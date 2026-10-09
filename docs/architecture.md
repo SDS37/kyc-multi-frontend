@@ -2,7 +2,7 @@
 
 This document describes **what runs today** and labels anything that is not wired. Week sequencing: [roadmap.md](roadmap.md). Production-shaped follow-ups (Redis client, MF host, user invite/list, TLS): [beyond-mvp.md](beyond-mvp.md). Decisions: [ADRs](architecture-decision-records.md).
 
-**How to read diagrams:** solid arrows are live. Dotted Redis means Compose is up and the API does **not** connect. There is no MediatR / domain-events box. Module Federation appears only as a labeled W7 spike (§3).
+**How to read diagrams:** solid arrows are live. Dotted Redis means Compose is up and the API does **not** connect. There is no MediatR / domain-events box. Module Federation appears only as the composition KYC-120 did not build (§3).
 
 **Today on `main`:** Compose (Postgres / Redis / MinIO — Redis is Compose-only; the API does not connect yet); .NET API with EF Core, Tenant/User/Case/Document/AuditEntry, JWT login, fail-closed `ICurrentTenant` / `ICurrentUser` + `ITenantScoped` EF filters; Hot Chocolate `/graphql` + `/health` (GraphQL IDE, introspection, and SDL in Development; depth limit 10 — KYC-105); GraphQL deny-by-default JWT auth with anonymous `login` / `registerTenant` (KYC-021; login password max 128 — KYC-109); Customer create/update/submit + Reviewer/TenantAdmin review lifecycle + authenticated `cases` / `case` detail (incl. `customerEmail`) + `documents(caseId)` metadata list + Customer document upload to MinIO + authenticated document download stream + append-only audit writes + Reviewer/TenantAdmin `caseAuditEntries` (KYC-022 / KYC-031–037 / KYC-040–042 / KYC-050–051; non-owner update/submit → `NOT_FOUND`, FormData 64 KiB / depth 8, atomic status — KYC-106; `submitCase` compare-and-swaps the validated FormData snapshot — KYC-111); temporary REST register/login stays on the same anonymous allow-list until an explicit retire story past DoD (UIs already use GraphQL login); CORS allow-list for `http://localhost:4200`, `http://localhost:5173`, `http://localhost:5174`, and Vite preview `http://localhost:4173` / `4174` (KYC-091 + issue #108); API CSP + HTTPS redirect outside Development; API readiness/liveness + EF retries (KYC-103); dummy password verify on login miss paths (KYC-107); public-auth abuse controls — env-specific IP rate limits, lockout, captcha, `registerTenant` invite codes (KYC-093); frontend login HTTP 429 + optional captcha (KYC-094); Angular login, case list, review actions, and document download map an unreachable API the same way as React/Vue, and a 429 does not clear the session (KYC-115); `apps/api/Kyc.Api.sln` + tests; GitHub Actions `api-ci` with SHA-pinned actions and a Postgres test slice (KYC-102 / KYC-108). **Angular admin** (KYC-060–065), **React customer** (KYC-070–074), and **Vue reports** (KYC-080–081: login, shell, status counts, latest-10 table) against the same API; Development demo seed (KYC-101: Acme + Globex, all roles, every case status); Playwright Chromium smokes per app (KYC-110); production bootstrap refuses an empty or localhost API origin (Angular KYC-095, React/Vue KYC-112); shared UX tokens in `packages/design-tokens`. Object-store failures on upload and download, and a metadata save failure after a successful put, return `STORAGE` (HTTP 502), not `VALIDATION` (KYC-113). ObjectStorage provider is fail-closed (empty → startup throw; explicit `InMemory` / `Minio` only).
 
@@ -10,7 +10,7 @@ This document describes **what runs today** and labels anything that is not wire
 
 **Observability (KYC-104):** JSON stdout logs include a `RequestId` (`X-Request-Id`). Auth and readiness failures are logged without secrets. MVP signals are those logs plus `/ready`; no APM vendor.
 
-**MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Share `@kyc/design-tokens` + auth/GraphQL contract + a11y rules — not cross-framework UI components (see §3). Section 3’s host/remotes diagram is a **W7 spike**, not DoD. Redis on the context diagram is **dotted / unused**. When to wire Redis, a real MF host, user invite/list, or TLS: [beyond-mvp.md](beyond-mvp.md).
+**MVP frontends (ADR-005):** three independent apps against the same GraphQL API. Share `@kyc/design-tokens` + auth/GraphQL contract + a11y rules — not cross-framework UI components (see §3). Section 3’s host/remotes diagram is the composition KYC-120 did not build. It is not DoD. Redis on the context diagram is **dotted / unused**. When to wire Redis, a real MF host, user invite/list, or TLS: [beyond-mvp.md](beyond-mvp.md).
 
 ## 1. System Context
 
@@ -123,7 +123,7 @@ flowchart TB
 
 ### Week 7 spike — Module Federation (not required)
 
-The diagram below is composition **if** the W7 spike succeeds ([ADR-005](architecture-decision-records.md)). MVP and DoD are three independent apps. A real one-URL host after a stable spike is [beyond-mvp.md](beyond-mvp.md) §2.
+The diagram below is the composition KYC-120 did **not** build. The spike closed as keep three apps ([spike notes](spikes/kyc-120-module-federation.md), [ADR-005](architecture-decision-records.md)). MVP and DoD stay three independent apps. A real one-URL host is [beyond-mvp.md](beyond-mvp.md) §2 and needs a new story.
 
 ```mermaid
 flowchart TB

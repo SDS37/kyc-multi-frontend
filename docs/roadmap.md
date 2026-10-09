@@ -7,7 +7,7 @@
 | **W5** | Done | React Customer | KYC-070 to KYC-074 | Customer happy path works in React |
 | **W6** | Done | Security + Seed | KYC-100, KYC-101, [KYC-110](https://github.com/SDS37/kyc-multi-frontend/issues/98) (**done**), [KYC-095](https://github.com/SDS37/kyc-multi-frontend/issues/114) (**done**), [issue #108](https://github.com/SDS37/kyc-multi-frontend/issues/108) (CSP / HTTPS redirect — **done**) | Isolation tests green; demo seed; Playwright smokes; leave-localhost hardening |
 | **W7** | Done | Polish + leftover docs (post-W6 audit) | [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120) submit FormData persist (**done**); [KYC-112](https://github.com/SDS37/kyc-multi-frontend/issues/121) React/Vue prod API URLs (**done**); [KYC-113](https://github.com/SDS37/kyc-multi-frontend/issues/122) upload `STORAGE` 502 (**done**); [KYC-114](https://github.com/SDS37/kyc-multi-frontend/issues/123) docs consistency (**done**); [KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124) Angular transport errors (**done**) | Public README and architecture complete |
-| **W7 spike** | Spike | Module Federation (ADR-005) | [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) | Spike notes **or** keep three apps; **not** a W7 polish / DoD gate |
+| **W7 spike** | Done | Module Federation (ADR-005) | [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) (**done** — keep three apps) | Spike notes; **not** a W7 polish / DoD gate |
 
 **W5+ demoable now:** Customer signs in (React), creates a draft, fills FormData, uploads PDF/PNG/JPG (≤10 MB), and submits. Reviewer finishes the case in Angular (W4). Vue reports overview is KYC-081 (counts + latest 10). Playwright Chromium smokes per app are KYC-110.
 
@@ -25,6 +25,7 @@ Backlog until the API leaves localhost (do not treat this as “only rate limits
 - **KYC-113** — **Done.** A metadata save that fails after a successful object put returns REST `STORAGE` (HTTP 502), same shape as a put failure. The compensating delete still runs. A failed delete is logged at Error with document and case ids, not the storage key. Put-then-DB order is unchanged. MinIO stays out of `/ready`.
 - **KYC-114** — **Done.** STUDY banners match `main` after W6. The root README describes three independent apps and lists W7 polish separately from the Module Federation spike. Temporary REST login/register stays until an explicit retire story past DoD. Architecture names the KYC-101 seed and KYC-110 Playwright smokes.
 - **KYC-115** — **Done.** Angular login, case list, review actions, and document download map an unreachable API (`TypeError`, `Failed to fetch`, `NetworkError`) to the network catalog, same as React/Vue. HTTP 429 stays the rate-limit catalog and does not clear the session.
+- **KYC-120** — **Done (keep three apps).** Spike window closed with W7 polish (2026-10-09). Native federation peers `@angular/build` `~22.2.0`; the lockfile is `22.1.6`. A host would also put three routers on one URL. No Module Federation host on `main`. Notes: [spikes/kyc-120-module-federation.md](spikes/kyc-120-module-federation.md).
 - **KYC-095** — **Done.** Post-094 review punch-list: atomic `updateDraftCase` / upload status, GraphQL login/register op limits (aliases/batches), captcha `test` blocked outside Testing, in-process lockout atomicity, Angular prod API URL, React unmount + guest JWT + skip links. Not Redis, not [#108](https://github.com/SDS37/kyc-multi-frontend/issues/108).
 - **KYC-091** — **Done.** CORS allow-list for local UIs (`http://localhost:4200`, `http://localhost:5173`, `http://localhost:5174`). Basic headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) and non-Dev HSTS. No secrets in git. Closed as delivered.
 - **[#108](https://github.com/SDS37/kyc-multi-frontend/issues/108)** — **Done.** Follow-up from KYC-091 (not a KYC-108 story): CSP on the API, HTTPS redirect **outside Development** only, Vite preview origins `4173` / `4174` (React / Vue `vite preview`).
@@ -44,9 +45,9 @@ At the end of every week, answer:
 
 ### Time-control rules
 
-- MVP ships **3 separate apps** (ADR-005). **W7 polish** is KYC-111–115 (integrity, FE prod URLs, upload errors, docs, Angular error mapping). **W7 Module Federation** is a **separate** spike ([KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125)) — if it is not stable by **end of W7**, keep separate apps. Do not mix MF into polish; do not treat MF as MVP / DoD.
+- MVP ships **3 separate apps** (ADR-005). **W7 polish** is KYC-111–115 (integrity, FE prod URLs, upload errors, docs, Angular error mapping) — **done**. **W7 Module Federation** ([KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125)) closed as **keep separate apps**. Do not treat MF as MVP / DoD.
 - If Vue is late, keep Reports as a **single read-only page**.
 - If document storage is slow, use local disk in dev and keep the same interface.
 - Do not add notifications, billing, OCR, or custom workflows.
 
-After Definition of Done, production-shaped follow-ups (Redis, user invite/list, MF **host**, TLS, …) live in [beyond-mvp.md](beyond-mvp.md). That file is a **triggered wishlist**, not W7 polish. The MF **spike** is KYC-120 only; a one-URL host is still beyond-mvp §2.
+After Definition of Done, production-shaped follow-ups (Redis, user invite/list, MF **host**, TLS, …) live in [beyond-mvp.md](beyond-mvp.md). That file is a **triggered wishlist**, not W7 polish. KYC-120 closed as keep three apps; a one-URL host is still beyond-mvp §2.

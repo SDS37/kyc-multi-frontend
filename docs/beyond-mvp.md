@@ -10,11 +10,7 @@ How this demo starts to look like a **whole, functional production product** —
 
 [DoD.md](DoD.md) is already true for the product slice: Customer (React), Reviewer (Angular), reports overview (Vue), isolation tests, local README.
 
-W6 leftover that was still listed here (KYC-100, KYC-095, KYC-110) is **done**. [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120) (submit FormData at persist), [KYC-112](https://github.com/SDS37/kyc-multi-frontend/issues/121) (React/Vue production API URL guard), [KYC-113](https://github.com/SDS37/kyc-multi-frontend/issues/122) (upload post-put `STORAGE` 502), [KYC-114](https://github.com/SDS37/kyc-multi-frontend/issues/123) (docs consistency), and [KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124) (Angular transport errors) are **done**. `updateDraftCase` already compare-and-swaps `Status == Draft` (KYC-095); that is not an open gap. Still on the **MVP roadmap** (W7 — not “beyond”):
-
-| Item | Where |
-|---|---|
-| Module Federation **spike** (keep 3 apps if it fails; **not** a polish gate) | [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) / [ADR-005](architecture-decision-records.md) |
+W6 leftover that was still listed here (KYC-100, KYC-095, KYC-110) is **done**. [KYC-111](https://github.com/SDS37/kyc-multi-frontend/issues/120) through [KYC-115](https://github.com/SDS37/kyc-multi-frontend/issues/124) (W7 polish) are **done**. [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) closed as **keep three apps** ([spike notes](spikes/kyc-120-module-federation.md)). `updateDraftCase` already compare-and-swaps `Status == Draft` (KYC-095); that is not an open gap. Nothing from the MVP roadmap is still open.
 
 Localhost hardening that already landed (rate limits, headers, captcha, `registerTenant` invite codes) stays as-is until you leave a single-process API. Those codes gate **new tenants** (KYC-093). They are not TenantAdmin user invite/list (Customer/Reviewer) — that is §1 below.
 
@@ -33,7 +29,7 @@ Each row is “the product would feel complete if…” plus **when** to actuall
 
 | Gap today | Production-shaped | Trigger |
 |---|---|---|
-| Three apps, three origins (`:4200`, `:5173`, `:5174`) | A shell that loads remotes (Module Federation) **or** a reverse-proxied same-site deploy | W7 spike is stable **and** a reviewer should not juggle three tabs. If the spike fails, keep three apps (ADR-005). |
+| Three apps, three origins (`:4200`, `:5173`, `:5174`). [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) closed as keep three apps | A shell that loads remotes (Module Federation) **or** a reverse-proxied same-site deploy | A **new** story, and a reviewer should not juggle three tabs. KYC-120 is not that story (ADR-005). |
 | JWT 60 minutes, no refresh, no logout kill | Refresh tokens; optional revoke list | Sessions are too short, or “Sign out” must invalidate the token on the server |
 
 Redis belongs here only for **shared revoke / rate-limit state** across API instances — see §4.
@@ -74,7 +70,7 @@ Do not cache KYC documents or case rows “in Redis.” Bytes stay MinIO; source
 These keep the portfolio honest. They do not make KYC “more production.”
 
 - MediatR / domain-events rewrite to match old diagrams
-- Module Federation from week 1, or a host if the W7 spike is unstable
+- Module Federation from week 1, or a host now that KYC-120 kept three apps
 - Shared React/Angular/Vue widget library (tokens + GraphQL stay the share boundary)
 - Notifications, billing, OCR, custom workflows ([roadmap](roadmap.md) time-control)
 - Sheriff / Nx / tsarch for a three-feature admin
@@ -86,7 +82,7 @@ These keep the portfolio honest. They do not make KYC “more production.”
 2. User invite/list API if humans must join without SQL.
 3. TLS on a real deploy; `/ready` not public.
 4. Redis **only** with a second API instance or token revoke.
-5. **W7 spike** [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) in parallel with polish; keep three apps if it is not boringly stable. A one-URL **host** is §2 after the spike.
+5. A one-URL **host** is §2 only. [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) already closed as keep three apps.
 6. Refresh tokens, audit UI, extra Vue pages, i18n — when a demo or operator actually misses them.
 
 That sequence is the difference between a **wishlist** and a second fake MVP.

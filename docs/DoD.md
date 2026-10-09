@@ -7,4 +7,4 @@
 - [x] Architecture diagrams published (target vs today called out)
 - [x] README allows a colleague to run the system locally (Compose + API + Angular + React + Vue runbooks; `api-ci` / `angular-ci` / `react-ci` / `vue-ci` / `*-e2e`)
 
-Not in this DoD (Redis client, MF **host**, user invite/list): [beyond-mvp.md](beyond-mvp.md). W7 **polish** is leftover integrity/docs ([roadmap.md](roadmap.md)); the MF **spike** is [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) and is not a DoD gate.
+Not in this DoD (Redis client, MF **host**, user invite/list): [beyond-mvp.md](beyond-mvp.md). W7 **polish** is done ([roadmap.md](roadmap.md)). The MF **spike** [KYC-120](https://github.com/SDS37/kyc-multi-frontend/issues/125) closed as keep three apps and is not a DoD gate.
