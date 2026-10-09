@@ -125,7 +125,7 @@ if (entity.CustomerUserId != customerUserId.Value)
 | GraphQL `/graphql` | Public contract for identity, cases (incl. `customerEmail`), document **metadata**, case audit (ADR-002) |
 | REST `POST /api/cases/{caseId}/documents` | Multipart upload (intentional; keep it REST) |
 | REST `GET /api/cases/{caseId}/documents/{documentId}` | Authenticated download stream (intentional; keep it REST) |
-| REST `POST /api/register-tenant`, `POST /api/login` | Temporary twins of GraphQL; same Application services; retire when UIs consume GraphQL (DoD) |
+| REST `POST /api/register-tenant`, `POST /api/login` | Temporary twins of GraphQL; same Application services. UIs already use GraphQL login. Endpoints stay until an explicit retire story past DoD — DoD does not remove them. |
 
 Keep `Query` / `Mutation` thin. New fields inherit type-level `[Authorize]` unless you add `[AllowAnonymous]` — do that only for a documented anonymous identity operation.
 

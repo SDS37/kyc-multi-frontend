@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README.
 
-**Aligned with:** KYC-081 Vue reports overview (counts + latest 10). Next: W6 seed + security hardening.
+**Aligned with:** `main` after W6 (API, three UIs, KYC-101 seed, KYC-110 Playwright). W7 polish left is Angular transport errors (KYC-115). The Module Federation spike (KYC-120) is separate.
 
 Tracked in git so they render on GitHub. They are a tour, not a contract — ADRs and official READMEs win if anything disagrees. Update these files when the code or architecture moves; they can be deleted from the repo later.
 
@@ -61,7 +61,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 | Three UIs + GraphQL API | API is real; **Angular admin** (KYC-060–065), **React customer** (KYC-070–074), **Vue reports** (KYC-080–081) |
 | Modular monolith (Identity, Cases, Documents, Audit) | **Layer folders** inside one .NET project; Documents use-cases exist |
 | Command/query **services** (no MediatR) | GraphQL / REST call `*Service` classes. MediatR is not planned ([beyond-mvp.md](docs/beyond-mvp.md) §6) |
-| GraphQL as the domain API | Cases are GraphQL; **upload/download are dedicated REST**; login/register still have temporary REST twins |
+| GraphQL as the domain API | Cases are GraphQL; **upload/download are dedicated REST**; login/register still have temporary REST twins (they stay until an explicit retire story past DoD) |
 | MinIO for KYC files | Compose + API `IObjectStorage` / MinIO (InMemory in tests) |
 | Redis | Compose up, **unused** by the API |
 | Module Federation host | Not MVP. W7 spike; real host only if [beyond-mvp.md](docs/beyond-mvp.md) §2 |
@@ -91,7 +91,7 @@ Redis is **up but unused**. MinIO holds document **bytes**; Postgres holds docum
 - API runbook: [apps/api/README.md](apps/api/README.md)
 - Frontend-oriented .NET map: [docs/guides/dotnet-api-for-frontend-engineers.md](docs/guides/dotnet-api-for-frontend-engineers.md)
 - How to write C# here: [docs/dotnet-code-standards.md](docs/dotnet-code-standards.md)
-- [Roadmap](docs/roadmap.md) (W1–W5 done; W6 next)
+- [Roadmap](docs/roadmap.md) (W1–W6 done; W7 polish left is KYC-115)
 - [Beyond MVP](docs/beyond-mvp.md) (Redis, MF host, user invite/list — triggers only)
 - [ADR-001 monorepo](docs/architecture-decision-records.md)
 - [ADR-007 tenant from JWT](docs/architecture-decision-records.md)

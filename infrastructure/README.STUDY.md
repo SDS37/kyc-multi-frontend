@@ -2,7 +2,7 @@
 
 Study tour of this folder. Distinct from the official README. Runbook: [README.md](README.md).
 
-**Aligned with:** `main` after W5 (Compose deps; Angular + React UIs on the host).
+**Aligned with:** `main` after W6 (Compose deps; Angular, React, and Vue on the host).
 
 ## Purpose
 

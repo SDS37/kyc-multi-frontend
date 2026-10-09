@@ -70,7 +70,7 @@ cd apps/api/Kyc.Api
 dotnet ef database update
 ```
 
-Schema history: `InitialCreate` → `AddTenant` → `AddUser` (unique `(TenantId, Email)`) → `AddCase` (`cases` table, `FormData` as JSON/`jsonb`). KYC-014 added filters only (no new migration).
+Schema history: `InitialCreate` → `AddTenant` → `AddUser` (unique `(TenantId, Email)`) → `AddCase` (`cases`, `FormData` as JSON/`jsonb`) → `AddCaseReviewComment` → `AddDocument` → `AddAuditEntry` → `AddRegistrationInvites`. KYC-014 added filters only (no new migration).
 
 To add another schema change:
 
